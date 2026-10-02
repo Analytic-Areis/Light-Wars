@@ -38,61 +38,21 @@ class WaveDirector {
 
   initPhase2() {
     this.phase = 2;
-    // If player already crafted Magenta, proceed directly to combat
-    if (this.game.player && this.game.player.ammo.MAGENTA > 0) {
-      this.initPhase2Combat();
-      return;
-    }
-
-    // Ensure there is at least one Red Orb in the arena
-    const hasRedOrb = this.game.orbs.some(o => o.alive && o.colorId === 'RED');
-    if (!hasRedOrb) {
-      this.game.spawnOrb(600, 550, 'RED');
-    }
-
     this.game.ui.setObjective(
-      "PHASE 2: ORB SYNTHESIS",
-      "Shoot the RED ORB with BLUE Laser [3] to craft MAGENTA Ammo!"
+      "PHASE 2: MAGENTA TROOP",
+      "Press [2] for GREEN Laser (or craft Magenta via Red Orb + Blue Laser) to defeat Magenta troop!"
     );
-  }
-
-  initPhase2Combat() {
-    this.phase = 2.5;
-    this.game.ui.setObjective(
-      "PHASE 2: GREEN THREAT",
-      "Select MAGENTA Laser [5] to eliminate the Green enemy!"
-    );
-    this.game.spawnEnemy(950, 550, 'GREEN');
+    this.game.spawnEnemy(950, 550, 'MAGENTA');
     this.enemiesRemainingInPhase = 1;
   }
 
   initPhase3() {
     this.phase = 3;
-    // If player already crafted Cyan, proceed directly to combat
-    if (this.game.player && this.game.player.ammo.CYAN > 0) {
-      this.initPhase3Combat();
-      return;
-    }
-
-    // Ensure there is at least one Green Orb
-    const hasGreenOrb = this.game.orbs.some(o => o.alive && o.colorId === 'GREEN');
-    if (!hasGreenOrb) {
-      this.game.spawnOrb(650, 550, 'GREEN');
-    }
-
     this.game.ui.setObjective(
-      "PHASE 3: CHAIN SYNTHESIS",
-      "Shoot GREEN ORB with BLUE Laser [3] to craft CYAN Ammo!"
+      "PHASE 3: YELLOW TROOP",
+      "Yellow troop approaches! Press [3] for BLUE Laser to eliminate it!"
     );
-  }
-
-  initPhase3Combat() {
-    this.phase = 3.5;
-    this.game.ui.setObjective(
-      "PHASE 3: RED ARMORED BRAWLER",
-      "Select CYAN Laser [4] to destroy the Red enemy!"
-    );
-    this.game.spawnEnemy(1050, 550, 'RED');
+    this.game.spawnEnemy(1050, 550, 'YELLOW');
     this.enemiesRemainingInPhase = 1;
   }
 
@@ -100,14 +60,13 @@ class WaveDirector {
     this.phase = 4;
     this.game.ui.setObjective(
       "CLIMAX WAVE: CHROMATIC SHOWDOWN",
-      "Eliminate all hostiles! Return to WHITE LIGHT if you need to recharge RGB ammo!"
+      "Cyan, Magenta, and Yellow troops attack! Use WHITE LIGHT at spawn to recharge RGB ammo!"
     );
-    // Spawn mixed squad
-    this.game.spawnEnemy(850, 300, 'CYAN');
-    this.game.spawnEnemy(1000, 450, 'GREEN');
-    this.game.spawnEnemy(950, 680, 'RED');
-    this.game.spawnEnemy(1150, 550, 'CYAN');
-    this.enemiesRemainingInPhase = 4;
+    // Spawn Cyan, Magenta, Yellow troops
+    this.game.spawnEnemy(850, 320, 'CYAN');
+    this.game.spawnEnemy(1050, 550, 'MAGENTA');
+    this.game.spawnEnemy(900, 720, 'YELLOW');
+    this.enemiesRemainingInPhase = 3;
   }
 
   onEnemyDefeated(enemy) {
@@ -116,9 +75,9 @@ class WaveDirector {
 
     if (this.phase === 1 && this.enemiesRemainingInPhase <= 0) {
       setTimeout(() => this.initPhase2(), 1000);
-    } else if (this.phase === 2.5 && this.enemiesRemainingInPhase <= 0) {
+    } else if (this.phase === 2 && this.enemiesRemainingInPhase <= 0) {
       setTimeout(() => this.initPhase3(), 1000);
-    } else if (this.phase === 3.5 && this.enemiesRemainingInPhase <= 0) {
+    } else if (this.phase === 3 && this.enemiesRemainingInPhase <= 0) {
       setTimeout(() => this.initPhase4(), 1200);
     } else if (this.phase === 4 && this.enemiesRemainingInPhase <= 0) {
       this.cleared = true;

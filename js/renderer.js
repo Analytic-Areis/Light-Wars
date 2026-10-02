@@ -6,6 +6,20 @@ class SpriteManager {
   constructor() {
     this.sprites = {};
     this.loadedCount = 0;
+    this.initDirectionalSprites();
+  }
+
+  initDirectionalSprites() {
+    const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+    const characters = ['hero', 'troop_cyan', 'troop_magenta', 'troop_yellow', 'troop_red'];
+
+    for (const charId of characters) {
+      for (const d of dirs) {
+        const id = `${charId}_${d}`;
+        const path = `assets/sprites/${charId}/${d}.png`;
+        this.loadSprite(id, path);
+      }
+    }
   }
 
   loadSprite(id, src) {
@@ -14,10 +28,9 @@ class SpriteManager {
     img.onload = () => {
       this.sprites[id] = img;
       this.loadedCount++;
-      console.log(`Loaded sprite: ${id}`);
     };
     img.onerror = () => {
-      console.warn(`Could not load sprite: ${id} at ${src}`);
+      // Graceful fallback
     };
   }
 
@@ -29,25 +42,45 @@ class SpriteManager {
     return this.sprites[id] || null;
   }
 
+  static getDirection8(angle) {
+    let deg = (angle * 180) / Math.PI;
+    if (deg < 0) deg += 360;
+    if (deg >= 337.5 || deg < 22.5) return 'E';
+    if (deg >= 22.5 && deg < 67.5) return 'SE';
+    if (deg >= 67.5 && deg < 112.5) return 'S';
+    if (deg >= 112.5 && deg < 157.5) return 'SW';
+    if (deg >= 157.5 && deg < 202.5) return 'W';
+    if (deg >= 202.5 && deg < 247.5) return 'NW';
+    if (deg >= 247.5 && deg < 292.5) return 'N';
+    return 'NE';
+  }
+
   drawPlayer(ctx, player) {
-    const img = this.getSprite('player');
-    if (!img) return;
+    const dir = SpriteManager.getDirection8(player.aimAngle);
+    const img = this.getSprite(`hero_${dir}`) || this.getSprite('hero_S');
+    if (!img) return false;
+
     ctx.save();
-    ctx.rotate(player.aimAngle);
-    const size = player.radius * 2.2;
-    ctx.drawImage(img, -size / 2, -size / 2, size, size);
+    // Render upright 2.5D sprite standing on ground plane
+    const h = player.radius * 2.8;
+    const w = (img.width / img.height) * h;
+    ctx.drawImage(img, -w / 2, -h + 8, w, h);
     ctx.restore();
+    return true;
   }
 
   drawEnemy(ctx, enemy) {
-    const key = `enemy_${enemy.colorId.toLowerCase()}`;
-    const img = this.getSprite(key) || this.getSprite('enemy_default');
-    if (!img) return;
+    const col = enemy.colorId.toLowerCase();
+    const dir = SpriteManager.getDirection8(enemy.facingAngle);
+    const img = this.getSprite(`troop_${col}_${dir}`) || this.getSprite(`troop_${col}_S`);
+    if (!img) return false;
+
     ctx.save();
-    ctx.rotate(enemy.facingAngle);
-    const size = enemy.radius * 2.2;
-    ctx.drawImage(img, -size / 2, -size / 2, size, size);
+    const h = enemy.radius * 2.8;
+    const w = (img.width / img.height) * h;
+    ctx.drawImage(img, -w / 2, -h + 8, w, h);
     ctx.restore();
+    return true;
   }
 }
 

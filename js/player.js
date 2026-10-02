@@ -280,8 +280,7 @@ class Player {
     ctx.translate(this.x, drawY);
 
     // If custom sprite loaded, allow spriteManager to render
-    if (spriteManager && spriteManager.hasSprite('player')) {
-      spriteManager.drawPlayer(ctx, this);
+    if (spriteManager && spriteManager.drawPlayer(ctx, this)) {
       ctx.restore();
       return;
     }

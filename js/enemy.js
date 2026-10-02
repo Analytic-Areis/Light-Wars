@@ -112,8 +112,7 @@ class Enemy {
     ctx.translate(this.x, drawY);
 
     // If custom sprite exists, allow spriteManager to render
-    if (spriteManager && spriteManager.hasSprite(`enemy_${this.colorId.toLowerCase()}`)) {
-      spriteManager.drawEnemy(ctx, this);
+    if (spriteManager && spriteManager.drawEnemy(ctx, this)) {
       ctx.restore();
       return;
     }

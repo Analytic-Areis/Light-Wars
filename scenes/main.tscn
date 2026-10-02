@@ -1,0 +1,475 @@
+[gd_scene load_steps=14 format=3 uid="uid://c5main001"]
+
+[ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/camera_controller.gd" id="2_cam"]
+[ext_resource type="PackedScene" path="res://scenes/player.tscn" id="3_player"]
+[ext_resource type="Script" path="res://scripts/hud.gd" id="4_hud"]
+
+[sub_resource type="Environment" id="Environment_1"]
+background_mode = 1
+background_color = Color(0.04, 0.05, 0.09, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.2, 0.25, 0.35, 1)
+tonemap_mode = 2
+glow_enabled = true
+glow_intensity = 0.6
+glow_bloom = 0.2
+
+[sub_resource type="StandardMaterial3D" id="Mat_Ground"]
+albedo_color = Color(0.08, 0.1, 0.16, 1)
+roughness = 0.7
+
+[sub_resource type="BoxMesh" id="BoxMesh_Ground"]
+material = SubResource("Mat_Ground")
+size = Vector3(40, 1, 30)
+
+[sub_resource type="BoxShape3D" id="BoxShape_Ground"]
+size = Vector3(40, 1, 30)
+
+[sub_resource type="StandardMaterial3D" id="Mat_WhiteLight"]
+albedo_color = Color(1, 1, 1, 1)
+emission_enabled = true
+emission = Color(0.9, 0.95, 1, 1)
+emission_energy_multiplier = 4.0
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_WL"]
+material = SubResource("Mat_WhiteLight")
+top_radius = 2.8
+bottom_radius = 2.8
+height = 0.1
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_Pil"]
+top_radius = 1.0
+bottom_radius = 1.0
+height = 3.5
+
+[sub_resource type="CylinderShape3D" id="CylinderShape_Pil"]
+height = 3.5
+radius = 1.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Banner"]
+bg_color = Color(0.0588235, 0.0823529, 0.14902, 0.9)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0, 0.941176, 1, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="Main" type="Node3D"]
+script = ExtResource("1_main")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_1")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 18, 0)
+shadow_enabled = true
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.642788, 0.766044, 0, -0.766044, 0.642788, 0, 14, 11)
+current = true
+fov = 48.0
+script = ExtResource("2_cam")
+target_path = NodePath("../Player")
+
+[node name="Arena" type="Node3D" parent="."]
+
+[node name="Ground" type="StaticBody3D" parent="Arena"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Arena/Ground"]
+mesh = SubResource("BoxMesh_Ground")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Arena/Ground"]
+shape = SubResource("BoxShape_Ground")
+
+[node name="Pillar1" type="StaticBody3D" parent="Arena"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 1.75, -5)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Arena/Pillar1"]
+mesh = SubResource("CylinderMesh_Pil")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Arena/Pillar1"]
+shape = SubResource("CylinderShape_Pil")
+
+[node name="Pillar2" type="StaticBody3D" parent="Arena"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 1.75, 5)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Arena/Pillar2"]
+mesh = SubResource("CylinderMesh_Pil")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Arena/Pillar2"]
+shape = SubResource("CylinderShape_Pil")
+
+[node name="Pillar3" type="StaticBody3D" parent="Arena"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 1.75, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Arena/Pillar3"]
+mesh = SubResource("CylinderMesh_Pil")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Arena/Pillar3"]
+shape = SubResource("CylinderShape_Pil")
+
+[node name="WhiteLightPad" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0.05, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="WhiteLightPad"]
+mesh = SubResource("CylinderMesh_WL")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="WhiteLightPad"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+light_color = Color(0.9, 0.95, 1, 1)
+light_energy = 4.0
+omni_range = 6.0
+
+[node name="Label3D" type="Label3D" parent="WhiteLightPad"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
+billboard = 1
+text = "⚡ WHITE LIGHT REFILL ⚡"
+font_size = 36
+outline_size = 8
+
+[node name="Player" parent="." instance=ExtResource("3_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0, 0)
+
+[node name="HUD" type="CanvasLayer" parent="."]
+script = ExtResource("4_hud")
+
+[node name="MarginContainer" type="MarginContainer" parent="HUD"]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 60.0
+grow_horizontal = 2
+theme_override_constants/margin_left = 30
+theme_override_constants/margin_top = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HUD/MarginContainer"]
+layout_mode = 2
+
+[node name="HealthBar" type="HBoxContainer" parent="HUD/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Heart1" type="ColorRect" parent="HUD/MarginContainer/VBoxContainer/HealthBar"]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+color = Color(1, 0.16, 0.3, 1)
+
+[node name="Heart2" type="ColorRect" parent="HUD/MarginContainer/VBoxContainer/HealthBar"]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+color = Color(1, 0.16, 0.3, 1)
+
+[node name="Heart3" type="ColorRect" parent="HUD/MarginContainer/VBoxContainer/HealthBar"]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+color = Color(1, 0.16, 0.3, 1)
+
+[node name="TopBanner" type="PanelContainer" parent="HUD"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -300.0
+offset_top = 16.0
+offset_right = 300.0
+offset_bottom = 80.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_Banner")
+
+[node name="VBox" type="VBoxContainer" parent="HUD/TopBanner"]
+layout_mode = 2
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="HUD/TopBanner/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0, 1)
+theme_override_font_sizes/font_size = 18
+text = "LEVEL 1: CHROMATIC CRUCIBLE"
+horizontal_alignment = 1
+
+[node name="DescLabel" type="Label" parent="HUD/TopBanner/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.92, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "Press [1] for RED Laser. Destroy Cyan troops!"
+horizontal_alignment = 1
+
+[node name="BottomBar" type="PanelContainer" parent="HUD"]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -260.0
+offset_top = -80.0
+offset_right = 260.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_Banner")
+
+[node name="AmmoRack" type="HBoxContainer" parent="HUD/BottomBar"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 16
+
+[node name="Slot1" type="VBoxContainer" parent="HUD/BottomBar/AmmoRack"]
+layout_mode = 2
+alignment = 1
+
+[node name="ColorPip" type="ColorRect" parent="HUD/BottomBar/AmmoRack/Slot1"]
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+size_flags_horizontal = 4
+color = Color(1, 0.164706, 0.301961, 1)
+
+[node name="KeyLabel" type="Label" parent="HUD/BottomBar/AmmoRack/Slot1"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "[1] RED"
+horizontal_alignment = 1
+
+[node name="CountLabel" type="Label" parent="HUD/BottomBar/AmmoRack/Slot1"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "6"
+horizontal_alignment = 1
+
+[node name="Highlight" type="ColorRect" parent="HUD/BottomBar/AmmoRack/Slot1"]
+custom_minimum_size = Vector2(40, 2)
+layout_mode = 2
+color = Color(1, 0.9, 0, 1)
+
+[node name="Slot2" type="VBoxContainer" parent="HUD/BottomBar/AmmoRack"]
+layout_mode = 2
+alignment = 1
+
+[node name="ColorPip" type="ColorRect" parent="HUD/BottomBar/AmmoRack/Slot2"]
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+size_flags_horizontal = 4
+color = Color(0.133333, 0.878431, 0.345098, 1)
+
+[node name="KeyLabel" type="Label" parent="HUD/BottomBar/AmmoRack/Slot2"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "[2] GRN"
+horizontal_alignment = 1
+
+[node name="CountLabel" type="Label" parent="HUD/BottomBar/AmmoRack/Slot2"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "6"
+horizontal_alignment = 1
+
+[node name="Highlight" type="ColorRect" parent="HUD/BottomBar/AmmoRack/Slot2"]
+visible = false
+custom_minimum_size = Vector2(40, 2)
+layout_mode = 2
+color = Color(1, 0.9, 0, 1)
+
+[node name="Slot3" type="VBoxContainer" parent="HUD/BottomBar/AmmoRack"]
+layout_mode = 2
+alignment = 1
+
+[node name="ColorPip" type="ColorRect" parent="HUD/BottomBar/AmmoRack/Slot3"]
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+size_flags_horizontal = 4
+color = Color(0.164706, 0.521569, 1, 1)
+
+[node name="KeyLabel" type="Label" parent="HUD/BottomBar/AmmoRack/Slot3"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "[3] BLU"
+horizontal_alignment = 1
+
+[node name="CountLabel" type="Label" parent="HUD/BottomBar/AmmoRack/Slot3"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "6"
+horizontal_alignment = 1
+
+[node name="Highlight" type="ColorRect" parent="HUD/BottomBar/AmmoRack/Slot3"]
+visible = false
+custom_minimum_size = Vector2(40, 2)
+layout_mode = 2
+color = Color(1, 0.9, 0, 1)
+
+[node name="Slot4" type="VBoxContainer" parent="HUD/BottomBar/AmmoRack"]
+layout_mode = 2
+alignment = 1
+
+[node name="ColorPip" type="ColorRect" parent="HUD/BottomBar/AmmoRack/Slot4"]
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+size_flags_horizontal = 4
+color = Color(0, 0.941176, 1, 1)
+
+[node name="KeyLabel" type="Label" parent="HUD/BottomBar/AmmoRack/Slot4"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "[4] CYN"
+horizontal_alignment = 1
+
+[node name="CountLabel" type="Label" parent="HUD/BottomBar/AmmoRack/Slot4"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "0"
+horizontal_alignment = 1
+
+[node name="Highlight" type="ColorRect" parent="HUD/BottomBar/AmmoRack/Slot4"]
+visible = false
+custom_minimum_size = Vector2(40, 2)
+layout_mode = 2
+color = Color(1, 0.9, 0, 1)
+
+[node name="Slot5" type="VBoxContainer" parent="HUD/BottomBar/AmmoRack"]
+layout_mode = 2
+alignment = 1
+
+[node name="ColorPip" type="ColorRect" parent="HUD/BottomBar/AmmoRack/Slot5"]
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+size_flags_horizontal = 4
+color = Color(1, 0.164706, 0.831373, 1)
+
+[node name="KeyLabel" type="Label" parent="HUD/BottomBar/AmmoRack/Slot5"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "[5] MAG"
+horizontal_alignment = 1
+
+[node name="CountLabel" type="Label" parent="HUD/BottomBar/AmmoRack/Slot5"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "0"
+horizontal_alignment = 1
+
+[node name="Highlight" type="ColorRect" parent="HUD/BottomBar/AmmoRack/Slot5"]
+visible = false
+custom_minimum_size = Vector2(40, 2)
+layout_mode = 2
+color = Color(1, 0.9, 0, 1)
+
+[node name="Slot6" type="VBoxContainer" parent="HUD/BottomBar/AmmoRack"]
+layout_mode = 2
+alignment = 1
+
+[node name="ColorPip" type="ColorRect" parent="HUD/BottomBar/AmmoRack/Slot6"]
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+size_flags_horizontal = 4
+color = Color(1, 0.901961, 0, 1)
+
+[node name="KeyLabel" type="Label" parent="HUD/BottomBar/AmmoRack/Slot6"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "[6] YEL"
+horizontal_alignment = 1
+
+[node name="CountLabel" type="Label" parent="HUD/BottomBar/AmmoRack/Slot6"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "0"
+horizontal_alignment = 1
+
+[node name="Highlight" type="ColorRect" parent="HUD/BottomBar/AmmoRack/Slot6"]
+visible = false
+custom_minimum_size = Vector2(40, 2)
+layout_mode = 2
+color = Color(1, 0.9, 0, 1)
+
+[node name="Floaters" type="Control" parent="HUD"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="WinModal" type="PanelContainer" parent="HUD"]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -140.0
+offset_right = 200.0
+offset_bottom = 140.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_Banner")
+
+[node name="VBox" type="VBoxContainer" parent="HUD/WinModal"]
+layout_mode = 2
+alignment = 1
+
+[node name="WinLabel" type="Label" parent="HUD/WinModal/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0, 1)
+theme_override_font_sizes/font_size = 32
+text = "LEVEL 1 CLEARED!"
+horizontal_alignment = 1
+
+[node name="Stars" type="Label" parent="HUD/WinModal/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0, 1)
+theme_override_font_sizes/font_size = 28
+text = "★★★"
+horizontal_alignment = 1
+
+[node name="StatsLabel" type="Label" parent="HUD/WinModal/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Troops Defeated: 7
+Orbs Converted: 3"
+horizontal_alignment = 1
+
+[node name="PlayAgainBtn" type="Button" parent="HUD/WinModal/VBox"]
+custom_minimum_size = Vector2(140, 40)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "PLAY AGAIN"
+
+[node name="GameOverModal" type="PanelContainer" parent="HUD"]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -180.0
+offset_top = -100.0
+offset_right = 180.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_Banner")
+
+[node name="VBox" type="VBoxContainer" parent="HUD/GameOverModal"]
+layout_mode = 2
+alignment = 1
+
+[node name="DefeatLabel" type="Label" parent="HUD/GameOverModal/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.16, 0.3, 1)
+theme_override_font_sizes/font_size = 32
+text = "DEFEATED!"
+horizontal_alignment = 1
+
+[node name="RetryBtn" type="Button" parent="HUD/GameOverModal/VBox"]
+custom_minimum_size = Vector2(140, 40)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "RETRY"
+
+[connection signal="pressed" from="HUD/WinModal/VBox/PlayAgainBtn" to="HUD" method="_on_restart_pressed"]
+[connection signal="pressed" from="HUD/GameOverModal/VBox/RetryBtn" to="HUD" method="_on_restart_pressed"]
