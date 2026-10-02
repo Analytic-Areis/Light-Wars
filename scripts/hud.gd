@@ -39,6 +39,25 @@ func update_ammo(ammo_dict: Dictionary, active_col: String) -> void:
 			if highlight:
 				highlight.visible = (c_id == active_col)
 
+func add_2d_floater(pos_2d: Vector2, text: String, color: Color) -> void:
+	var label = Label.new()
+	label.text = text
+	label.modulate = color
+	label.add_theme_font_size_override("font_size", 24)
+	label.add_theme_color_override("font_outline_color", Color.BLACK)
+	label.add_theme_constant_override("outline_size", 7)
+	
+	if floaters_layer:
+		floaters_layer.add_child(label)
+		active_floaters.append({
+			"label": label,
+			"pos_2d": pos_2d,
+			"y_offset": 0.0,
+			"life": 1.0,
+			"max_life": 1.0,
+			"is_2d": true
+		})
+
 func add_3d_floater(pos_3d: Vector3, text: String, color: Color) -> void:
 	var label = Label.new()
 	label.text = text
@@ -54,31 +73,38 @@ func add_3d_floater(pos_3d: Vector3, text: String, color: Color) -> void:
 			"pos": pos_3d,
 			"y_offset": 0.0,
 			"life": 1.0,
-			"max_life": 1.0
+			"max_life": 1.0,
+			"is_2d": false
 		})
 
 func _process(delta: float) -> void:
-	var camera = get_viewport().get_camera_3d()
-	if not camera: return
+	var cam_3d = get_viewport().get_camera_3d()
+	var canvas_xform = get_viewport().get_canvas_transform()
 	
 	for i in range(active_floaters.size() - 1, -1, -1):
 		var f = active_floaters[i]
 		f["life"] -= delta
-		f["y_offset"] += delta * 1.5
+		f["y_offset"] += delta * 45.0
 		
 		if f["life"] <= 0.0:
 			f["label"].queue_free()
 			active_floaters.remove_at(i)
 			continue
 			
-		var world_p = f["pos"] + Vector3(0, f["y_offset"], 0)
-		if camera.is_position_behind(world_p):
-			f["label"].visible = false
-		else:
-			f["label"].visible = true
-			var screen_p = camera.unproject_position(world_p)
+		if f.get("is_2d", false):
+			var world_p = f["pos_2d"] - Vector2(0, f["y_offset"])
+			var screen_p = canvas_xform * world_p
 			f["label"].position = screen_p - f["label"].size / 2.0
 			f["label"].modulate.a = f["life"] / f["max_life"]
+		elif cam_3d:
+			var world_p = f["pos"] + Vector3(0, f["y_offset"] * 0.03, 0)
+			if cam_3d.is_position_behind(world_p):
+				f["label"].visible = false
+			else:
+				f["label"].visible = true
+				var screen_p = cam_3d.unproject_position(world_p)
+				f["label"].position = screen_p - f["label"].size / 2.0
+				f["label"].modulate.a = f["life"] / f["max_life"]
 
 func show_level_clear(kills: int, orbs: int) -> void:
 	if win_modal:

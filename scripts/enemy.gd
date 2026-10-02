@@ -1,156 +1,132 @@
-extends CharacterBody3D
+extends CharacterBody2D
 
 @export var color_id: String = "CYAN"
-var speed: float = 3.8
+@export var speed: float = 195.0
+
 var health: int = 1
 var attack_cooldown: float = 0.0
-
-var troop_sprites: Dictionary = {}
-var run_frames: Array[Texture2D] = []
-var current_dir_name: String = "S"
-
-# Animation
-var base_sprite_y: float = 1.45
+var current_dir: String = "S"
 var walk_anim_time: float = 0.0
 var hurt_flash_timer: float = 0.0
-var knockback_vel: Vector3 = Vector3.ZERO
+var knockback_vel: Vector2 = Vector2.ZERO
 
-@onready var sprite_3d: Sprite3D = $Sprite3D
+var troop_sprites: Dictionary = {}
+@onready var sprite_2d: Sprite2D = $Sprite2D
 var orb_scene = preload("res://scenes/orb.tscn")
 
 func _ready() -> void:
 	add_to_group("enemies")
 	load_sprites_for_color()
+	update_sprite(true)
 
 func set_enemy_color(new_col: String) -> void:
 	color_id = new_col
 	load_sprites_for_color()
+	update_sprite(true)
 
 func load_sprites_for_color() -> void:
 	troop_sprites.clear()
-	run_frames.clear()
 	var folder = "troop_" + color_id.to_lower()
 	var dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
 	for d in dirs:
-		var path = "res://assets/sprites/" + folder + "/" + d + ".png"
-		if ResourceLoader.exists(path):
-			troop_sprites[d] = load(path)
+		troop_sprites[d] = { "idle": null, "run": [] }
+		var idle_path = "res://assets/sprites/" + folder + "/" + d + "_idle.png"
+		if ResourceLoader.exists(idle_path):
+			troop_sprites[d]["idle"] = load(idle_path)
+		elif ResourceLoader.exists("res://assets/sprites/" + folder + "/" + d + ".png"):
+			troop_sprites[d]["idle"] = load("res://assets/sprites/" + folder + "/" + d + ".png")
 			
-	# Load the 8 running animation frames
-	for i in range(1, 9):
-		var rpath = "res://assets/sprites/" + folder + "/run_" + str(i) + ".png"
-		if ResourceLoader.exists(rpath):
-			run_frames.append(load(rpath))
-			
-	if troop_sprites.has("S") and sprite_3d:
-		sprite_3d.texture = troop_sprites["S"]
+		for r in range(10):
+			var r_path = "res://assets/sprites/" + folder + "/" + d + "_run_" + str(r) + ".png"
+			if ResourceLoader.exists(r_path):
+				troop_sprites[d]["run"].append(load(r_path))
 
 func _physics_process(delta: float) -> void:
 	if attack_cooldown > 0.0:
 		attack_cooldown -= delta
 		
-	# Decay hurt flash
 	if hurt_flash_timer > 0.0:
 		hurt_flash_timer -= delta
-		if sprite_3d:
-			sprite_3d.modulate = Color(3.5, 3.5, 3.5, 1.0) # Intense white hit flash
-			sprite_3d.scale = Vector3(1.25, 0.75, 1.0)
+		if sprite_2d:
+			sprite_2d.modulate = Color(3.0, 3.0, 3.0, 1.0)
 	else:
-		if sprite_3d:
-			sprite_3d.modulate = Color.WHITE
+		if sprite_2d:
+			sprite_2d.modulate = Color.WHITE
 
-	# Knockback physics
-	if knockback_vel.length_squared() > 0.1:
+	# Knockback decay
+	if knockback_vel.length_squared() > 10.0:
 		velocity = knockback_vel
-		knockback_vel = knockback_vel.move_toward(Vector3.ZERO, delta * 35.0)
+		knockback_vel = knockback_vel.move_toward(Vector2.ZERO, delta * 800.0)
 	else:
 		var player = get_tree().get_first_node_in_group("player")
 		if player:
 			var to_player = player.global_position - global_position
-			to_player.y = 0.0
 			var dist = to_player.length()
 			
-			if dist > 1.4:
-				velocity = to_player.normalized() * speed
-				
-				# Active Running Animation
-				walk_anim_time += delta * 11.0
-				if run_frames.size() == 8 and sprite_3d:
-					var frame_idx = int(walk_anim_time) % 8
-					sprite_3d.texture = run_frames[frame_idx]
-					# Face left or right based on X velocity
-					sprite_3d.flip_h = (to_player.x < -0.05)
-				elif sprite_3d:
-					# Fallback directional sprite
-					var dir_2d = Vector2(to_player.x, to_player.z)
-					var new_dir = GameManager.get_direction_8(dir_2d)
-					if troop_sprites.has(new_dir):
-						sprite_3d.texture = troop_sprites[new_dir]
-						sprite_3d.flip_h = false
-
-				if sprite_3d and hurt_flash_timer <= 0.0:
-					var bob = abs(sin(walk_anim_time * 0.7)) * 0.12
-					sprite_3d.position.y = base_sprite_y + bob
-					sprite_3d.scale = Vector3.ONE
+			if dist > 35.0:
+				var move_dir = to_player.normalized()
+				velocity = move_dir * speed
+				current_dir = GameManager.get_direction_8(move_dir)
+				walk_anim_time += delta * 14.0
+				update_sprite(false)
 			else:
-				velocity = Vector3.ZERO
-				# Idle state
-				if troop_sprites.has("S") and sprite_3d:
-					sprite_3d.texture = troop_sprites["S"]
-					sprite_3d.flip_h = false
-					
-				if sprite_3d and hurt_flash_timer <= 0.0:
-					sprite_3d.position.y = move_toward(sprite_3d.position.y, base_sprite_y, delta * 3.0)
-					var breath = sin(Time.get_ticks_msec() * 0.003) * 0.02
-					sprite_3d.scale = Vector3(1.0 - breath, 1.0 + breath, 1.0)
-					
+				velocity = Vector2.ZERO
+				walk_anim_time = 0.0
+				update_sprite(true)
 				if attack_cooldown <= 0.0:
 					player.take_damage(1, global_position)
 					attack_cooldown = 1.2
 		else:
-			velocity = Vector3.ZERO
-		
+			velocity = Vector2.ZERO
+			update_sprite(true)
+
 	move_and_slide()
 
-func take_laser_hit(laser_col: String, hit_dir: Vector3) -> void:
-	var rules = GameManager.ENEMY_INTERACTIONS.get(color_id, {})
-	var outcome = rules.get(laser_col, { "action": "NONE" })
-	var action = outcome["action"]
-	
-	hurt_flash_timer = 0.2
-	knockback_vel = hit_dir.normalized() * 12.0
-	
-	var main_node = get_tree().current_scene
-	
-	if action == "KILL":
-		if main_node and main_node.has_method("shake_camera"):
-			main_node.shake_camera(0.45)
-			
-		var comic_word = GameManager.COMIC_WORDS[randi() % GameManager.COMIC_WORDS.size()]
-		var col_data = GameManager.COLORS.get(color_id, GameManager.COLORS["CYAN"])
-		if main_node and main_node.has_method("spawn_comic_floater"):
-			main_node.spawn_comic_floater(global_position + Vector3(0, 2.2, 0), comic_word, col_data["color"])
-			
-		# Drop Orb
-		var orb_col = GameManager.ENEMY_ORB_DROPS.get(color_id, "")
-		if orb_col != "" and orb_scene:
-			var orb = orb_scene.instantiate()
-			get_parent().add_child(orb)
-			orb.init_orb(global_position + Vector3(0, 1.0, 0), orb_col)
-			
-		if main_node and main_node.has_method("on_enemy_killed"):
-			main_node.on_enemy_killed(self)
-			
-		queue_free()
-	elif action == "TRANSFORM":
-		var target_col = outcome["target"]
-		set_enemy_color(target_col)
-		if main_node and main_node.has_method("shake_camera"):
-			main_node.shake_camera(0.25)
-		var col_data = GameManager.COLORS.get(target_col, GameManager.COLORS["YELLOW"])
-		if main_node and main_node.has_method("spawn_comic_floater"):
-			main_node.spawn_comic_floater(global_position + Vector3(0, 2.2, 0), "➔ " + target_col + "!", col_data["color"])
+func update_sprite(is_idle: bool) -> void:
+	if not sprite_2d or not troop_sprites.has(current_dir):
+		return
+	var dir_data = troop_sprites[current_dir]
+	if is_idle or dir_data["run"].is_empty():
+		if dir_data["idle"]:
+			sprite_2d.texture = dir_data["idle"]
 	else:
-		# Deflect
-		if main_node and main_node.has_method("spawn_comic_floater"):
-			main_node.spawn_comic_floater(global_position + Vector3(0, 2.2, 0), "DEFLECTED!", Color.WHITE)
+		var frames = dir_data["run"]
+		var f_idx = int(walk_anim_time) % frames.size()
+		sprite_2d.texture = frames[f_idx]
+
+func take_laser_hit(laser_col: String, hit_dir: Vector2) -> void:
+	hurt_flash_timer = 0.22
+	knockback_vel = hit_dir.normalized() * 320.0
+	
+	var rules = GameManager.ENEMY_INTERACTIONS.get(color_id, {})
+	var interaction = rules.get(laser_col, { "action": "NONE" })
+	var main = get_parent()
+	
+	match interaction.get("action"):
+		"KILL":
+			if main and main.has_method("spawn_comic_floater"):
+				var word = GameManager.COMIC_WORDS[randi() % GameManager.COMIC_WORDS.size()]
+				main.spawn_comic_floater(global_position + Vector2(0, -120), word, GameManager.COLORS[color_id]["color"])
+				
+			# Drop color orb
+			var drop_color = GameManager.ENEMY_ORB_DROPS.get(color_id, "")
+			if drop_color != "":
+				var orb = orb_scene.instantiate()
+				main.add_child(orb)
+				orb.global_position = global_position
+				orb.set_orb_color(drop_color)
+				
+			if main and main.has_method("on_enemy_killed"):
+				main.on_enemy_killed(self)
+				
+			queue_free()
+			
+		"TRANSFORM":
+			var target_color = interaction.get("target")
+			set_enemy_color(target_color)
+			if main and main.has_method("spawn_comic_floater"):
+				main.spawn_comic_floater(global_position + Vector2(0, -120), "TRANSFORM -> " + target_color, GameManager.COLORS[target_color]["color"])
+				
+		"NONE":
+			if main and main.has_method("spawn_comic_floater"):
+				main.spawn_comic_floater(global_position + Vector2(0, -120), "DEFLECT!", Color(0.8, 0.8, 0.8))

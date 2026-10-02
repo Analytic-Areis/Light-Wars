@@ -444,24 +444,22 @@ class LightWarsGame {
     // 1. Draw Arena (Floor, grid, White Light pad, pillars)
     this.arena.draw(this.ctx);
 
-    // 2. Draw Floating Orbs
-    for (const orb of this.orbs) {
-      orb.draw(this.ctx);
+    // 2. Y-sorted 2.5D Entities (Player, Enemies, Orbs)
+    const entities = [...this.orbs, ...this.enemies];
+    if (this.player) entities.push(this.player);
+    entities.sort((a, b) => a.y - b.y);
+
+    for (const ent of entities) {
+      if (ent instanceof window.LightWars.Player || ent instanceof window.LightWars.Enemy) {
+        ent.draw(this.ctx, this.spriteManager);
+      } else if (ent.draw) {
+        ent.draw(this.ctx);
+      }
     }
 
     // 3. Draw Lasers
     for (const laser of this.lasers) {
       laser.draw(this.ctx);
-    }
-
-    // 4. Draw Enemies (2.5D with Bands)
-    for (const enemy of this.enemies) {
-      enemy.draw(this.ctx, this.spriteManager);
-    }
-
-    // 5. Draw Player Hero
-    if (this.player) {
-      this.player.draw(this.ctx, this.spriteManager);
     }
 
     // 6. Draw Particles & Comic Text bursts

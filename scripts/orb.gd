@@ -1,59 +1,62 @@
-extends Area3D
+extends Area2D
 
-var color_id: String = "GREEN"
-var hover_time: float = 0.0
-var base_y: float = 1.0
+@export var color_id: String = "RED"
+var orb_color: Color = Color.RED
+var float_time: float = 0.0
 
-@onready var mesh_instance: MeshInstance3D = $MeshInstance3D
-@onready var omni_light: OmniLight3D = $OmniLight3D
-
-func init_orb(pos: Vector3, col_id: String) -> void:
-	global_position = pos
-	base_y = pos.y
-	color_id = col_id
+func _ready() -> void:
 	add_to_group("orbs")
-	update_visuals()
+	set_orb_color(color_id)
+	body_entered.connect(_on_body_entered)
 
-func update_visuals() -> void:
-	var col_data = GameManager.COLORS.get(color_id, GameManager.COLORS["GREEN"])
-	var mat = StandardMaterial3D.new()
-	mat.albedo_color = col_data["color"]
-	mat.emission_enabled = true
-	mat.emission = col_data["color"]
-	mat.emission_energy_multiplier = 3.5
-	mat.roughness = 0.1
-	mat.metallic = 0.3
-	
-	if mesh_instance:
-		mesh_instance.material_override = mat
-	if omni_light:
-		omni_light.light_color = col_data["color"]
+func set_orb_color(col: String) -> void:
+	color_id = col
+	if GameManager.COLORS.has(color_id):
+		orb_color = GameManager.COLORS[color_id]["color"]
+	queue_redraw()
 
 func _process(delta: float) -> void:
-	hover_time += delta * 3.0
-	global_position.y = base_y + sin(hover_time) * 0.25
-	rotate_y(delta * 1.5)
+	float_time += delta * 4.0
+	queue_redraw()
 
-func take_laser_hit(laser_col: String) -> bool:
-	var key = color_id + "_" + laser_col
-	var res_color = GameManager.ORB_CONVERSIONS.get(key, "")
-	if res_color != "":
-		# Successful conversion!
-		var main_node = get_tree().current_scene
-		if main_node and main_node.has_method("spawn_comic_floater"):
-			main_node.spawn_comic_floater(global_position, "+" + res_color + " AMMO!", GameManager.COLORS[res_color]["color"])
-		
-		var player = get_tree().get_first_node_in_group("player")
-		if player:
-			player.add_ammo(res_color, 2)
+func _draw() -> void:
+	var bob = sin(float_time) * 6.0
+	var center = Vector2(0, -30 + bob)
+	# Glowing chromatic orb
+	draw_circle(center, 22.0, Color(orb_color.r, orb_color.g, orb_color.b, 0.35))
+	draw_circle(center, 15.0, orb_color)
+	draw_circle(center + Vector2(-4, -4), 5.0, Color.WHITE)
+
+func _on_body_entered(body: Node2D) -> void:
+	if body.is_in_group("player"):
+		# Player collects orb directly: +2 ammo of this orb color
+		if body.ammo.has(color_id):
+			body.ammo[color_id] = min(body.max_ammo_per_color, body.ammo[color_id] + 2)
+			body.emit_signal("ammo_changed", body.ammo, body.get_active_color())
 			
-		if main_node and main_node.has_method("on_orb_converted"):
-			main_node.on_orb_converted(color_id, laser_col, res_color)
-			
+		var main = get_parent()
+		if main and main.has_method("spawn_comic_floater"):
+			main.spawn_comic_floater(global_position + Vector2(0, -50), "+2 " + color_id + " AMMO!", orb_color)
 		queue_free()
-		return true
+
+func on_laser_hit(laser_col: String) -> void:
+	var combo = color_id + "_" + laser_col
+	var result_color = GameManager.ORB_CONVERSIONS.get(combo, "")
+	var main = get_parent()
+	var player = get_tree().get_first_node_in_group("player")
+	
+	if result_color != "":
+		if player and player.ammo.has(result_color):
+			player.ammo[result_color] = min(player.max_ammo_per_color, player.ammo[result_color] + 3)
+			player.emit_signal("ammo_changed", player.ammo, player.get_active_color())
+			
+		if main and main.has_method("spawn_comic_floater"):
+			var res_data = GameManager.COLORS.get(result_color, { "color": Color.WHITE })
+			main.spawn_comic_floater(global_position + Vector2(0, -60), "CRAFTED " + result_color + "!", res_data["color"])
+		if main and main.has_method("on_orb_converted"):
+			main.on_orb_converted(color_id, laser_col, result_color)
 	else:
-		var main_node = get_tree().current_scene
-		if main_node and main_node.has_method("spawn_comic_floater"):
-			main_node.spawn_comic_floater(global_position, "DEFLECT!", Color.WHITE)
-		return false
+		if main and main.has_method("spawn_comic_floater"):
+			main.spawn_comic_floater(global_position + Vector2(0, -60), "NO REACTION", Color.GRAY)
+			
+	queue_free()

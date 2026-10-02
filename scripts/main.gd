@@ -1,26 +1,52 @@
-extends Node3D
+extends Node2D
 
-@onready var player = $Player
-@onready var camera = $Camera3D
-@onready var hud = $HUD
-@onready var white_light_pad = $WhiteLightPad
+@onready var entities: Node2D = $Entities
+@onready var player: CharacterBody2D = $Entities/Player
+@onready var camera_2d: Camera2D = $Camera2D
+@onready var hud: CanvasLayer = $HUD
 
+var obstacle_scene = preload("res://scenes/obstacle.tscn")
 var enemy_scene = preload("res://scenes/enemy.tscn")
 var orb_scene = preload("res://scenes/orb.tscn")
+
+var sanctuary_pos: Vector2 = Vector2(1352, 1502)
+var sanctuary_radius: float = 210.0
+var refill_timer: float = 0.0
 
 var phase: int = 1
 var enemies_left: int = 0
 var kills_count: int = 0
 var orbs_crafted: int = 0
 
-var refill_timer: float = 0.0
-
 func _ready() -> void:
+	load_map_obstacles()
+	
 	if player and hud:
 		player.ammo_changed.connect(hud.update_ammo)
 		player.health_changed.connect(hud.update_health)
-	
+		
 	start_level_1()
+
+func load_map_obstacles() -> void:
+	var json_path = "res://assets/textures/dungeon_map_data.json"
+	if not FileAccess.file_exists(json_path):
+		return
+		
+	var file = FileAccess.open(json_path, FileAccess.READ)
+	var text = file.get_as_text()
+	var json = JSON.new()
+	var err = json.parse(text)
+	if err != OK:
+		return
+		
+	var data = json.get_data()
+	var obs_list = data.get("obstacles", [])
+	
+	for obs in obs_list:
+		var obstacle = obstacle_scene.instantiate()
+		entities.add_child(obstacle)
+		obstacle.position = Vector2(obs["x"], obs["y"])
+		obstacle.setup(obs["tex"], obs["type"])
 
 func start_level_1() -> void:
 	phase = 1
@@ -32,18 +58,17 @@ func start_level_1() -> void:
 		"Press [1] for RED Laser. Red Laser annihilates Cyan troops!"
 	)
 	
-	# Spawn 2 Cyan troops
-	spawn_enemy(Vector3(6.0, 0.0, -3.0), "CYAN")
-	spawn_enemy(Vector3(8.0, 0.0, 3.0), "CYAN")
+	spawn_enemy(Vector2(2900, 1300), "CYAN")
+	spawn_enemy(Vector2(3200, 1800), "CYAN")
 	enemies_left = 2
 
-func spawn_enemy(pos: Vector3, col_id: String) -> void:
+func spawn_enemy(pos: Vector2, col_id: String) -> void:
 	var enemy = enemy_scene.instantiate()
-	add_child(enemy)
-	enemy.global_position = pos
+	entities.add_child(enemy)
+	enemy.position = pos
 	enemy.set_enemy_color(col_id)
 
-func on_enemy_killed(enemy: Node3D) -> void:
+func on_enemy_killed(enemy: Node2D) -> void:
 	kills_count += 1
 	enemies_left = max(0, enemies_left - 1)
 	
@@ -59,68 +84,63 @@ func on_enemy_killed(enemy: Node3D) -> void:
 func init_phase_2() -> void:
 	phase = 2
 	hud.set_objective(
-		"PHASE 2: MAGENTA TROOP ARRIVES",
-		"Press [2] for GREEN Laser (or shoot Red Orb with Blue Laser for Magenta) to destroy Magenta troop!"
+		"PHASE 2: MAGENTA TROOPS ARRIVING",
+		"Press [2] for GREEN Laser (or craft with Red Orb + Blue Laser) to defeat Magenta!"
 	)
-	spawn_enemy(Vector3(9.0, 0.0, -1.0), "MAGENTA")
-	spawn_enemy(Vector3(7.0, 0.0, 4.0), "MAGENTA")
+	spawn_enemy(Vector2(3300, 1200), "MAGENTA")
+	spawn_enemy(Vector2(3000, 2100), "MAGENTA")
 	enemies_left = 2
 
 func init_phase_3() -> void:
 	phase = 3
 	hud.set_objective(
-		"PHASE 3: YELLOW TROOP INFILTRATION",
+		"PHASE 3: YELLOW TROOP INVASION",
 		"Yellow troops incoming! Press [3] for BLUE Laser to eliminate them!"
 	)
-	spawn_enemy(Vector3(8.0, 0.0, -4.0), "YELLOW")
-	spawn_enemy(Vector3(10.0, 0.0, 2.0), "YELLOW")
+	spawn_enemy(Vector2(3400, 1500), "YELLOW")
+	spawn_enemy(Vector2(3800, 1300), "YELLOW")
 	enemies_left = 2
 
 func init_phase_4() -> void:
 	phase = 4
 	hud.set_objective(
 		"CLIMAX SHOWDOWN: ALL 3 TROOPS!",
-		"Cyan, Magenta, and Yellow troops attack together! Use the glowing WHITE LIGHT to recharge!"
+		"Cyan, Magenta, and Yellow troops attack together! Use the WHITE LIGHT sanctuary to recharge!"
 	)
-	# All 3 troops spawn simultaneously
-	spawn_enemy(Vector3(7.0, 0.0, -5.0), "CYAN")
-	spawn_enemy(Vector3(9.0, 0.0, 0.0), "MAGENTA")
-	spawn_enemy(Vector3(8.0, 0.0, 5.0), "YELLOW")
+	spawn_enemy(Vector2(3100, 1200), "CYAN")
+	spawn_enemy(Vector2(3500, 1600), "MAGENTA")
+	spawn_enemy(Vector2(3300, 2100), "YELLOW")
 	enemies_left = 3
 
 func on_orb_converted(orb_col: String, laser_col: String, res_col: String) -> void:
 	orbs_crafted += 1
 
-func shake_camera(amt: float = 0.35) -> void:
-	if camera and camera.has_method("shake"):
-		camera.shake(amt)
-
 func on_player_died() -> void:
 	hud.show_game_over()
 
 func _process(delta: float) -> void:
-	# White Light Refill Zone Check
-	if white_light_pad and player and player.health > 0:
-		var dist = (player.global_position - white_light_pad.global_position).length()
-		if dist <= 3.8:
+	# Camera follows player
+	if player and camera_2d:
+		camera_2d.position = camera_2d.position.lerp(player.position, delta * 8.0)
+		
+	# White Light Refill Check
+	if player and player.health > 0:
+		var dist = player.position.distance_to(sanctuary_pos)
+		if dist <= sanctuary_radius:
 			refill_timer += delta
-			if refill_timer >= 0.28:
+			if refill_timer >= 0.25:
 				refill_timer = 0.0
 				var refilled = false
-				if player.ammo["RED"] < player.max_ammo_per_color:
-					player.ammo["RED"] += 1
-					refilled = true
-				if player.ammo["GREEN"] < player.max_ammo_per_color:
-					player.ammo["GREEN"] += 1
-					refilled = true
-				if player.ammo["BLUE"] < player.max_ammo_per_color:
-					player.ammo["BLUE"] += 1
-					refilled = true
-					
+				for c in ["RED", "GREEN", "BLUE"]:
+					if player.ammo[c] < player.max_ammo_per_color:
+						player.ammo[c] += 1
+						refilled = true
 				if refilled:
 					player.emit_signal("ammo_changed", player.ammo, player.get_active_color())
-					spawn_comic_floater(white_light_pad.global_position + Vector3(0, 1.8, 0), "⚡ RECHARGING RGB ⚡", Color("#00F0FF"))
+					spawn_comic_floater(player.position + Vector2(0, -110), "⚡ RECHARGING RGB ⚡", Color("#00F0FF"))
 
-func spawn_comic_floater(pos: Vector3, text: String, color: Color) -> void:
-	if hud and hud.has_method("add_3d_floater"):
-		hud.add_3d_floater(pos, text, color)
+func spawn_comic_floater(pos: Vector2, text: String, color: Color) -> void:
+	if hud and hud.has_method("add_2d_floater"):
+		hud.add_2d_floater(pos, text, color)
+	elif hud and hud.has_method("add_3d_floater"):
+		hud.add_3d_floater(Vector3(pos.x, 0, pos.y), text, color)

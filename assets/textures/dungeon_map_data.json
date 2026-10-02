@@ -1,0 +1,648 @@
+{
+  "width": 5520,
+  "height": 3388,
+  "whiteLight": {
+    "x": 1352,
+    "y": 1502,
+    "radius": 180
+  },
+  "obstacles": [
+    {
+      "name": "corner_w",
+      "tex": "stoneWallCorner_W",
+      "x": 2632,
+      "y": 414,
+      "type": "corner"
+    },
+    {
+      "name": "wall_e",
+      "tex": "stoneWall_E",
+      "x": 2504,
+      "y": 478,
+      "type": "wall"
+    },
+    {
+      "name": "wall_e",
+      "tex": "stoneWall_E",
+      "x": 2376,
+      "y": 542,
+      "type": "wall"
+    },
+    {
+      "name": "wall_e",
+      "tex": "stoneWall_E",
+      "x": 2248,
+      "y": 606,
+      "type": "wall"
+    },
+    {
+      "name": "wall_e",
+      "tex": "stoneWall_E",
+      "x": 2120,
+      "y": 670,
+      "type": "wall"
+    },
+    {
+      "name": "wall_e",
+      "tex": "stoneWall_E",
+      "x": 1992,
+      "y": 734,
+      "type": "wall"
+    },
+    {
+      "name": "wall_e",
+      "tex": "stoneWall_E",
+      "x": 1864,
+      "y": 798,
+      "type": "wall"
+    },
+    {
+      "name": "wall_e",
+      "tex": "stoneWall_E",
+      "x": 1736,
+      "y": 862,
+      "type": "wall"
+    },
+    {
+      "name": "wall_e",
+      "tex": "stoneWall_E",
+      "x": 1608,
+      "y": 926,
+      "type": "wall"
+    },
+    {
+      "name": "wall_e",
+      "tex": "stoneWallDoorOpen_E",
+      "x": 1480,
+      "y": 990,
+      "type": "wall"
+    },
+    {
+      "name": "wall_e",
+      "tex": "stoneWall_E",
+      "x": 1352,
+      "y": 1054,
+      "type": "wall"
+    },
+    {
+      "name": "wall_e",
+      "tex": "stoneWall_E",
+      "x": 1224,
+      "y": 1118,
+      "type": "wall"
+    },
+    {
+      "name": "wall_e",
+      "tex": "stoneWall_E",
+      "x": 1096,
+      "y": 1182,
+      "type": "wall"
+    },
+    {
+      "name": "wall_e",
+      "tex": "stoneWall_E",
+      "x": 968,
+      "y": 1246,
+      "type": "wall"
+    },
+    {
+      "name": "wall_e",
+      "tex": "stoneWall_E",
+      "x": 840,
+      "y": 1310,
+      "type": "wall"
+    },
+    {
+      "name": "wall_e",
+      "tex": "stoneWall_E",
+      "x": 712,
+      "y": 1374,
+      "type": "wall"
+    },
+    {
+      "name": "wall_e",
+      "tex": "stoneWall_E",
+      "x": 584,
+      "y": 1438,
+      "type": "wall"
+    },
+    {
+      "name": "corner_s",
+      "tex": "stoneWallCorner_S",
+      "x": 456,
+      "y": 1502,
+      "type": "corner"
+    },
+    {
+      "name": "wall_n",
+      "tex": "stoneWall_N",
+      "x": 2760,
+      "y": 478,
+      "type": "wall"
+    },
+    {
+      "name": "wall_s",
+      "tex": "stoneWall_S",
+      "x": 584,
+      "y": 1566,
+      "type": "wall"
+    },
+    {
+      "name": "wall_n",
+      "tex": "stoneWall_N",
+      "x": 2888,
+      "y": 542,
+      "type": "wall"
+    },
+    {
+      "name": "wall_s",
+      "tex": "stoneWall_S",
+      "x": 712,
+      "y": 1630,
+      "type": "wall"
+    },
+    {
+      "name": "wall_n",
+      "tex": "stoneWall_N",
+      "x": 3016,
+      "y": 606,
+      "type": "wall"
+    },
+    {
+      "name": "wall_s",
+      "tex": "stoneWall_S",
+      "x": 840,
+      "y": 1694,
+      "type": "wall"
+    },
+    {
+      "name": "wall_n",
+      "tex": "stoneWall_N",
+      "x": 3144,
+      "y": 670,
+      "type": "wall"
+    },
+    {
+      "name": "wall_s",
+      "tex": "stoneWall_S",
+      "x": 968,
+      "y": 1758,
+      "type": "wall"
+    },
+    {
+      "name": "wall_n",
+      "tex": "stoneWall_N",
+      "x": 3272,
+      "y": 734,
+      "type": "wall"
+    },
+    {
+      "name": "wall_s",
+      "tex": "stoneWall_S",
+      "x": 1096,
+      "y": 1822,
+      "type": "wall"
+    },
+    {
+      "name": "wall_n",
+      "tex": "stoneWall_N",
+      "x": 3400,
+      "y": 798,
+      "type": "wall"
+    },
+    {
+      "name": "wall_s",
+      "tex": "stoneWall_S",
+      "x": 1224,
+      "y": 1886,
+      "type": "wall"
+    },
+    {
+      "name": "wall_n",
+      "tex": "stoneWall_N",
+      "x": 3528,
+      "y": 862,
+      "type": "wall"
+    },
+    {
+      "name": "wall_s",
+      "tex": "stoneWall_S",
+      "x": 1352,
+      "y": 1950,
+      "type": "wall"
+    },
+    {
+      "name": "wall_n",
+      "tex": "stoneWall_N",
+      "x": 3656,
+      "y": 926,
+      "type": "wall"
+    },
+    {
+      "name": "wall_s",
+      "tex": "stoneWall_S",
+      "x": 1480,
+      "y": 2014,
+      "type": "wall"
+    },
+    {
+      "name": "wall_n",
+      "tex": "stoneWall_N",
+      "x": 3784,
+      "y": 990,
+      "type": "wall"
+    },
+    {
+      "name": "wall_s",
+      "tex": "stoneWall_S",
+      "x": 1608,
+      "y": 2078,
+      "type": "wall"
+    },
+    {
+      "name": "wall_n",
+      "tex": "stoneWall_N",
+      "x": 3912,
+      "y": 1054,
+      "type": "wall"
+    },
+    {
+      "name": "wall_s",
+      "tex": "stoneWall_S",
+      "x": 1736,
+      "y": 2142,
+      "type": "wall"
+    },
+    {
+      "name": "wall_n",
+      "tex": "stoneWallArchway_N",
+      "x": 4040,
+      "y": 1118,
+      "type": "wall"
+    },
+    {
+      "name": "wall_s",
+      "tex": "stoneWallDoorOpen_S",
+      "x": 1864,
+      "y": 2206,
+      "type": "wall"
+    },
+    {
+      "name": "wall_n",
+      "tex": "stoneWall_N",
+      "x": 4168,
+      "y": 1182,
+      "type": "wall"
+    },
+    {
+      "name": "wall_s",
+      "tex": "stoneWall_S",
+      "x": 1992,
+      "y": 2270,
+      "type": "wall"
+    },
+    {
+      "name": "wall_n",
+      "tex": "stoneWall_N",
+      "x": 4296,
+      "y": 1246,
+      "type": "wall"
+    },
+    {
+      "name": "wall_s",
+      "tex": "stoneWall_S",
+      "x": 2120,
+      "y": 2334,
+      "type": "wall"
+    },
+    {
+      "name": "wall_n",
+      "tex": "stoneWall_N",
+      "x": 4424,
+      "y": 1310,
+      "type": "wall"
+    },
+    {
+      "name": "wall_s",
+      "tex": "stoneWall_S",
+      "x": 2248,
+      "y": 2398,
+      "type": "wall"
+    },
+    {
+      "name": "wall_n",
+      "tex": "stoneWall_N",
+      "x": 4552,
+      "y": 1374,
+      "type": "wall"
+    },
+    {
+      "name": "wall_s",
+      "tex": "stoneWall_S",
+      "x": 2376,
+      "y": 2462,
+      "type": "wall"
+    },
+    {
+      "name": "wall_n",
+      "tex": "stoneWall_N",
+      "x": 4680,
+      "y": 1438,
+      "type": "wall"
+    },
+    {
+      "name": "wall_s",
+      "tex": "stoneWall_S",
+      "x": 2504,
+      "y": 2526,
+      "type": "wall"
+    },
+    {
+      "name": "wall_n",
+      "tex": "stoneWall_N",
+      "x": 4808,
+      "y": 1502,
+      "type": "wall"
+    },
+    {
+      "name": "wall_s",
+      "tex": "stoneWall_S",
+      "x": 2632,
+      "y": 2590,
+      "type": "wall"
+    },
+    {
+      "name": "wall_n",
+      "tex": "stoneWall_N",
+      "x": 4936,
+      "y": 1566,
+      "type": "wall"
+    },
+    {
+      "name": "wall_s",
+      "tex": "stoneWall_S",
+      "x": 2760,
+      "y": 2654,
+      "type": "wall"
+    },
+    {
+      "name": "wall_n",
+      "tex": "stoneWall_N",
+      "x": 5064,
+      "y": 1630,
+      "type": "wall"
+    },
+    {
+      "name": "wall_s",
+      "tex": "stoneWall_S",
+      "x": 2888,
+      "y": 2718,
+      "type": "wall"
+    },
+    {
+      "name": "wall_n",
+      "tex": "stoneWall_N",
+      "x": 5192,
+      "y": 1694,
+      "type": "wall"
+    },
+    {
+      "name": "wall_s",
+      "tex": "stoneWall_S",
+      "x": 3016,
+      "y": 2782,
+      "type": "wall"
+    },
+    {
+      "name": "corner_n",
+      "tex": "stoneWallCorner_N",
+      "x": 5320,
+      "y": 1758,
+      "type": "corner"
+    },
+    {
+      "name": "wall_w",
+      "tex": "stoneWall_W",
+      "x": 5192,
+      "y": 1822,
+      "type": "wall"
+    },
+    {
+      "name": "wall_w",
+      "tex": "stoneWall_W",
+      "x": 5064,
+      "y": 1886,
+      "type": "wall"
+    },
+    {
+      "name": "wall_w",
+      "tex": "stoneWall_W",
+      "x": 4936,
+      "y": 1950,
+      "type": "wall"
+    },
+    {
+      "name": "wall_w",
+      "tex": "stoneWall_W",
+      "x": 4808,
+      "y": 2014,
+      "type": "wall"
+    },
+    {
+      "name": "wall_w",
+      "tex": "stoneWall_W",
+      "x": 4680,
+      "y": 2078,
+      "type": "wall"
+    },
+    {
+      "name": "wall_w",
+      "tex": "stoneWall_W",
+      "x": 4552,
+      "y": 2142,
+      "type": "wall"
+    },
+    {
+      "name": "wall_w",
+      "tex": "stoneWall_W",
+      "x": 4424,
+      "y": 2206,
+      "type": "wall"
+    },
+    {
+      "name": "wall_w",
+      "tex": "stoneWall_W",
+      "x": 4296,
+      "y": 2270,
+      "type": "wall"
+    },
+    {
+      "name": "wall_w",
+      "tex": "stoneWallGateOpen_W",
+      "x": 4168,
+      "y": 2334,
+      "type": "wall"
+    },
+    {
+      "name": "wall_w",
+      "tex": "stoneWall_W",
+      "x": 4040,
+      "y": 2398,
+      "type": "wall"
+    },
+    {
+      "name": "wall_w",
+      "tex": "stoneWall_W",
+      "x": 3912,
+      "y": 2462,
+      "type": "wall"
+    },
+    {
+      "name": "wall_w",
+      "tex": "stoneWall_W",
+      "x": 3784,
+      "y": 2526,
+      "type": "wall"
+    },
+    {
+      "name": "wall_w",
+      "tex": "stoneWall_W",
+      "x": 3656,
+      "y": 2590,
+      "type": "wall"
+    },
+    {
+      "name": "wall_w",
+      "tex": "stoneWall_W",
+      "x": 3528,
+      "y": 2654,
+      "type": "wall"
+    },
+    {
+      "name": "wall_w",
+      "tex": "stoneWall_W",
+      "x": 3400,
+      "y": 2718,
+      "type": "wall"
+    },
+    {
+      "name": "wall_w",
+      "tex": "stoneWall_W",
+      "x": 3272,
+      "y": 2782,
+      "type": "wall"
+    },
+    {
+      "name": "corner_e",
+      "tex": "stoneWallCorner_E",
+      "x": 3144,
+      "y": 2846,
+      "type": "corner"
+    },
+    {
+      "name": "col_c1",
+      "tex": "stoneColumn_N",
+      "x": 2888,
+      "y": 1566,
+      "type": "column"
+    },
+    {
+      "name": "chest",
+      "tex": "chestClosed_N",
+      "x": 3016,
+      "y": 1630,
+      "type": "chest"
+    },
+    {
+      "name": "col_c2",
+      "tex": "stoneColumn_N",
+      "x": 3144,
+      "y": 1694,
+      "type": "column"
+    },
+    {
+      "name": "crates_u",
+      "tex": "woodenCrates_N",
+      "x": 2888,
+      "y": 1054,
+      "type": "crates"
+    },
+    {
+      "name": "barrel_u1",
+      "tex": "barrels_N",
+      "x": 3016,
+      "y": 1118,
+      "type": "barrel"
+    },
+    {
+      "name": "crate_u2",
+      "tex": "woodenCrate_N",
+      "x": 2760,
+      "y": 1118,
+      "type": "crates"
+    },
+    {
+      "name": "col_r",
+      "tex": "stoneColumnWood_N",
+      "x": 4040,
+      "y": 1758,
+      "type": "column"
+    },
+    {
+      "name": "crates_r",
+      "tex": "woodenCrates_N",
+      "x": 4168,
+      "y": 1822,
+      "type": "crates"
+    },
+    {
+      "name": "barrels_r",
+      "tex": "barrelsStacked_N",
+      "x": 3912,
+      "y": 1822,
+      "type": "barrel"
+    },
+    {
+      "name": "barrels_b",
+      "tex": "barrelsStacked_N",
+      "x": 3016,
+      "y": 2142,
+      "type": "barrel"
+    },
+    {
+      "name": "crates_b",
+      "tex": "woodenCrates_N",
+      "x": 3144,
+      "y": 2206,
+      "type": "crates"
+    },
+    {
+      "name": "barrel_b2",
+      "tex": "barrels_N",
+      "x": 2888,
+      "y": 2206,
+      "type": "barrel"
+    },
+    {
+      "name": "col_s1",
+      "tex": "stoneColumn_N",
+      "x": 1480,
+      "y": 1246,
+      "type": "column"
+    },
+    {
+      "name": "col_s2",
+      "tex": "stoneColumn_N",
+      "x": 968,
+      "y": 1502,
+      "type": "column"
+    },
+    {
+      "name": "col_s3",
+      "tex": "stoneColumn_N",
+      "x": 1352,
+      "y": 1694,
+      "type": "column"
+    }
+  ]
+}

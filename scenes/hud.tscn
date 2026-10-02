@@ -1,0 +1,366 @@
+[gd_scene load_steps=4 format=3 uid="uid://c5hud2d01"]
+
+[ext_resource type="Script" path="res://scripts/hud.gd" id="1_hud"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Banner"]
+bg_color = Color(0.06, 0.08, 0.16, 0.92)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.18, 0.55, 0.95, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.6)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Rack"]
+bg_color = Color(0.04, 0.06, 0.12, 0.94)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2, 0.25, 0.4, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.7)
+shadow_size = 8
+
+[node name="HUD" type="CanvasLayer"]
+script = ExtResource("1_hud")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 70.0
+grow_horizontal = 2
+theme_override_constants/margin_left = 30
+theme_override_constants/margin_top = 20
+
+[node name="HealthBar" type="HBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Heart1" type="ColorRect" parent="MarginContainer/HealthBar"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+color = Color(1, 0.16, 0.3, 1)
+
+[node name="Heart2" type="ColorRect" parent="MarginContainer/HealthBar"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+color = Color(1, 0.16, 0.3, 1)
+
+[node name="Heart3" type="ColorRect" parent="MarginContainer/HealthBar"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+color = Color(1, 0.16, 0.3, 1)
+
+[node name="TopBanner" type="PanelContainer" parent="."]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -340.0
+offset_top = 16.0
+offset_right = 340.0
+offset_bottom = 86.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_Banner")
+
+[node name="VBox" type="VBoxContainer" parent="TopBanner"]
+layout_mode = 2
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="TopBanner/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0, 1)
+theme_override_font_sizes/font_size = 20
+text = "LEVEL 1: CHROMATIC CRUCIBLE"
+horizontal_alignment = 1
+
+[node name="DescLabel" type="Label" parent="TopBanner/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.94, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "Press [1] for RED Laser. Destroy Cyan troops!"
+horizontal_alignment = 1
+
+[node name="BottomBar" type="PanelContainer" parent="."]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -300.0
+offset_top = -90.0
+offset_right = 300.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_Rack")
+
+[node name="AmmoRack" type="HBoxContainer" parent="BottomBar"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 22
+
+[node name="Slot1" type="VBoxContainer" parent="BottomBar/AmmoRack"]
+layout_mode = 2
+alignment = 1
+
+[node name="ColorPip" type="ColorRect" parent="BottomBar/AmmoRack/Slot1"]
+custom_minimum_size = Vector2(22, 22)
+layout_mode = 2
+size_flags_horizontal = 4
+color = Color(1, 0.164706, 0.301961, 1)
+
+[node name="KeyLabel" type="Label" parent="BottomBar/AmmoRack/Slot1"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "[1] RED"
+horizontal_alignment = 1
+
+[node name="CountLabel" type="Label" parent="BottomBar/AmmoRack/Slot1"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "6"
+horizontal_alignment = 1
+
+[node name="Highlight" type="ColorRect" parent="BottomBar/AmmoRack/Slot1"]
+custom_minimum_size = Vector2(46, 3)
+layout_mode = 2
+color = Color(1, 0.9, 0, 1)
+
+[node name="Slot2" type="VBoxContainer" parent="BottomBar/AmmoRack"]
+layout_mode = 2
+alignment = 1
+
+[node name="ColorPip" type="ColorRect" parent="BottomBar/AmmoRack/Slot2"]
+custom_minimum_size = Vector2(22, 22)
+layout_mode = 2
+size_flags_horizontal = 4
+color = Color(0.133333, 0.878431, 0.345098, 1)
+
+[node name="KeyLabel" type="Label" parent="BottomBar/AmmoRack/Slot2"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "[2] GRN"
+horizontal_alignment = 1
+
+[node name="CountLabel" type="Label" parent="BottomBar/AmmoRack/Slot2"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "6"
+horizontal_alignment = 1
+
+[node name="Highlight" type="ColorRect" parent="BottomBar/AmmoRack/Slot2"]
+visible = false
+custom_minimum_size = Vector2(46, 3)
+layout_mode = 2
+color = Color(1, 0.9, 0, 1)
+
+[node name="Slot3" type="VBoxContainer" parent="BottomBar/AmmoRack"]
+layout_mode = 2
+alignment = 1
+
+[node name="ColorPip" type="ColorRect" parent="BottomBar/AmmoRack/Slot3"]
+custom_minimum_size = Vector2(22, 22)
+layout_mode = 2
+size_flags_horizontal = 4
+color = Color(0.164706, 0.521569, 1, 1)
+
+[node name="KeyLabel" type="Label" parent="BottomBar/AmmoRack/Slot3"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "[3] BLU"
+horizontal_alignment = 1
+
+[node name="CountLabel" type="Label" parent="BottomBar/AmmoRack/Slot3"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "6"
+horizontal_alignment = 1
+
+[node name="Highlight" type="ColorRect" parent="BottomBar/AmmoRack/Slot3"]
+visible = false
+custom_minimum_size = Vector2(46, 3)
+layout_mode = 2
+color = Color(1, 0.9, 0, 1)
+
+[node name="Slot4" type="VBoxContainer" parent="BottomBar/AmmoRack"]
+layout_mode = 2
+alignment = 1
+
+[node name="ColorPip" type="ColorRect" parent="BottomBar/AmmoRack/Slot4"]
+custom_minimum_size = Vector2(22, 22)
+layout_mode = 2
+size_flags_horizontal = 4
+color = Color(0, 0.941176, 1, 1)
+
+[node name="KeyLabel" type="Label" parent="BottomBar/AmmoRack/Slot4"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "[4] CYN"
+horizontal_alignment = 1
+
+[node name="CountLabel" type="Label" parent="BottomBar/AmmoRack/Slot4"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "0"
+horizontal_alignment = 1
+
+[node name="Highlight" type="ColorRect" parent="BottomBar/AmmoRack/Slot4"]
+visible = false
+custom_minimum_size = Vector2(46, 3)
+layout_mode = 2
+color = Color(1, 0.9, 0, 1)
+
+[node name="Slot5" type="VBoxContainer" parent="BottomBar/AmmoRack"]
+layout_mode = 2
+alignment = 1
+
+[node name="ColorPip" type="ColorRect" parent="BottomBar/AmmoRack/Slot5"]
+custom_minimum_size = Vector2(22, 22)
+layout_mode = 2
+size_flags_horizontal = 4
+color = Color(1, 0.164706, 0.831373, 1)
+
+[node name="KeyLabel" type="Label" parent="BottomBar/AmmoRack/Slot5"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "[5] MAG"
+horizontal_alignment = 1
+
+[node name="CountLabel" type="Label" parent="BottomBar/AmmoRack/Slot5"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "0"
+horizontal_alignment = 1
+
+[node name="Highlight" type="ColorRect" parent="BottomBar/AmmoRack/Slot5"]
+visible = false
+custom_minimum_size = Vector2(46, 3)
+layout_mode = 2
+color = Color(1, 0.9, 0, 1)
+
+[node name="Slot6" type="VBoxContainer" parent="BottomBar/AmmoRack"]
+layout_mode = 2
+alignment = 1
+
+[node name="ColorPip" type="ColorRect" parent="BottomBar/AmmoRack/Slot6"]
+custom_minimum_size = Vector2(22, 22)
+layout_mode = 2
+size_flags_horizontal = 4
+color = Color(1, 0.901961, 0, 1)
+
+[node name="KeyLabel" type="Label" parent="BottomBar/AmmoRack/Slot6"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "[6] YEL"
+horizontal_alignment = 1
+
+[node name="CountLabel" type="Label" parent="BottomBar/AmmoRack/Slot6"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "0"
+horizontal_alignment = 1
+
+[node name="Highlight" type="ColorRect" parent="BottomBar/AmmoRack/Slot6"]
+visible = false
+custom_minimum_size = Vector2(46, 3)
+layout_mode = 2
+color = Color(1, 0.9, 0, 1)
+
+[node name="Floaters" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="WinModal" type="PanelContainer" parent="."]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -220.0
+offset_top = -150.0
+offset_right = 220.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_Banner")
+
+[node name="VBox" type="VBoxContainer" parent="WinModal"]
+layout_mode = 2
+alignment = 1
+
+[node name="WinLabel" type="Label" parent="WinModal/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0, 1)
+theme_override_font_sizes/font_size = 34
+text = "LEVEL 1 CLEARED!"
+horizontal_alignment = 1
+
+[node name="Stars" type="Label" parent="WinModal/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0, 1)
+theme_override_font_sizes/font_size = 30
+text = "★★★"
+horizontal_alignment = 1
+
+[node name="StatsLabel" type="Label" parent="WinModal/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Troops Defeated: 9
+Orbs Crafted: 3"
+horizontal_alignment = 1
+
+[node name="PlayAgainBtn" type="Button" parent="WinModal/VBox"]
+custom_minimum_size = Vector2(160, 42)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "PLAY AGAIN"
+
+[node name="GameOverModal" type="PanelContainer" parent="."]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -110.0
+offset_right = 200.0
+offset_bottom = 110.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_Banner")
+
+[node name="VBox" type="VBoxContainer" parent="GameOverModal"]
+layout_mode = 2
+alignment = 1
+
+[node name="GameOverLabel" type="Label" parent="GameOverModal/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.16, 0.3, 1)
+theme_override_font_sizes/font_size = 32
+text = "DEFEATED"
+horizontal_alignment = 1
+
+[node name="RestartBtn" type="Button" parent="GameOverModal/VBox"]
+custom_minimum_size = Vector2(160, 42)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "TRY AGAIN"
+
+[connection signal="pressed" from="WinModal/VBox/PlayAgainBtn" to="." method="_on_restart_pressed"]
+[connection signal="pressed" from="GameOverModal/VBox/RestartBtn" to="." method="_on_restart_pressed"]
