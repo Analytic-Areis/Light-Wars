@@ -18,5 +18,5 @@ shape = SubResource("CircleShape2D_1")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = ExtResource("2_trooptex")
-offset = Vector2(0, -200)
+offset = Vector2(0, -107)
 

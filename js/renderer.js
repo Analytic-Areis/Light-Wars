@@ -18,8 +18,15 @@ class SpriteManager {
         const id = `${charId}_${d}`;
         const path = `assets/sprites/${charId}/${d}.png`;
         this.loadSprite(id, path);
+        
+        // Load 8 directional run frames
+        for (let r = 0; r < 8; r++) {
+          const runId = `${charId}_${d}_run_${r}`;
+          const runPath = `assets/sprites/${charId}/${d}_run_${r}.png`;
+          this.loadSprite(runId, runPath);
+        }
       }
-      // Load 8-frame run cycle
+      // General run cycle fallback
       for (let i = 1; i <= 8; i++) {
         const id = `${charId}_run_${i}`;
         const path = `assets/sprites/${charId}/run_${i}.png`;
@@ -88,26 +95,20 @@ class SpriteManager {
   drawEnemy(ctx, enemy) {
     const col = enemy.colorId.toLowerCase();
     const isMoving = enemy.walkCycle > 0;
-    const runFrameIdx = (Math.floor(enemy.walkCycle * 1.3) % 8) + 1;
-    const runImg = this.getSprite(`troop_${col}_run_${runFrameIdx}`);
     const dir = SpriteManager.getDirection8(enemy.facingAngle);
+    const runFrameIdx = Math.floor(enemy.walkCycle * 1.5) % 8;
+    const runImg = this.getSprite(`troop_${col}_${dir}_run_${runFrameIdx}`) || this.getSprite(`troop_${col}_run_${runFrameIdx + 1}`);
     const idleImg = this.getSprite(`troop_${col}_${dir}`) || this.getSprite(`troop_${col}_S`);
     const img = (isMoving && runImg) ? runImg : idleImg;
     if (!img) return false;
 
     ctx.save();
-    // Running animation bobbing, tilt, and squash-stretch
-    const bob = Math.abs(Math.sin(enemy.walkCycle)) * 4;
-    const tilt = Math.sin(enemy.walkCycle) * 0.05;
-    const squash = Math.sin(enemy.walkCycle * 2) * 0.04;
+    // Running animation bobbing and subtle tilt
+    const bob = isMoving ? Math.abs(Math.sin(enemy.walkCycle)) * 3 : 0;
+    const tilt = isMoving ? Math.sin(enemy.walkCycle) * 0.04 : 0;
 
     ctx.translate(0, -bob);
     ctx.rotate(tilt);
-    
-    // Flip horizontally if facing left
-    const facingLeft = Math.cos(enemy.facingAngle) < -0.05;
-    const flipX = facingLeft ? -1 : 1;
-    ctx.scale(flipX * (1.0 + squash), 1.0 - squash);
 
     // Visual hurt flash on laser hit
     if (enemy.hurtFlash > 0) {
