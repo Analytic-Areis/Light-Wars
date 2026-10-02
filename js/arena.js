@@ -88,29 +88,29 @@ class Arena {
     const pulse = 1.0 + Math.sin(wl.pulseTime) * 0.12;
 
     ctx.save();
-    // Outer intense bloom halo
-    const haloGrad = ctx.createRadialGradient(wl.x, wl.y, wl.radius * 0.2, wl.x, wl.y, wl.radius * 2.2 * pulse);
-    haloGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
-    haloGrad.addColorStop(0.3, 'rgba(215, 245, 255, 0.7)');
-    haloGrad.addColorStop(0.7, 'rgba(0, 240, 255, 0.3)');
+    // Soft translucent cyan-white halo
+    const haloGrad = ctx.createRadialGradient(wl.x, wl.y, wl.radius * 0.2, wl.x, wl.y, wl.radius * 1.5 * pulse);
+    haloGrad.addColorStop(0, 'rgba(220, 245, 255, 0.35)');
+    haloGrad.addColorStop(0.5, 'rgba(0, 240, 255, 0.15)');
     haloGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
     ctx.fillStyle = haloGrad;
     ctx.beginPath();
-    ctx.ellipse(wl.x, wl.y, wl.radius * 2.2 * pulse, wl.radius * 1.2 * pulse, 0, 0, Math.PI * 2);
+    ctx.ellipse(wl.x, wl.y, wl.radius * 1.5 * pulse, wl.radius * 0.85 * pulse, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Pure white glowing platform disc
-    ctx.fillStyle = '#FFFFFF';
-    ctx.shadowColor = '#00F0FF';
-    ctx.shadowBlur = 30;
+    // Translucent soft disc
+    ctx.fillStyle = 'rgba(180, 230, 255, 0.22)';
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.6)';
+    ctx.lineWidth = 2.5;
     ctx.beginPath();
     ctx.ellipse(wl.x, wl.y, wl.radius, wl.radius * 0.55, 0, 0, Math.PI * 2);
     ctx.fill();
+    ctx.stroke();
 
-    // Inner bright cyan energy ring
-    ctx.strokeStyle = '#00F0FF';
-    ctx.lineWidth = 4;
+    // Inner delicate cyan energy ring
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.ellipse(wl.x, wl.y, wl.radius * 0.75, wl.radius * 0.42, 0, 0, Math.PI * 2);
     ctx.stroke();
@@ -118,26 +118,25 @@ class Arena {
     // Rotating holographic tech runes
     ctx.save();
     ctx.translate(wl.x, wl.y);
-    ctx.rotate(wl.pulseTime * 0.6);
-    ctx.strokeStyle = '#FFFFFF';
-    ctx.lineWidth = 2.5;
-    ctx.setLineDash([16, 12]);
+    ctx.rotate(wl.pulseTime * 0.5);
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([14, 10]);
     ctx.beginPath();
     ctx.ellipse(0, 0, wl.radius * 0.6, wl.radius * 0.33, 0, 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
 
-    // Vertical Ascension Light Beacon Column
-    const colGrad = ctx.createLinearGradient(wl.x, wl.y, wl.x, wl.y - 180);
-    colGrad.addColorStop(0, 'rgba(255, 255, 255, 0.75)');
-    colGrad.addColorStop(0.5, 'rgba(0, 240, 255, 0.4)');
+    // Subtle translucent light shimmer
+    const colGrad = ctx.createLinearGradient(wl.x, wl.y, wl.x, wl.y - 120);
+    colGrad.addColorStop(0, 'rgba(200, 240, 255, 0.2)');
     colGrad.addColorStop(1, 'rgba(0, 240, 255, 0)');
     ctx.fillStyle = colGrad;
     ctx.beginPath();
-    ctx.moveTo(wl.x - wl.radius * 0.7, wl.y);
-    ctx.lineTo(wl.x - wl.radius * 0.5, wl.y - 180);
-    ctx.lineTo(wl.x + wl.radius * 0.5, wl.y - 180);
-    ctx.lineTo(wl.x + wl.radius * 0.7, wl.y);
+    ctx.moveTo(wl.x - wl.radius * 0.6, wl.y);
+    ctx.lineTo(wl.x - wl.radius * 0.4, wl.y - 120);
+    ctx.lineTo(wl.x + wl.radius * 0.4, wl.y - 120);
+    ctx.lineTo(wl.x + wl.radius * 0.6, wl.y);
     ctx.closePath();
     ctx.fill();
 

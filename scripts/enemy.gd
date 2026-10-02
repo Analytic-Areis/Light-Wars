@@ -6,6 +6,7 @@ var health: int = 1
 var attack_cooldown: float = 0.0
 
 var troop_sprites: Dictionary = {}
+var run_frames: Array[Texture2D] = []
 var current_dir_name: String = "S"
 
 # Animation
@@ -27,12 +28,20 @@ func set_enemy_color(new_col: String) -> void:
 
 func load_sprites_for_color() -> void:
 	troop_sprites.clear()
+	run_frames.clear()
 	var folder = "troop_" + color_id.to_lower()
 	var dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
 	for d in dirs:
 		var path = "res://assets/sprites/" + folder + "/" + d + ".png"
 		if ResourceLoader.exists(path):
 			troop_sprites[d] = load(path)
+			
+	# Load the 8 running animation frames
+	for i in range(1, 9):
+		var rpath = "res://assets/sprites/" + folder + "/run_" + str(i) + ".png"
+		if ResourceLoader.exists(rpath):
+			run_frames.append(load(rpath))
+			
 	if troop_sprites.has("S") and sprite_3d:
 		sprite_3d.texture = troop_sprites["S"]
 
@@ -61,29 +70,40 @@ func _physics_process(delta: float) -> void:
 			to_player.y = 0.0
 			var dist = to_player.length()
 			
-			# Update 8-direction sprite facing player
-			var dir_2d = Vector2(to_player.x, to_player.z)
-			var new_dir = GameManager.get_direction_8(dir_2d)
-			if new_dir != current_dir_name and troop_sprites.has(new_dir):
-				current_dir_name = new_dir
-				sprite_3d.texture = troop_sprites[new_dir]
-				
 			if dist > 1.4:
 				velocity = to_player.normalized() * speed
-				# Running animation
-				walk_anim_time += delta * 12.0
+				
+				# Active Running Animation
+				walk_anim_time += delta * 11.0
+				if run_frames.size() == 8 and sprite_3d:
+					var frame_idx = int(walk_anim_time) % 8
+					sprite_3d.texture = run_frames[frame_idx]
+					# Face left or right based on X velocity
+					sprite_3d.flip_h = (to_player.x < -0.05)
+				elif sprite_3d:
+					# Fallback directional sprite
+					var dir_2d = Vector2(to_player.x, to_player.z)
+					var new_dir = GameManager.get_direction_8(dir_2d)
+					if troop_sprites.has(new_dir):
+						sprite_3d.texture = troop_sprites[new_dir]
+						sprite_3d.flip_h = false
+
 				if sprite_3d and hurt_flash_timer <= 0.0:
-					var bob = abs(sin(walk_anim_time)) * 0.15
+					var bob = abs(sin(walk_anim_time * 0.7)) * 0.12
 					sprite_3d.position.y = base_sprite_y + bob
-					sprite_3d.rotation.z = sin(walk_anim_time) * 0.08
-					var squash = sin(walk_anim_time * 2.0) * 0.05
-					sprite_3d.scale = Vector3(1.0 + squash, 1.0 - squash, 1.0)
+					sprite_3d.scale = Vector3.ONE
 			else:
 				velocity = Vector3.ZERO
+				# Idle state
+				if troop_sprites.has("S") and sprite_3d:
+					sprite_3d.texture = troop_sprites["S"]
+					sprite_3d.flip_h = false
+					
 				if sprite_3d and hurt_flash_timer <= 0.0:
 					sprite_3d.position.y = move_toward(sprite_3d.position.y, base_sprite_y, delta * 3.0)
-					sprite_3d.rotation.z = move_toward(sprite_3d.rotation.z, 0.0, delta * 5.0)
-					sprite_3d.scale = Vector3.ONE
+					var breath = sin(Time.get_ticks_msec() * 0.003) * 0.02
+					sprite_3d.scale = Vector3(1.0 - breath, 1.0 + breath, 1.0)
+					
 				if attack_cooldown <= 0.0:
 					player.take_damage(1, global_position)
 					attack_cooldown = 1.2
@@ -97,8 +117,8 @@ func take_laser_hit(laser_col: String, hit_dir: Vector3) -> void:
 	var outcome = rules.get(laser_col, { "action": "NONE" })
 	var action = outcome["action"]
 	
-	hurt_flash_timer = 0.18
-	knockback_vel = hit_dir.normalized() * 10.0
+	hurt_flash_timer = 0.2
+	knockback_vel = hit_dir.normalized() * 12.0
 	
 	var main_node = get_tree().current_scene
 	
