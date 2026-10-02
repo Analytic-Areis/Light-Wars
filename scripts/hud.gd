@@ -1,6 +1,6 @@
 extends CanvasLayer
 
-@onready var health_container: HBoxContainer = $MarginContainer/VBoxContainer/HealthBar
+@onready var health_container: HBoxContainer = $MarginContainer/HealthBar
 @onready var ammo_container: HBoxContainer = $BottomBar/AmmoRack
 @onready var objective_title: Label = $TopBanner/VBox/TitleLabel
 @onready var objective_desc: Label = $TopBanner/VBox/DescLabel
