@@ -1,0 +1,43 @@
+[gd_scene load_steps=2 format=3 uid="uid://c5comicpop01"]
+
+[ext_resource type="Script" path="res://scripts/comic_pop.gd" id="1_comic"]
+
+[node name="ComicPop" type="Node2D"]
+z_index = 100
+script = ExtResource("1_comic")
+
+[node name="CPUParticles2D" type="CPUParticles2D" parent="."]
+emitting = false
+amount = 32
+lifetime = 0.6
+one_shot = true
+explosiveness = 1.0
+emission_shape = 1
+emission_sphere_radius = 16.0
+direction = Vector2(0, -1)
+spread = 180.0
+gravity = Vector2(0, 180)
+initial_velocity_min = 200.0
+initial_velocity_max = 420.0
+scale_amount_min = 4.0
+scale_amount_max = 9.0
+
+[node name="Label" type="Label" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -28.0
+offset_right = 150.0
+offset_bottom = 28.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.07, 0.07, 0.1, 1)
+theme_override_constants/outline_size = 9
+theme_override_font_sizes/font_size = 34
+text = "KAABOOM!"
+horizontal_alignment = 1
+vertical_alignment = 1

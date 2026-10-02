@@ -100,6 +100,9 @@ func request_dash() -> void:
 		is_dashing = true
 		dash_timer = 0.22
 		dash_cooldown = 1.2
+		var main = get_tree().current_scene
+		if main and main.has_method("play_sfx") and "sfx_dash" in main:
+			main.play_sfx(main.sfx_dash, randf_range(0.95, 1.05))
 
 func _physics_process(delta: float) -> void:
 	if shoot_cooldown > 0.0:
@@ -157,9 +160,16 @@ func try_shoot(aim_dir: Vector2) -> void:
 	shoot_cooldown = 0.20
 	emit_signal("ammo_changed", ammo, active_col)
 	
+	# Small muzzle kick recoil
+	velocity -= aim_dir * 50.0
+	
 	var laser = laser_scene.instantiate()
 	get_parent().add_child(laser)
 	laser.setup(global_position + aim_dir * 28.0, aim_dir, active_col)
+	
+	var main = get_tree().current_scene
+	if main and main.has_method("play_sfx") and "sfx_laser" in main:
+		main.play_sfx(main.sfx_laser, randf_range(0.95, 1.05))
 
 func take_damage(amount: int, from_pos: Vector2) -> void:
 	if is_dashing or health <= 0:
@@ -168,11 +178,18 @@ func take_damage(amount: int, from_pos: Vector2) -> void:
 	health = max(0, health - amount)
 	emit_signal("health_changed", health, max_health)
 	
+	# Knockback
+	var knock_dir = (global_position - from_pos).normalized()
+	velocity = knock_dir * 380.0
+	
+	var main = get_tree().current_scene
+	if main and main.has_method("add_camera_shake"):
+		main.add_camera_shake(0.5)
+	
 	if sprite_2d:
 		sprite_2d.modulate = Color.RED
 		get_tree().create_timer(0.15).timeout.connect(func(): if sprite_2d: sprite_2d.modulate = Color.WHITE)
 		
 	if health <= 0:
-		var main = get_parent()
 		if main and main.has_method("on_player_died"):
 			main.on_player_died()

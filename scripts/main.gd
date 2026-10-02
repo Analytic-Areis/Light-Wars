@@ -8,10 +8,29 @@ extends Node2D
 var obstacle_scene = preload("res://scenes/obstacle.tscn")
 var enemy_scene = preload("res://scenes/enemy.tscn")
 var orb_scene = preload("res://scenes/orb.tscn")
+var comic_pop_scene = preload("res://scenes/comic_pop.tscn")
+
+var sfx_laser = preload("res://assets/audio/laser.wav")
+var sfx_kaboom = preload("res://assets/audio/kaboom.wav")
+var sfx_hit = preload("res://assets/audio/hit.wav")
+var sfx_craft = preload("res://assets/audio/craft.wav")
+var sfx_dash = preload("res://assets/audio/dash.wav")
 
 var sanctuary_pos: Vector2 = Vector2(1352, 1502)
 var sanctuary_radius: float = 210.0
 var refill_timer: float = 0.0
+
+var trauma: float = 0.0
+var max_shake_offset: float = 20.0
+
+func play_sfx(stream: AudioStream, pitch: float = 1.0) -> void:
+	if not stream: return
+	var asp = AudioStreamPlayer.new()
+	asp.stream = stream
+	asp.pitch_scale = pitch
+	add_child(asp)
+	asp.play()
+	asp.finished.connect(asp.queue_free)
 
 var phase: int = 1
 var enemies_left: int = 0
@@ -118,10 +137,21 @@ func on_orb_converted(orb_col: String, laser_col: String, res_col: String) -> vo
 func on_player_died() -> void:
 	hud.show_game_over()
 
+func add_camera_shake(amount: float = 0.4) -> void:
+	trauma = min(1.0, trauma + amount)
+
 func _process(delta: float) -> void:
-	# Camera follows player
+	# Camera follows player with juice & screen shake
 	if player and camera_2d:
-		camera_2d.position = camera_2d.position.lerp(player.position, delta * 8.0)
+		var target = player.position
+		if trauma > 0.0:
+			trauma = max(0.0, trauma - delta * 2.2)
+			var shake_amount = trauma * trauma
+			target += Vector2(
+				randf_range(-1.0, 1.0) * max_shake_offset * shake_amount,
+				randf_range(-1.0, 1.0) * max_shake_offset * shake_amount
+			)
+		camera_2d.position = camera_2d.position.lerp(target, delta * 10.0)
 		
 	# White Light Refill Check
 	if player and player.health > 0:
@@ -137,10 +167,16 @@ func _process(delta: float) -> void:
 						refilled = true
 				if refilled:
 					player.emit_signal("ammo_changed", player.ammo, player.get_active_color())
-					spawn_comic_floater(player.position + Vector2(0, -110), "⚡ RECHARGING RGB ⚡", Color("#00F0FF"))
+					spawn_comic_floater(player.position + Vector2(0, -90), "RECHARGING", Color("#00F0FF"))
 
 func spawn_comic_floater(pos: Vector2, text: String, color: Color) -> void:
-	if hud and hud.has_method("add_2d_floater"):
-		hud.add_2d_floater(pos, text, color)
-	elif hud and hud.has_method("add_3d_floater"):
-		hud.add_3d_floater(Vector3(pos.x, 0, pos.y), text, color)
+	var pop = comic_pop_scene.instantiate()
+	entities.add_child(pop)
+	pop.setup(pos, text, color)
+	
+	if text.contains("BOOM") or text.contains("POW") or text.contains("1CO") or text.contains("ZAP"):
+		play_sfx(sfx_kaboom, randf_range(0.92, 1.08))
+	elif text.contains("CRAFTED"):
+		play_sfx(sfx_craft, randf_range(0.98, 1.02))
+	elif text.contains("DEFLECT"):
+		play_sfx(sfx_hit, randf_range(1.1, 1.3))

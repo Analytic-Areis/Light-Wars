@@ -97,7 +97,7 @@ func _draw() -> void:
 func on_laser_hit(laser_col: String) -> void:
 	var combo = color_id + "_" + laser_col
 	var result_color = GameManager.ORB_CONVERSIONS.get(combo, "")
-	var main = get_parent()
+	var main = get_tree().current_scene
 	var player = get_tree().get_first_node_in_group("player")
 	
 	if result_color != "":

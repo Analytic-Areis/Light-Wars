@@ -1,7 +1,7 @@
 extends CharacterBody2D
 
 @export var color_id: String = "CYAN"
-@export var speed: float = 195.0
+@export var speed: float = 135.0
 
 var health: int = 1
 var attack_cooldown: float = 0.0
@@ -56,7 +56,7 @@ func _physics_process(delta: float) -> void:
 	# Knockback decay
 	if knockback_vel.length_squared() > 10.0:
 		velocity = knockback_vel
-		knockback_vel = knockback_vel.move_toward(Vector2.ZERO, delta * 800.0)
+		knockback_vel = knockback_vel.move_toward(Vector2.ZERO, delta * 900.0)
 	else:
 		var player = get_tree().get_first_node_in_group("player")
 		if player:
@@ -67,7 +67,7 @@ func _physics_process(delta: float) -> void:
 				var move_dir = to_player.normalized()
 				velocity = move_dir * speed
 				current_dir = GameManager.get_direction_8(move_dir)
-				walk_anim_time += delta * 14.0
+				walk_anim_time += delta * 12.0
 				update_sprite(false)
 			else:
 				velocity = Vector2.ZERO
@@ -100,13 +100,15 @@ func take_laser_hit(laser_col: String, hit_dir: Vector2) -> void:
 	
 	var rules = GameManager.ENEMY_INTERACTIONS.get(color_id, {})
 	var interaction = rules.get(laser_col, { "action": "NONE" })
-	var main = get_parent()
+	var main = get_tree().current_scene
 	
 	match interaction.get("action"):
 		"KILL":
 			if main and main.has_method("spawn_comic_floater"):
 				var word = GameManager.COMIC_WORDS[randi() % GameManager.COMIC_WORDS.size()]
-				main.spawn_comic_floater(global_position + Vector2(0, -120), word, GameManager.COLORS[color_id]["color"])
+				main.spawn_comic_floater(global_position + Vector2(0, -40), word, GameManager.COLORS[color_id]["color"])
+			if main and main.has_method("add_camera_shake"):
+				main.add_camera_shake(0.38)
 				
 			# Drop color orb
 			var drop_color = GameManager.ENEMY_ORB_DROPS.get(color_id, "")
@@ -114,8 +116,8 @@ func take_laser_hit(laser_col: String, hit_dir: Vector2) -> void:
 				var orb = orb_scene.instantiate()
 				if main and main.get_node_or_null("Entities"):
 					main.get_node("Entities").add_child(orb)
-				elif main:
-					main.add_child(orb)
+				else:
+					get_parent().add_child(orb)
 				orb.global_position = global_position
 				orb.set_orb_color(drop_color)
 				
@@ -128,8 +130,10 @@ func take_laser_hit(laser_col: String, hit_dir: Vector2) -> void:
 			var target_color = interaction.get("target")
 			set_enemy_color(target_color)
 			if main and main.has_method("spawn_comic_floater"):
-				main.spawn_comic_floater(global_position + Vector2(0, -120), "TRANSFORM -> " + target_color, GameManager.COLORS[target_color]["color"])
+				main.spawn_comic_floater(global_position + Vector2(0, -40), "TRANSFORM", GameManager.COLORS[target_color]["color"])
+			if main and main.has_method("add_camera_shake"):
+				main.add_camera_shake(0.2)
 				
 		"NONE":
 			if main and main.has_method("spawn_comic_floater"):
-				main.spawn_comic_floater(global_position + Vector2(0, -120), "DEFLECT!", Color(0.8, 0.8, 0.8))
+				main.spawn_comic_floater(global_position + Vector2(0, -40), "DEFLECT!", Color(0.8, 0.8, 0.8))
