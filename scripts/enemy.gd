@@ -36,7 +36,7 @@ func load_sprites_for_color() -> void:
 		elif ResourceLoader.exists("res://assets/sprites/" + folder + "/" + d + ".png"):
 			troop_sprites[d]["idle"] = load("res://assets/sprites/" + folder + "/" + d + ".png")
 			
-		for r in range(10):
+		for r in range(8):
 			var r_path = "res://assets/sprites/" + folder + "/" + d + "_run_" + str(r) + ".png"
 			if ResourceLoader.exists(r_path):
 				troop_sprites[d]["run"].append(load(r_path))
@@ -112,7 +112,10 @@ func take_laser_hit(laser_col: String, hit_dir: Vector2) -> void:
 			var drop_color = GameManager.ENEMY_ORB_DROPS.get(color_id, "")
 			if drop_color != "":
 				var orb = orb_scene.instantiate()
-				main.add_child(orb)
+				if main and main.get_node_or_null("Entities"):
+					main.get_node("Entities").add_child(orb)
+				elif main:
+					main.add_child(orb)
 				orb.global_position = global_position
 				orb.set_orb_color(drop_color)
 				
