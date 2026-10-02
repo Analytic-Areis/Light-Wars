@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Light-Wars</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="gameContainer">
+    <canvas id="gameCanvas" width="1280" height="720"></canvas>
+
+    <!-- Comic-Strip Level Menu Overlay -->
+    <div id="comicMenu" class="comic-menu-overlay">
+      <div class="comic-header">
+        <div class="comic-issue-tag">ISSUE #1 &bull; CHROMATIC ORIGINS</div>
+        <h1 class="comic-title">LIGHT-WARS</h1>
+      </div>
+
+      <!-- Comic Strip Panels Row -->
+      <div class="comic-strip-container">
+        <!-- Panel 1: Active Playable Level 1 -->
+        <div class="comic-panel active">
+          <div class="panel-tag">PANEL 01</div>
+          <div class="panel-art" style="background: radial-gradient(circle, #00F0FF33 0%, #0E1220 80%);">
+            <span class="level-art-icon">💥</span>
+          </div>
+          <h2 class="panel-title">FIRST STRIKE</h2>
+          <p class="panel-desc">
+            Cyan enemies prowl the arena. Master RGB laser shifts, craft Magenta & Cyan ammo via Orbs, and return to the White Light to recharge!
+          </p>
+          <button id="startLevel1Btn" class="comic-btn">PLAY LEVEL 1</button>
+        </div>
+
+        <!-- Panel 2: Locked -->
+        <div class="comic-panel locked">
+          <div class="panel-tag">PANEL 02</div>
+          <div class="panel-art">
+            <span class="level-art-icon">🔒</span>
+          </div>
+          <h2 class="panel-title">ORB CATALYST</h2>
+          <p class="panel-desc">Advanced chromatic chain conversions and dual-enemy swarms.</p>
+          <span style="font-size: 11px; font-weight: 900; color: #5B6B98;">LOCKED</span>
+        </div>
+
+        <!-- Panel 3: Locked -->
+        <div class="comic-panel locked">
+          <div class="panel-tag">PANEL 03</div>
+          <div class="panel-art">
+            <span class="level-art-icon">🔒</span>
+          </div>
+          <h2 class="panel-title">INVERT FRAME</h2>
+          <p class="panel-desc">The battlefield flips: rules reverse into same-colour chromatic annihilation.</p>
+          <span style="font-size: 11px; font-weight: 900; color: #5B6B98;">LOCKED</span>
+        </div>
+
+        <!-- Panel 4: Boss Teaser -->
+        <div class="comic-panel locked boss-panel">
+          <div class="panel-tag" style="color: #FF2A4D; border-color: #FF2A4D;">BOSS</div>
+          <div class="panel-art" style="background: #05060A;">
+            <span class="level-art-icon" style="filter: drop-shadow(0 0 10px #FF2A4D);">👁️‍🗨️</span>
+          </div>
+          <h2 class="panel-title" style="color: #FF2A4D;">THE BLACK BOSS</h2>
+          <p class="panel-desc">An ominous entity cloaked in total darkness awaits at the end of the strip...</p>
+          <span style="font-size: 11px; font-weight: 900; color: #FF2A4D;">LOCKED</span>
+        </div>
+      </div>
+
+      <div class="comic-footer-legend">
+        <div><span>[WASD]</span> MOVE</div>
+        <div><span>[MOUSE]</span> AIM & SHOOT</div>
+        <div><span>[1-6 / Q-E / SCROLL]</span> CHANGE LASER COLOR</div>
+        <div><span>[SPACE / RMB]</span> DASH</div>
+        <div><span>[M]</span> MUTE AUDIO</div>
+      </div>
+    </div>
+
+    <!-- Level Complete Modal -->
+    <div id="levelClearModal" class="modal-overlay">
+      <div class="comic-modal-box">
+        <h2 class="comic-modal-title">LEVEL 1 CLEARED!</h2>
+        <div class="stars-rating">★★★</div>
+        <p style="color: #A0B2DE; font-size: 13px; margin-bottom: 20px;">
+          You successfully mastered RGB chromatic shifts and Orb ammunition synthesis!
+        </p>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-label">ENEMIES DEFEATED</div>
+            <div id="clearKills" class="stat-val">0</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">ORBS CONVERTED</div>
+            <div id="clearOrbs" class="stat-val">0</div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="menuReturnBtn" class="comic-btn secondary">COMIC STRIP</button>
+          <button onclick="window.game.startLevel1()" class="comic-btn">PLAY AGAIN</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="gameOverModal" class="modal-overlay">
+      <div class="comic-modal-box" style="border-color: #FF2A4D; box-shadow: 10px 10px 0 #FFE600, 14px 14px 0 #000;">
+        <h2 class="comic-modal-title" style="color: #FF2A4D;">DEFEATED!</h2>
+        <p style="color: #A0B2DE; font-size: 13px; margin-bottom: 20px;">
+          Your chromatic shields gave out! Remember to step on the White Light pad when low on ammo.
+        </p>
+        <div class="modal-actions">
+          <button id="restartBtn" class="comic-btn">RETRY</button>
+          <button onclick="window.game.showMenu()" class="comic-btn secondary">MENU</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/laser.js"></script>
+  <script src="js/orb.js"></script>
+  <script src="js/enemy.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/arena.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/waves.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
