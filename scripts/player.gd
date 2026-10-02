@@ -54,7 +54,7 @@ func load_hero_sprites() -> void:
 		elif ResourceLoader.exists("res://assets/sprites/hero/" + d + ".png"):
 			character_sprites[d]["idle"] = load("res://assets/sprites/hero/" + d + ".png")
 			
-		for r in range(10):
+		for r in range(8):
 			var r_path = "res://assets/sprites/hero/" + d + "_run_" + str(r) + ".png"
 			if ResourceLoader.exists(r_path):
 				character_sprites[d]["run"].append(load(r_path))
