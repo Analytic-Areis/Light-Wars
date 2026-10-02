@@ -28,9 +28,13 @@ var dash_dir: Vector2 = Vector2.ZERO
 
 var shoot_cooldown: float = 0.0
 var walk_anim_time: float = 0.0
+var idle_anim_time: float = 0.0
 var current_dir: String = "S"
 
-# Cached sprites: dir -> { "idle": tex, "run": [tex0..tex9] }
+const ACCEL: float = 1800.0
+const FRICTION: float = 2400.0
+
+# Cached sprites: dir -> { "idle": [tex0..tex3], "run": [tex0..tex7] }
 var character_sprites: Dictionary = {}
 
 @onready var sprite_2d: Sprite2D = $Sprite2D
@@ -47,13 +51,19 @@ func load_hero_sprites() -> void:
 	character_sprites.clear()
 	var dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
 	for d in dirs:
-		character_sprites[d] = { "idle": null, "run": [] }
-		var idle_path = "res://assets/sprites/hero/" + d + "_idle.png"
-		if ResourceLoader.exists(idle_path):
-			character_sprites[d]["idle"] = load(idle_path)
-		elif ResourceLoader.exists("res://assets/sprites/hero/" + d + ".png"):
-			character_sprites[d]["idle"] = load("res://assets/sprites/hero/" + d + ".png")
+		character_sprites[d] = { "idle": [], "run": [] }
+		
+		# Load 4 idle frames from Chibi Soldier Idle Sprite Atlas
+		for i in range(4):
+			var idle_path = "res://assets/sprites/hero/" + d + "_idle_" + str(i) + ".png"
+			if ResourceLoader.exists(idle_path):
+				character_sprites[d]["idle"].append(load(idle_path))
+		if character_sprites[d]["idle"].is_empty():
+			var fallback_idle = "res://assets/sprites/hero/" + d + "_idle.png"
+			if ResourceLoader.exists(fallback_idle):
+				character_sprites[d]["idle"].append(load(fallback_idle))
 			
+		# Load 8 run frames from Eight-Direction Pixel RPG Running Sprite Sheet
 		for r in range(8):
 			var r_path = "res://assets/sprites/hero/" + d + "_run_" + str(r) + ".png"
 			if ResourceLoader.exists(r_path):
@@ -110,10 +120,9 @@ func _physics_process(delta: float) -> void:
 	if dash_cooldown > 0.0:
 		dash_cooldown -= delta
 
-	# Calculate aim direction to mouse in 8-directions
+	# Aim direction for shooting
 	var mouse_pos = get_global_mouse_position()
 	var to_mouse = (mouse_pos - global_position).normalized()
-	current_dir = GameManager.get_direction_8(to_mouse)
 
 	# Movement
 	if is_dashing:
@@ -124,17 +133,29 @@ func _physics_process(delta: float) -> void:
 	else:
 		var input_vec = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 		if input_vec.length_squared() > 0.01:
-			velocity = input_vec.normalized() * speed
-			walk_anim_time += delta * 15.0
+			# 3) Character faces strictly in the WASD movement direction (NOT cursor)
+			current_dir = GameManager.get_direction_8(input_vec)
+			
+			# 4) Smooth acceleration
+			var target_vel = input_vec.normalized() * speed
+			velocity = velocity.move_toward(target_vel, ACCEL * delta)
+			
+			# Smooth rhythmic walk/run cycle (8 frames at 11 fps)
+			walk_anim_time += delta * 11.0
+			idle_anim_time = 0.0
 			update_sprite(false)
 		else:
-			velocity = Vector2.ZERO
+			# 4) Smooth deceleration to stop
+			velocity = velocity.move_toward(Vector2.ZERO, FRICTION * delta)
 			walk_anim_time = 0.0
+			
+			# Breathing idle cycle (4 frames at 4 fps)
+			idle_anim_time += delta * 4.0
 			update_sprite(true)
 
 	move_and_slide()
 
-	# Shooting
+	# Shooting fires towards mouse cursor
 	if Input.is_action_pressed("shoot") and shoot_cooldown <= 0.0:
 		try_shoot(to_mouse)
 
@@ -143,13 +164,16 @@ func update_sprite(is_idle: bool) -> void:
 		return
 		
 	var dir_data = character_sprites[current_dir]
-	if is_idle or dir_data["run"].is_empty():
-		if dir_data["idle"]:
-			sprite_2d.texture = dir_data["idle"]
+	if is_idle:
+		var idle_frames = dir_data["idle"]
+		if not idle_frames.is_empty():
+			var f_idx = int(idle_anim_time) % idle_frames.size()
+			sprite_2d.texture = idle_frames[f_idx]
 	else:
 		var run_frames = dir_data["run"]
-		var f_idx = int(walk_anim_time) % run_frames.size()
-		sprite_2d.texture = run_frames[f_idx]
+		if not run_frames.is_empty():
+			var f_idx = int(walk_anim_time) % run_frames.size()
+			sprite_2d.texture = run_frames[f_idx]
 
 func try_shoot(aim_dir: Vector2) -> void:
 	var active_col = get_active_color()

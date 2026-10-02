@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" path="res://assets/sprites/hero/S_idle.png" id="2_herotex"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_1"]
-radius = 24.0
+radius = 16.0
 
 [node name="Player" type="CharacterBody2D" groups=["player"]]
 y_sort_enabled = true
@@ -13,10 +13,10 @@ collision_mask = 6
 script = ExtResource("1_player")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, -10)
+position = Vector2(0, -8)
 shape = SubResource("CircleShape2D_1")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = ExtResource("2_herotex")
-offset = Vector2(0, -112)
+offset = Vector2(0, -65)
 

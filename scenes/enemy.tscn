@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" path="res://assets/sprites/troop_cyan/S_idle.png" id="2_trooptex"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_1"]
-radius = 24.0
+radius = 16.0
 
 [node name="Enemy" type="CharacterBody2D" groups=["enemies"]]
 y_sort_enabled = true
@@ -13,10 +13,11 @@ collision_mask = 5
 script = ExtResource("1_enemy")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, -10)
+position = Vector2(0, -8)
 shape = SubResource("CircleShape2D_1")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(0.68, 0.68)
 texture = ExtResource("2_trooptex")
 offset = Vector2(0, -107)
 
