@@ -3,14 +3,16 @@
 [ext_resource type="Script" path="res://scripts/laser.gd" id="1_laser"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
-radius = 0.25
-height = 1.0
+radius = 0.55
+height = 1.6
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_1"]
-radius = 0.15
-height = 0.8
+radius = 0.18
+height = 1.1
 
 [node name="Laser" type="Area3D"]
+collision_layer = 4
+collision_mask = 7
 script = ExtResource("1_laser")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
@@ -21,8 +23,8 @@ transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0, 
 mesh = SubResource("CapsuleMesh_1")
 
 [node name="OmniLight3D" type="OmniLight3D" parent="."]
-light_energy = 2.0
-omni_range = 3.0
+light_energy = 3.5
+omni_range = 4.5
 
 [connection signal="area_entered" from="." to="." method="_on_area_entered"]
 [connection signal="body_entered" from="." to="." method="_on_body_entered"]

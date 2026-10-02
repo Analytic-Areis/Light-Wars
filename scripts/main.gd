@@ -27,11 +27,14 @@ func start_level_1() -> void:
 	kills_count = 0
 	orbs_crafted = 0
 	
-	hud.set_objective("PHASE 1: THE CYAN TROOPS", "Cyan troops approach! Press [1] for RED Laser to destroy them!")
+	hud.set_objective(
+		"PHASE 1: CYAN TROOPS INBOUND",
+		"Press [1] for RED Laser. Red Laser annihilates Cyan troops!"
+	)
 	
 	# Spawn 2 Cyan troops
 	spawn_enemy(Vector3(6.0, 0.0, -3.0), "CYAN")
-	spawn_enemy(Vector3(8.0, 0.0, 4.0), "CYAN")
+	spawn_enemy(Vector3(8.0, 0.0, 3.0), "CYAN")
 	enemies_left = 2
 
 func spawn_enemy(pos: Vector3, col_id: String) -> void:
@@ -55,19 +58,31 @@ func on_enemy_killed(enemy: Node3D) -> void:
 
 func init_phase_2() -> void:
 	phase = 2
-	hud.set_objective("PHASE 2: MAGENTA TROOP", "Shoot RED ORB with BLUE Laser [3] for MAGENTA, or shoot MAGENTA troop with GREEN Laser [2]!")
-	spawn_enemy(Vector3(9.0, 0.0, 0.0), "MAGENTA")
-	enemies_left = 1
+	hud.set_objective(
+		"PHASE 2: MAGENTA TROOP ARRIVES",
+		"Press [2] for GREEN Laser (or shoot Red Orb with Blue Laser for Magenta) to destroy Magenta troop!"
+	)
+	spawn_enemy(Vector3(9.0, 0.0, -1.0), "MAGENTA")
+	spawn_enemy(Vector3(7.0, 0.0, 4.0), "MAGENTA")
+	enemies_left = 2
 
 func init_phase_3() -> void:
 	phase = 3
-	hud.set_objective("PHASE 3: YELLOW TROOP", "A Yellow troop attacks! Select BLUE Laser [3] to eliminate it!")
-	spawn_enemy(Vector3(10.0, 0.0, 1.0), "YELLOW")
-	enemies_left = 1
+	hud.set_objective(
+		"PHASE 3: YELLOW TROOP INFILTRATION",
+		"Yellow troops incoming! Press [3] for BLUE Laser to eliminate them!"
+	)
+	spawn_enemy(Vector3(8.0, 0.0, -4.0), "YELLOW")
+	spawn_enemy(Vector3(10.0, 0.0, 2.0), "YELLOW")
+	enemies_left = 2
 
 func init_phase_4() -> void:
 	phase = 4
-	hud.set_objective("CLIMAX: CHROMATIC INVASION", "Cyan, Magenta, and Yellow troops inbound! Use WHITE LIGHT to refill when low on ammo!")
+	hud.set_objective(
+		"CLIMAX SHOWDOWN: ALL 3 TROOPS!",
+		"Cyan, Magenta, and Yellow troops attack together! Use the glowing WHITE LIGHT to recharge!"
+	)
+	# All 3 troops spawn simultaneously
 	spawn_enemy(Vector3(7.0, 0.0, -5.0), "CYAN")
 	spawn_enemy(Vector3(9.0, 0.0, 0.0), "MAGENTA")
 	spawn_enemy(Vector3(8.0, 0.0, 5.0), "YELLOW")
@@ -76,7 +91,7 @@ func init_phase_4() -> void:
 func on_orb_converted(orb_col: String, laser_col: String, res_col: String) -> void:
 	orbs_crafted += 1
 
-func shake_camera(amt: float = 0.3) -> void:
+func shake_camera(amt: float = 0.35) -> void:
 	if camera and camera.has_method("shake"):
 		camera.shake(amt)
 
@@ -87,14 +102,24 @@ func _process(delta: float) -> void:
 	# White Light Refill Zone Check
 	if white_light_pad and player and player.health > 0:
 		var dist = (player.global_position - white_light_pad.global_position).length()
-		if dist <= 3.2:
+		if dist <= 3.8:
 			refill_timer += delta
-			if refill_timer >= 0.35:
+			if refill_timer >= 0.28:
 				refill_timer = 0.0
-				player.add_ammo("RED", 1)
-				player.add_ammo("GREEN", 1)
-				player.add_ammo("BLUE", 1)
-				spawn_comic_floater(white_light_pad.global_position + Vector3(0, 1.5, 0), "⚡ RECHARGING RGB ⚡", Color("#00F0FF"))
+				var refilled = false
+				if player.ammo["RED"] < player.max_ammo_per_color:
+					player.ammo["RED"] += 1
+					refilled = true
+				if player.ammo["GREEN"] < player.max_ammo_per_color:
+					player.ammo["GREEN"] += 1
+					refilled = true
+				if player.ammo["BLUE"] < player.max_ammo_per_color:
+					player.ammo["BLUE"] += 1
+					refilled = true
+					
+				if refilled:
+					player.emit_signal("ammo_changed", player.ammo, player.get_active_color())
+					spawn_comic_floater(white_light_pad.global_position + Vector3(0, 1.8, 0), "⚡ RECHARGING RGB ⚡", Color("#00F0FF"))
 
 func spawn_comic_floater(pos: Vector3, text: String, color: Color) -> void:
 	if hud and hud.has_method("add_3d_floater"):

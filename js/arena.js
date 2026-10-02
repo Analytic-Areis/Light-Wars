@@ -1,5 +1,6 @@
 /**
- * Light-Wars: 2.5D Arena & White Light Refill Platform
+ * Light-Wars: 2.5D Arena & Radiant White Light Refill Platform
+ * Renders the high-res sci-fi rooftop arena map texture and bright beacon pad.
  */
 
 class Arena {
@@ -7,50 +8,55 @@ class Arena {
     this.width = width;
     this.height = height;
 
-    this.minX = 60;
-    this.maxX = width - 60;
-    this.minY = 60;
-    this.maxY = height - 60;
+    this.minX = 75;
+    this.maxX = width - 75;
+    this.minY = 75;
+    this.maxY = height - 75;
 
-    // White Light Spawn & Refill Zone
+    // Load custom arena map image
+    this.mapImg = new Image();
+    this.mapImg.src = 'assets/textures/arena_map.jpg';
+
+    // White Light Spawn & Refill Zone (Brilliant Radiant Beacon)
     this.whiteLight = {
-      x: 220,
-      y: height / 2,
-      radius: window.LightWars.GAME_CONFIG.whiteLightRadius,
+      x: 230,
+      y: height - 220,
+      radius: 95,
       pulseTime: 0,
       particles: []
     };
 
-    // Tech obstacles / Cover pillars
-    this.pillars = [
-      { x: 500, y: 320, radius: 40 },
-      { x: 500, y: height - 320, radius: 40 },
-      { x: 1050, y: 320, radius: 40 },
-      { x: 1050, y: height - 320, radius: 40 },
-      { x: 800, y: height / 2, radius: 55 }
+    // Barriers matching the map layout
+    this.barriers = [
+      { x: 920, y: 240, w: 280, h: 65 },  // Top horizontal barrier
+      { x: 480, y: 460, w: 75, h: 260 },   // L barrier stem
+      { x: 570, y: 560, w: 140, h: 70 },   // L barrier arm
+      { x: 940, y: 760, w: 280, h: 65 }   // Bottom horizontal barrier
     ];
   }
 
   update(dt) {
-    this.whiteLight.pulseTime += dt * 2.5;
+    this.whiteLight.pulseTime += dt * 3.0;
 
-    // Spawn upward light particles from White Light
-    if (Math.random() < 0.6) {
+    // Spawn intense upward beacon beams and light particles
+    if (Math.random() < 0.85) {
       const angle = Math.random() * Math.PI * 2;
-      const r = Math.random() * (this.whiteLight.radius * 0.85);
+      const r = Math.random() * (this.whiteLight.radius * 0.9);
       this.whiteLight.particles.push({
         x: this.whiteLight.x + Math.cos(angle) * r,
-        y: this.whiteLight.y + Math.sin(angle) * (r * 0.6),
-        vy: -(30 + Math.random() * 50),
+        y: this.whiteLight.y + Math.sin(angle) * (r * 0.55),
+        vy: -(60 + Math.random() * 90),
+        vx: (Math.random() - 0.5) * 20,
         alpha: 1.0,
-        size: 2 + Math.random() * 3
+        size: 3 + Math.random() * 4
       });
     }
 
     for (let i = this.whiteLight.particles.length - 1; i >= 0; i--) {
       const p = this.whiteLight.particles[i];
+      p.x += p.vx * dt;
       p.y += p.vy * dt;
-      p.alpha -= dt * 1.5;
+      p.alpha -= dt * 1.8;
       if (p.alpha <= 0) {
         this.whiteLight.particles.splice(i, 1);
       }
@@ -58,85 +64,95 @@ class Arena {
   }
 
   draw(ctx) {
-    // 1. Draw Sci-Fi Hex / Grid Floor
-    ctx.save();
-    ctx.fillStyle = '#0B0D19';
+    // 1. Draw High-Res Sci-Fi Arena Map
+    if (this.mapImg.complete && this.mapImg.naturalWidth > 0) {
+      ctx.drawImage(this.mapImg, 0, 0, this.width, this.height);
+    } else {
+      // Fallback sci-fi floor
+      ctx.fillStyle = '#0B0E1B';
+      ctx.fillRect(0, 0, this.width, this.height);
+    }
+
+    // Subtle arena edge vignette
+    const vig = ctx.createRadialGradient(
+      this.width / 2, this.height / 2, this.width * 0.35,
+      this.width / 2, this.height / 2, this.width * 0.65
+    );
+    vig.addColorStop(0, 'rgba(0,0,0,0)');
+    vig.addColorStop(1, 'rgba(0,0,0,0.6)');
+    ctx.fillStyle = vig;
     ctx.fillRect(0, 0, this.width, this.height);
 
-    // Grid lines with perspective tint
-    ctx.strokeStyle = 'rgba(40, 50, 85, 0.4)';
-    ctx.lineWidth = 1.5;
-    const tileSize = 80;
-
-    for (let x = 0; x < this.width; x += tileSize) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, this.height);
-      ctx.stroke();
-    }
-    for (let y = 0; y < this.height; y += tileSize) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(this.width, y);
-      ctx.stroke();
-    }
-
-    // Outer boundary walls with comic hazard lines
-    ctx.strokeStyle = '#2B3352';
-    ctx.lineWidth = 14;
-    ctx.strokeRect(30, 30, this.width - 60, this.height - 60);
-
-    ctx.strokeStyle = '#00F0FF';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(30, 30, this.width - 60, this.height - 60);
-
-    // 2. Draw White Light Spawn Platform
+    // 2. Draw Brilliant Radiant White Light Refill Platform
     const wl = this.whiteLight;
-    const pulse = 1 + Math.sin(wl.pulseTime) * 0.08;
+    const pulse = 1.0 + Math.sin(wl.pulseTime) * 0.12;
 
-    // Glowing base halo
-    const haloGrad = ctx.createRadialGradient(wl.x, wl.y, wl.radius * 0.2, wl.x, wl.y, wl.radius * 1.6 * pulse);
-    haloGrad.addColorStop(0, 'rgba(255, 255, 255, 0.65)');
-    haloGrad.addColorStop(0.4, 'rgba(210, 240, 255, 0.35)');
+    ctx.save();
+    // Outer intense bloom halo
+    const haloGrad = ctx.createRadialGradient(wl.x, wl.y, wl.radius * 0.2, wl.x, wl.y, wl.radius * 2.2 * pulse);
+    haloGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+    haloGrad.addColorStop(0.3, 'rgba(215, 245, 255, 0.7)');
+    haloGrad.addColorStop(0.7, 'rgba(0, 240, 255, 0.3)');
     haloGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
     ctx.fillStyle = haloGrad;
     ctx.beginPath();
-    ctx.ellipse(wl.x, wl.y, wl.radius * 1.6 * pulse, wl.radius * 0.9 * pulse, 0, 0, Math.PI * 2);
+    ctx.ellipse(wl.x, wl.y, wl.radius * 2.2 * pulse, wl.radius * 1.2 * pulse, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Solid inner pad
-    ctx.fillStyle = '#182035';
-    ctx.strokeStyle = '#FFFFFF';
-    ctx.lineWidth = 4;
+    // Pure white glowing platform disc
+    ctx.fillStyle = '#FFFFFF';
+    ctx.shadowColor = '#00F0FF';
+    ctx.shadowBlur = 30;
     ctx.beginPath();
     ctx.ellipse(wl.x, wl.y, wl.radius, wl.radius * 0.55, 0, 0, Math.PI * 2);
     ctx.fill();
+
+    // Inner bright cyan energy ring
+    ctx.strokeStyle = '#00F0FF';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.ellipse(wl.x, wl.y, wl.radius * 0.75, wl.radius * 0.42, 0, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Rotating holographic tech ring
+    // Rotating holographic tech runes
     ctx.save();
     ctx.translate(wl.x, wl.y);
-    ctx.rotate(wl.pulseTime * 0.5);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.rotate(wl.pulseTime * 0.6);
+    ctx.strokeStyle = '#FFFFFF';
     ctx.lineWidth = 2.5;
-    ctx.setLineDash([12, 10]);
+    ctx.setLineDash([16, 12]);
     ctx.beginPath();
-    ctx.ellipse(0, 0, wl.radius * 0.75, wl.radius * 0.42, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, wl.radius * 0.6, wl.radius * 0.33, 0, 0, Math.PI * 2);
     ctx.stroke();
-    ctx.setLineDash([]);
     ctx.restore();
 
-    // White Light label & icon
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '900 13px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('WHITE LIGHT', wl.x, wl.y - 12);
-    ctx.font = 'bold 11px sans-serif';
-    ctx.fillStyle = '#00F0FF';
-    ctx.fillText('⚡ REFILL PAD ⚡', wl.x, wl.y + 14);
+    // Vertical Ascension Light Beacon Column
+    const colGrad = ctx.createLinearGradient(wl.x, wl.y, wl.x, wl.y - 180);
+    colGrad.addColorStop(0, 'rgba(255, 255, 255, 0.75)');
+    colGrad.addColorStop(0.5, 'rgba(0, 240, 255, 0.4)');
+    colGrad.addColorStop(1, 'rgba(0, 240, 255, 0)');
+    ctx.fillStyle = colGrad;
+    ctx.beginPath();
+    ctx.moveTo(wl.x - wl.radius * 0.7, wl.y);
+    ctx.lineTo(wl.x - wl.radius * 0.5, wl.y - 180);
+    ctx.lineTo(wl.x + wl.radius * 0.5, wl.y - 180);
+    ctx.lineTo(wl.x + wl.radius * 0.7, wl.y);
+    ctx.closePath();
+    ctx.fill();
 
-    // Floating upward particles
+    // White Light 3D Label
+    ctx.shadowColor = '#000000';
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '900 15px "Impact", "Arial Black", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('⚡ WHITE LIGHT REFILL ⚡', wl.x, wl.y - 18);
+    ctx.font = 'bold 12px sans-serif';
+    ctx.fillStyle = '#00F0FF';
+    ctx.fillText('STEP ON PAD TO RECHARGE RGB AMMO', wl.x, wl.y + 18);
+
+    // Floating upward beacon particles
     for (const p of wl.particles) {
       ctx.fillStyle = '#FFFFFF';
       ctx.globalAlpha = p.alpha;
@@ -144,43 +160,6 @@ class Arena {
       ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
       ctx.fill();
     }
-    ctx.globalAlpha = 1.0;
-
-    // 3. Draw Tech Pillars with 2.5D height
-    for (const pil of this.pillars) {
-      // Base shadow
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-      ctx.beginPath();
-      ctx.ellipse(pil.x, pil.y + 15, pil.radius * 1.2, pil.radius * 0.65, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Pillar cylinder base
-      const pilGrad = ctx.createLinearGradient(pil.x - pil.radius, pil.y, pil.x + pil.radius, pil.y);
-      pilGrad.addColorStop(0, '#1E2438');
-      pilGrad.addColorStop(0.5, '#384266');
-      pilGrad.addColorStop(1, '#151928');
-
-      ctx.fillStyle = pilGrad;
-      ctx.beginPath();
-      ctx.ellipse(pil.x, pil.y, pil.radius, pil.radius * 0.5, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Pillar cap
-      ctx.fillStyle = '#4B5888';
-      ctx.beginPath();
-      ctx.ellipse(pil.x, pil.y - 28, pil.radius * 0.9, pil.radius * 0.45, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = '#00F0FF';
-      ctx.lineWidth = 2.5;
-      ctx.stroke();
-
-      // Top glowing energy conduit
-      ctx.fillStyle = '#00F0FF';
-      ctx.beginPath();
-      ctx.arc(pil.x, pil.y - 28, 7, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
     ctx.restore();
   }
 }

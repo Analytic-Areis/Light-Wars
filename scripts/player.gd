@@ -41,6 +41,10 @@ var hero_sprites: Dictionary = {}
 var current_dir_name: String = "S"
 var aim_world_pos: Vector3 = Vector3.ZERO
 
+# Animation
+var base_sprite_y: float = 1.45
+var walk_anim_time: float = 0.0
+
 @onready var sprite_3d: Sprite3D = $Sprite3D
 @onready var muzzle_point: Marker3D = $MuzzlePoint
 
@@ -166,6 +170,7 @@ func _physics_process(delta: float) -> void:
 	if is_dashing:
 		dash_timer -= delta
 		velocity = dash_dir * DASH_SPEED
+		sprite_3d.scale = Vector3(0.85, 1.25, 1.0) # stretch during dash
 		if dash_timer <= 0.0:
 			is_dashing = false
 	else:
@@ -173,5 +178,23 @@ func _physics_process(delta: float) -> void:
 		var target_vel = Vector3(input_vec.x, 0, input_vec.y).normalized() * SPEED
 		velocity.x = move_toward(velocity.x, target_vel.x, SPEED * 8.0 * delta)
 		velocity.z = move_toward(velocity.z, target_vel.z, SPEED * 8.0 * delta)
+		
+		# Procedural Running Animation
+		var moving = velocity.length() > 0.3
+		if moving:
+			walk_anim_time += delta * 14.0
+			var bob = abs(sin(walk_anim_time)) * 0.16
+			sprite_3d.position.y = base_sprite_y + bob
+			var tilt = sin(walk_anim_time) * 0.1
+			sprite_3d.rotation.z = tilt
+			var squash = sin(walk_anim_time * 2.0) * 0.06
+			sprite_3d.scale = Vector3(1.0 + squash, 1.0 - squash, 1.0)
+		else:
+			# Idle breathing
+			walk_anim_time = 0.0
+			sprite_3d.position.y = move_toward(sprite_3d.position.y, base_sprite_y, delta * 3.0)
+			sprite_3d.rotation.z = move_toward(sprite_3d.rotation.z, 0.0, delta * 5.0)
+			var breath = sin(Time.get_ticks_msec() * 0.003) * 0.025
+			sprite_3d.scale = Vector3(1.0 - breath, 1.0 + breath, 1.0)
 	
 	move_and_slide()

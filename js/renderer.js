@@ -61,10 +61,20 @@ class SpriteManager {
     if (!img) return false;
 
     ctx.save();
-    // Render upright 2.5D sprite standing on ground plane
-    const h = player.radius * 2.8;
+    // Running animation bobbing, tilt, and squash-stretch
+    const moving = player.isMoving;
+    const bob = moving ? Math.abs(Math.sin(player.walkCycle)) * 6 : 0;
+    const tilt = moving ? Math.sin(player.walkCycle) * 0.08 : 0;
+    const squash = moving ? Math.sin(player.walkCycle * 2) * 0.05 : 0;
+
+    ctx.translate(0, -bob);
+    ctx.rotate(tilt);
+    ctx.scale(1.0 + squash, 1.0 - squash);
+
+    // Render upright 2.5D sprite standing on ground plane with increased size
+    const h = player.radius * 3.8;
     const w = (img.width / img.height) * h;
-    ctx.drawImage(img, -w / 2, -h + 8, w, h);
+    ctx.drawImage(img, -w / 2, -h + 10, w, h);
     ctx.restore();
     return true;
   }
@@ -76,9 +86,23 @@ class SpriteManager {
     if (!img) return false;
 
     ctx.save();
-    const h = enemy.radius * 2.8;
+    // Running animation bobbing, tilt, and squash-stretch
+    const bob = Math.abs(Math.sin(enemy.walkCycle)) * 5;
+    const tilt = Math.sin(enemy.walkCycle) * 0.08;
+    const squash = Math.sin(enemy.walkCycle * 2) * 0.05;
+
+    ctx.translate(0, -bob);
+    ctx.rotate(tilt);
+    ctx.scale(1.0 + squash, 1.0 - squash);
+
+    // Visual hurt flash on laser hit
+    if (enemy.hurtFlash > 0) {
+      ctx.filter = 'brightness(2.8) contrast(1.5)';
+    }
+
+    const h = enemy.radius * 3.8;
     const w = (img.width / img.height) * h;
-    ctx.drawImage(img, -w / 2, -h + 8, w, h);
+    ctx.drawImage(img, -w / 2, -h + 10, w, h);
     ctx.restore();
     return true;
   }

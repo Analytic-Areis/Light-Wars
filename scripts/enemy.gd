@@ -1,12 +1,18 @@
 extends CharacterBody3D
 
 @export var color_id: String = "CYAN"
-var speed: float = 3.5
+var speed: float = 3.8
 var health: int = 1
 var attack_cooldown: float = 0.0
 
 var troop_sprites: Dictionary = {}
 var current_dir_name: String = "S"
+
+# Animation
+var base_sprite_y: float = 1.45
+var walk_anim_time: float = 0.0
+var hurt_flash_timer: float = 0.0
+var knockback_vel: Vector3 = Vector3.ZERO
 
 @onready var sprite_3d: Sprite3D = $Sprite3D
 var orb_scene = preload("res://scenes/orb.tscn")
@@ -34,28 +40,55 @@ func _physics_process(delta: float) -> void:
 	if attack_cooldown > 0.0:
 		attack_cooldown -= delta
 		
-	var player = get_tree().get_first_node_in_group("player")
-	if player:
-		var to_player = player.global_position - global_position
-		to_player.y = 0.0
-		var dist = to_player.length()
-		
-		# Update 8-direction sprite facing player
-		var dir_2d = Vector2(to_player.x, to_player.z)
-		var new_dir = GameManager.get_direction_8(dir_2d)
-		if new_dir != current_dir_name and troop_sprites.has(new_dir):
-			current_dir_name = new_dir
-			sprite_3d.texture = troop_sprites[new_dir]
+	# Decay hurt flash
+	if hurt_flash_timer > 0.0:
+		hurt_flash_timer -= delta
+		if sprite_3d:
+			sprite_3d.modulate = Color(3.5, 3.5, 3.5, 1.0) # Intense white hit flash
+			sprite_3d.scale = Vector3(1.25, 0.75, 1.0)
+	else:
+		if sprite_3d:
+			sprite_3d.modulate = Color.WHITE
+
+	# Knockback physics
+	if knockback_vel.length_squared() > 0.1:
+		velocity = knockback_vel
+		knockback_vel = knockback_vel.move_toward(Vector3.ZERO, delta * 35.0)
+	else:
+		var player = get_tree().get_first_node_in_group("player")
+		if player:
+			var to_player = player.global_position - global_position
+			to_player.y = 0.0
+			var dist = to_player.length()
 			
-		if dist > 1.2:
-			velocity = to_player.normalized() * speed
+			# Update 8-direction sprite facing player
+			var dir_2d = Vector2(to_player.x, to_player.z)
+			var new_dir = GameManager.get_direction_8(dir_2d)
+			if new_dir != current_dir_name and troop_sprites.has(new_dir):
+				current_dir_name = new_dir
+				sprite_3d.texture = troop_sprites[new_dir]
+				
+			if dist > 1.4:
+				velocity = to_player.normalized() * speed
+				# Running animation
+				walk_anim_time += delta * 12.0
+				if sprite_3d and hurt_flash_timer <= 0.0:
+					var bob = abs(sin(walk_anim_time)) * 0.15
+					sprite_3d.position.y = base_sprite_y + bob
+					sprite_3d.rotation.z = sin(walk_anim_time) * 0.08
+					var squash = sin(walk_anim_time * 2.0) * 0.05
+					sprite_3d.scale = Vector3(1.0 + squash, 1.0 - squash, 1.0)
+			else:
+				velocity = Vector3.ZERO
+				if sprite_3d and hurt_flash_timer <= 0.0:
+					sprite_3d.position.y = move_toward(sprite_3d.position.y, base_sprite_y, delta * 3.0)
+					sprite_3d.rotation.z = move_toward(sprite_3d.rotation.z, 0.0, delta * 5.0)
+					sprite_3d.scale = Vector3.ONE
+				if attack_cooldown <= 0.0:
+					player.take_damage(1, global_position)
+					attack_cooldown = 1.2
 		else:
 			velocity = Vector3.ZERO
-			if attack_cooldown <= 0.0:
-				player.take_damage(1, global_position)
-				attack_cooldown = 1.2
-	else:
-		velocity = Vector3.ZERO
 		
 	move_and_slide()
 
@@ -64,23 +97,26 @@ func take_laser_hit(laser_col: String, hit_dir: Vector3) -> void:
 	var outcome = rules.get(laser_col, { "action": "NONE" })
 	var action = outcome["action"]
 	
+	hurt_flash_timer = 0.18
+	knockback_vel = hit_dir.normalized() * 10.0
+	
 	var main_node = get_tree().current_scene
 	
 	if action == "KILL":
 		if main_node and main_node.has_method("shake_camera"):
-			main_node.shake_camera(0.4)
+			main_node.shake_camera(0.45)
 			
 		var comic_word = GameManager.COMIC_WORDS[randi() % GameManager.COMIC_WORDS.size()]
 		var col_data = GameManager.COLORS.get(color_id, GameManager.COLORS["CYAN"])
 		if main_node and main_node.has_method("spawn_comic_floater"):
-			main_node.spawn_comic_floater(global_position + Vector3(0, 1.8, 0), comic_word, col_data["color"])
+			main_node.spawn_comic_floater(global_position + Vector3(0, 2.2, 0), comic_word, col_data["color"])
 			
 		# Drop Orb
 		var orb_col = GameManager.ENEMY_ORB_DROPS.get(color_id, "")
 		if orb_col != "" and orb_scene:
 			var orb = orb_scene.instantiate()
 			get_parent().add_child(orb)
-			orb.init_orb(global_position + Vector3(0, 0.8, 0), orb_col)
+			orb.init_orb(global_position + Vector3(0, 1.0, 0), orb_col)
 			
 		if main_node and main_node.has_method("on_enemy_killed"):
 			main_node.on_enemy_killed(self)
@@ -89,11 +125,12 @@ func take_laser_hit(laser_col: String, hit_dir: Vector3) -> void:
 	elif action == "TRANSFORM":
 		var target_col = outcome["target"]
 		set_enemy_color(target_col)
+		if main_node and main_node.has_method("shake_camera"):
+			main_node.shake_camera(0.25)
 		var col_data = GameManager.COLORS.get(target_col, GameManager.COLORS["YELLOW"])
 		if main_node and main_node.has_method("spawn_comic_floater"):
-			main_node.spawn_comic_floater(global_position + Vector3(0, 1.8, 0), "➔ " + target_col + "!", col_data["color"])
+			main_node.spawn_comic_floater(global_position + Vector3(0, 2.2, 0), "➔ " + target_col + "!", col_data["color"])
 	else:
 		# Deflect
-		velocity += hit_dir.normalized() * 3.0
 		if main_node and main_node.has_method("spawn_comic_floater"):
-			main_node.spawn_comic_floater(global_position + Vector3(0, 1.8, 0), "NO EFFECT", Color.WHITE)
+			main_node.spawn_comic_floater(global_position + Vector3(0, 2.2, 0), "DEFLECTED!", Color.WHITE)
