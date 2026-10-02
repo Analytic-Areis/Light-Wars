@@ -17,21 +17,24 @@ class Arena {
     this.mapImg = new Image();
     this.mapImg.src = 'assets/textures/arena_map.jpg';
 
-    // White Light Spawn & Refill Zone (Brilliant Radiant Beacon)
+    // White Light Sanctuary (lower-left quadrant)
     this.whiteLight = {
-      x: 230,
-      y: height - 220,
+      x: Math.round(width * 0.245),
+      y: Math.round(height * 0.443),
       radius: 95,
       pulseTime: 0,
       particles: []
     };
 
-    // Barriers matching the map layout
+    // Barriers matching the Kenney Isometric Dungeon layout
     this.barriers = [
-      { x: 920, y: 240, w: 280, h: 65 },  // Top horizontal barrier
-      { x: 480, y: 460, w: 75, h: 260 },   // L barrier stem
-      { x: 570, y: 560, w: 140, h: 70 },   // L barrier arm
-      { x: 940, y: 760, w: 280, h: 65 }   // Bottom horizontal barrier
+      { x: Math.round(width * 0.546) - 100, y: Math.round(height * 0.481) - 45, w: 200, h: 90 }, // Center Monument (columns + chest)
+      { x: Math.round(width * 0.523) - 75, y: Math.round(height * 0.330) - 40, w: 150, h: 80 },  // Upper Barricade (crates/barrels)
+      { x: Math.round(width * 0.732) - 70, y: Math.round(height * 0.538) - 45, w: 140, h: 90 },  // Right Bastion (column + barrels)
+      { x: Math.round(width * 0.546) - 75, y: Math.round(height * 0.651) - 40, w: 150, h: 80 },  // Bottom Barricade (stacked barrels)
+      { x: Math.round(width * 0.268) - 30, y: Math.round(height * 0.368) - 40, w: 60, h: 80 },   // Sanctuary Column 1
+      { x: Math.round(width * 0.175) - 30, y: Math.round(height * 0.443) - 40, w: 60, h: 80 },   // Sanctuary Column 2
+      { x: Math.round(width * 0.245) - 30, y: Math.round(height * 0.500) - 40, w: 60, h: 80 }    // Sanctuary Column 3
     ];
   }
 
