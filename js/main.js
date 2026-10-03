@@ -1,6 +1,8 @@
 /**
  * Light-Wars: Main Game Engine & Loop
- * Itch.io ready HTML5 / Canvas 2.5D Action Game
+ * Full 2.5D Isometric Pathway Dungeon with WASD 8-direction running animations,
+ * 92 boundary collision slabs, destructible Barrels, physical Ammo Crystals,
+ * and 8 waves featuring Red, Green, Blue, Cyan, Magenta, and Yellow troops.
  */
 
 class LightWarsGame {
@@ -25,14 +27,16 @@ class LightWarsGame {
     this.enemies = [];
     this.lasers = [];
     this.orbs = [];
+    this.crystals = [];
+    this.barrels = [];
 
     // Input state
     this.input = {
       keys: {},
-      mouseX: 0,
-      mouseY: 0,
-      screenMouseX: 0,
-      screenMouseY: 0,
+      mouseX: 1352,
+      mouseY: 1502,
+      screenMouseX: 640,
+      screenMouseY: 360,
       isMouseDown: false,
       dashRequested: false
     };
@@ -58,26 +62,31 @@ class LightWarsGame {
   }
 
   resizeCanvas() {
-    // Keep 16:9 aspect ratio crisp on any display / itch.io iframe
-    const container = document.getElementById('gameContainer');
-    const width = container.clientWidth || 1280;
-    const height = container.clientHeight || 720;
+    // Keep 1280x720 internal aspect ratio while scaling gracefully to viewport
+    const aspect = 1280 / 720;
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
 
-    this.canvas.width = 1280;
-    this.canvas.height = 720;
-    this.camera.viewportWidth = 1280;
-    this.camera.viewportHeight = 720;
+    let targetWidth = windowWidth;
+    let targetHeight = windowWidth / aspect;
+
+    if (targetHeight > windowHeight) {
+      targetHeight = windowHeight;
+      targetWidth = windowHeight * aspect;
+    }
+
+    this.canvas.style.width = `${Math.floor(targetWidth)}px`;
+    this.canvas.style.height = `${Math.floor(targetHeight)}px`;
   }
 
   bindEvents() {
-    // Prevent default scrolling on arrow keys / space
     window.addEventListener('keydown', (e) => {
       if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
         e.preventDefault();
       }
       this.input.keys[e.code] = true;
 
-      // Number keys for ammo selection
+      // Number keys 1-6 for laser ammo selection
       if (e.key >= '1' && e.key <= '6') {
         const idx = parseInt(e.key, 10) - 1;
         if (this.player) this.player.selectColorIndex(idx);
@@ -103,7 +112,7 @@ class LightWarsGame {
       this.input.keys[e.code] = false;
     });
 
-    // Mouse movement & firing
+    // Mouse tracking & firing
     this.canvas.addEventListener('mousemove', (e) => {
       const rect = this.canvas.getBoundingClientRect();
       const scaleX = this.canvas.width / rect.width;
@@ -112,7 +121,6 @@ class LightWarsGame {
       this.input.screenMouseX = (e.clientX - rect.left) * scaleX;
       this.input.screenMouseY = (e.clientY - rect.top) * scaleY;
 
-      // Convert to world coordinates
       const worldPos = this.camera.screenToWorld(this.input.screenMouseX, this.input.screenMouseY);
       this.input.mouseX = worldPos.x;
       this.input.mouseY = worldPos.y;
@@ -129,7 +137,7 @@ class LightWarsGame {
       }
     });
 
-    this.canvas.addEventListener('mouseup', (e) => {
+    window.addEventListener('mouseup', (e) => {
       if (e.button === 0) {
         this.input.isMouseDown = false;
       }
@@ -137,14 +145,13 @@ class LightWarsGame {
 
     this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
-    // Mouse wheel ammo switching
     this.canvas.addEventListener('wheel', (e) => {
       if (!this.player) return;
       if (e.deltaY > 0) this.player.selectNextColor();
       else if (e.deltaY < 0) this.player.selectPrevColor();
     });
 
-    // Canvas click on ammo HUD
+    // Ammo HUD click
     this.canvas.addEventListener('click', (e) => {
       if (!this.player || this.state !== 'PLAYING') return;
       const rect = this.canvas.getBoundingClientRect();
@@ -162,43 +169,6 @@ class LightWarsGame {
         const clickedIdx = Math.floor((clickX - startX) / slotWidth);
         this.player.selectColorIndex(clickedIdx);
       }
-    });
-
-    // Touch support for mobile / touchpads
-    this.canvas.addEventListener('touchstart', (e) => {
-      window.LightWars.sound.resume();
-      this.touchControls.active = true;
-      const t = e.touches[0];
-      const rect = this.canvas.getBoundingClientRect();
-      this.touchControls.stickStartX = (t.clientX - rect.left) * (this.canvas.width / rect.width);
-      this.touchControls.stickStartY = (t.clientY - rect.top) * (this.canvas.height / rect.height);
-      this.touchControls.stickCurrX = this.touchControls.stickStartX;
-      this.touchControls.stickCurrY = this.touchControls.stickStartY;
-      this.touchControls.stickActive = true;
-      this.handlePlayerShoot();
-    }, { passive: false });
-
-    this.canvas.addEventListener('touchmove', (e) => {
-      if (!this.touchControls.stickActive) return;
-      const t = e.touches[0];
-      const rect = this.canvas.getBoundingClientRect();
-      this.touchControls.stickCurrX = (t.clientX - rect.left) * (this.canvas.width / rect.width);
-      this.touchControls.stickCurrY = (t.clientY - rect.top) * (this.canvas.height / rect.height);
-      const dx = this.touchControls.stickCurrX - this.touchControls.stickStartX;
-      const dy = this.touchControls.stickCurrY - this.touchControls.stickStartY;
-
-      this.input.keys['KeyA'] = dx < -20;
-      this.input.keys['KeyD'] = dx > 20;
-      this.input.keys['KeyW'] = dy < -20;
-      this.input.keys['KeyS'] = dy > 20;
-    }, { passive: false });
-
-    this.canvas.addEventListener('touchend', () => {
-      this.touchControls.stickActive = false;
-      this.input.keys['KeyA'] = false;
-      this.input.keys['KeyD'] = false;
-      this.input.keys['KeyW'] = false;
-      this.input.keys['KeyS'] = false;
     });
   }
 
@@ -238,14 +208,26 @@ class LightWarsGame {
     document.getElementById('levelClearModal').style.display = 'none';
     document.getElementById('gameOverModal').style.display = 'none';
 
-    // Spawn player at White Light
+    // Spawn player at White Light Sanctuary (1352, 1502)
     this.player = new window.LightWars.Player(this.arena.whiteLight.x, this.arena.whiteLight.y);
     this.camera.x = this.player.x;
     this.camera.y = this.player.y;
 
+    // Tactical destructible Barrels along corridors matching Godot layout
+    const barrelPositions = [
+      { x: 2120, y: 1310 },
+      { x: 1900, y: 1800 },
+      { x: 2650, y: 1500 },
+      { x: 2650, y: 1720 },
+      { x: 3200, y: 1580 },
+      { x: 3600, y: 1750 }
+    ];
+    this.barrels = barrelPositions.map(p => new window.LightWars.Barrel(p.x, p.y));
+
     this.enemies = [];
     this.lasers = [];
     this.orbs = [];
+    this.crystals = [];
     this.particles = new window.LightWars.ParticleSystem();
 
     this.waves = new window.LightWars.WaveDirector(this);
@@ -269,7 +251,6 @@ class LightWarsGame {
   handlePlayerShoot() {
     if (this.state !== 'PLAYING' || !this.player || !this.player.alive) return;
 
-    // Refresh world mouse position
     const worldPos = this.camera.screenToWorld(this.input.screenMouseX, this.input.screenMouseY);
     this.input.mouseX = worldPos.x;
     this.input.mouseY = worldPos.y;
@@ -298,22 +279,37 @@ class LightWarsGame {
   update(dt) {
     if (this.state !== 'PLAYING') return;
 
-    // Handle continuous firing when holding mouse button
     if (this.input.isMouseDown) {
       this.handlePlayerShoot();
     }
 
-    // Update Arena
     this.arena.update(dt);
 
-    // Update Player
     if (this.player) {
-      this.player.update(dt, this.input, this.arena);
+      this.player.update(dt, this.input, this.arena, this.barrels);
       if (!this.player.alive) {
         this.onGameOver();
         return;
       }
     }
+
+    // Update Barrels
+    for (const b of this.barrels) {
+      b.update(dt);
+    }
+    this.barrels = this.barrels.filter(b => b.alive);
+
+    // Update Ammo Crystals & Player Collection
+    for (const c of this.crystals) {
+      c.update(dt);
+      if (this.player && this.player.alive) {
+        const dist = Math.hypot(this.player.x - c.x, this.player.y - c.y);
+        if (dist <= c.pickupRadius + this.player.radius) {
+          c.collect(this.player, this);
+        }
+      }
+    }
+    this.crystals = this.crystals.filter(c => c.alive);
 
     // Update Camera
     if (this.player) {
@@ -323,6 +319,8 @@ class LightWarsGame {
     // Update Lasers
     for (let i = this.lasers.length - 1; i >= 0; i--) {
       const laser = this.lasers[i];
+      const prevX = laser.x;
+      const prevY = laser.y;
       laser.update(dt);
 
       if (!laser.alive) {
@@ -330,29 +328,66 @@ class LightWarsGame {
         continue;
       }
 
-      // Check collision with Orbs
+      // 1. Boundary Wall Collision Check
+      if (this.arena.isRayBlocked(prevX, prevY, laser.x, laser.y)) {
+        laser.alive = false;
+        this.particles.spawnBurst(laser.x, laser.y, '#AAAAAA', 8);
+        this.lasers.splice(i, 1);
+        continue;
+      }
+
+      // 2. Destructible Barrel Collision Check
+      let hitBarrel = false;
+      for (const b of this.barrels) {
+        if (!b.alive) continue;
+        const dist = Math.hypot(laser.x - b.x, laser.y - (b.y - 12));
+        if (dist < b.colRadiusX + laser.radius) {
+          hitBarrel = true;
+          laser.alive = false;
+          this.particles.spawnBurst(laser.x, laser.y, '#D2A679', 10);
+          const res = b.takeLaserHit(laser.colorId, laser.angle);
+          if (res.destroyed) {
+            this.particles.spawnComicText(b.x, b.y, 'CRASH!', '#D2A679');
+            if (res.dropColor) {
+              this.spawnOrb(b.x, b.y, res.dropColor);
+            }
+            if (window.LightWars.sound) {
+              window.LightWars.sound.playKaboom();
+            }
+          }
+          break;
+        }
+      }
+      if (hitBarrel) {
+        this.lasers.splice(i, 1);
+        continue;
+      }
+
+      // 3. Collision with Orbs -> Spawn 2 Ammo Crystals!
       let laserConsumed = false;
       for (let j = this.orbs.length - 1; j >= 0; j--) {
         const orb = this.orbs[j];
         if (!orb.alive) continue;
         const d = Math.hypot(laser.x - orb.x, laser.y - orb.y);
-        if (d < orb.radius + laser.radius) {
+        if (d < orb.radius + laser.radius + 6) {
           const res = orb.hitByLaser(laser.colorId);
           if (res.success) {
-            // Orb converted!
-            window.LightWars.sound.playOrbConvert();
-            this.particles.spawnBurst(orb.x, orb.y, window.LightWars.COLORS[res.resultColor].hex, 28);
-            this.particles.spawnComicText(orb.x, orb.y, `+1 ${res.resultColor}!`, window.LightWars.COLORS[res.resultColor].hex);
-
-            // Add ammo to player
-            this.player.addAmmo(res.resultColor, 2);
-            this.waves.onOrbCrafted(orb.colorId, laser.colorId, res.resultColor);
-
             laser.alive = false;
             laserConsumed = true;
+
+            // Audio & comic banner
+            if (window.LightWars.sound) window.LightWars.sound.playOrbConvert();
+            this.particles.spawnBurst(orb.x, orb.y, window.LightWars.COLORS[res.resultColor].hex, 24);
+            this.particles.spawnComicText(orb.x, orb.y, 'CRAFTED!', window.LightWars.COLORS[res.resultColor].hex);
+
+            // Exact User Requirement: Place 2 crystals in the place of the orb for player to collect!
+            this.crystals.push(new window.LightWars.AmmoCrystal(orb.x, orb.y, res.resultColor, -Math.PI / 2));
+            this.crystals.push(new window.LightWars.AmmoCrystal(orb.x, orb.y, res.resultColor, Math.PI / 2));
+
+            this.waves.onOrbCrafted(orb.colorId, laser.colorId, res.resultColor);
             break;
           } else {
-            // Deflected off orb
+            // Deflected off incompatible orb
             this.particles.spawnBurst(laser.x, laser.y, '#FFFFFF', 6);
             laser.alive = false;
             laserConsumed = true;
@@ -366,7 +401,7 @@ class LightWarsGame {
         continue;
       }
 
-      // Check collision with Enemies
+      // 4. Collision with Enemies
       for (let j = this.enemies.length - 1; j >= 0; j--) {
         const enemy = this.enemies[j];
         if (!enemy.alive) continue;
@@ -378,23 +413,19 @@ class LightWarsGame {
           laser.alive = false;
 
           if (outcome.action === 'KILL') {
-            enemy.alive = false;
+            window.LightWars.sound.playKaboom();
             this.camera.shake(9);
-            window.LightWars.sound.playComicDeath();
 
-            // Spawn comic popup word (KAABOOM!, BOOM!, 1CO!)
-            const words = window.LightWars.COMIC_DEATH_WORDS;
-            const comicWord = words[Math.floor(Math.random() * words.length)];
-            this.particles.spawnComicText(enemy.x, enemy.y, comicWord, enemy.colorData.hex);
-            this.particles.spawnBurst(enemy.x, enemy.y, enemy.colorData.hex, 32);
+            this.particles.spawnBurst(enemy.x, enemy.y, window.LightWars.COLORS[enemy.colorId].hex, 28);
+            const deathWord = window.LightWars.COMIC_DEATH_WORDS[Math.floor(Math.random() * window.LightWars.COMIC_DEATH_WORDS.length)];
+            this.particles.spawnComicText(enemy.x, enemy.y, deathWord, window.LightWars.COLORS[enemy.colorId].hex);
 
-            // Check orb drop
-            const dropOrbColor = window.LightWars.ENEMY_ORB_DROPS[enemy.colorId];
-            if (dropOrbColor) {
-              this.spawnOrb(enemy.x, enemy.y, dropOrbColor);
+            // Drop orb: Cyan -> Red, Magenta -> Green, Yellow -> Blue; RGB troops drop nothing!
+            const dropColor = enemy.getOrbDrop();
+            if (dropColor) {
+              this.spawnOrb(enemy.x, enemy.y, dropColor);
             }
 
-            this.enemies.splice(j, 1);
             this.waves.onEnemyDefeated(enemy);
           } else if (outcome.action === 'TRANSFORM') {
             window.LightWars.sound.playTransform();
@@ -402,9 +433,9 @@ class LightWarsGame {
             this.particles.spawnComicText(enemy.x, enemy.y, `➔ ${outcome.target}!`, window.LightWars.COLORS[outcome.target].hex);
             enemy.setColor(outcome.target);
           } else {
-            // Deflected
-            this.particles.spawnBurst(laser.x, laser.y, '#AAAAAA', 6);
-            this.particles.spawnComicText(enemy.x, enemy.y, 'NO EFFECT', '#FFFFFF');
+            // Hit feedback
+            this.particles.spawnBurst(laser.x, laser.y, '#DDDDDD', 6);
+            this.particles.spawnComicText(enemy.x, enemy.y, 'HIT!', '#FFFFFF');
           }
 
           break;
@@ -414,8 +445,9 @@ class LightWarsGame {
 
     // Update Enemies
     for (const enemy of this.enemies) {
-      enemy.update(dt, this.player, this.arena);
+      enemy.update(dt, this.player, this.arena, this.barrels);
     }
+    this.enemies = this.enemies.filter(e => e.alive);
 
     // Update Orbs
     for (let i = this.orbs.length - 1; i >= 0; i--) {
@@ -441,11 +473,11 @@ class LightWarsGame {
     // Apply Camera translation
     this.camera.apply(this.ctx);
 
-    // 1. Draw Arena (Floor, grid, White Light pad, pillars)
+    // 1. Draw 5520x3388 2.5D Dungeon Arena
     this.arena.draw(this.ctx);
 
-    // 2. Y-sorted 2.5D Entities (Player, Enemies, Orbs)
-    const entities = [...this.orbs, ...this.enemies];
+    // 2. Y-sorted 2.5D Entities (Player, Enemies, Barrels, Orbs, Crystals)
+    const entities = [...this.orbs, ...this.crystals, ...this.barrels, ...this.enemies];
     if (this.player) entities.push(this.player);
     entities.sort((a, b) => a.y - b.y);
 
@@ -462,12 +494,12 @@ class LightWarsGame {
       laser.draw(this.ctx);
     }
 
-    // 6. Draw Particles & Comic Text bursts
+    // 4. Draw Particles & Comic Text bursts
     this.particles.draw(this.ctx);
 
     this.camera.restore(this.ctx);
 
-    // 7. Draw HUD (Screenspace)
+    // 5. Draw Screenspace HUD
     this.ui.drawHUD(this.ctx, this.canvas.width, this.canvas.height, this.player, this.waves);
   }
 

@@ -1,14 +1,15 @@
 /**
  * Light-Wars: Player Character Controller
- * 2.5D Brawler hero with RGB laser blasters, dash, and White Light refill.
+ * 2.5D Brawler hero with 8-directional smooth WASD run animations,
+ * RGB laser blasters, dash, and White Light refill.
  */
 
 class Player {
-  constructor(x, y) {
+  constructor(x = 1352, y = 1502) {
     this.x = x;
     this.y = y;
     this.z = 0;
-    this.radius = 26;
+    this.radius = 22;
     this.speed = window.LightWars.GAME_CONFIG.playerSpeed;
     this.alive = true;
 
@@ -48,8 +49,9 @@ class Player {
     // Movement & Animation
     this.vx = 0;
     this.vy = 0;
-    this.walkCycle = 0;
     this.isMoving = false;
+    this.facingDir = 'S';
+    this.walkAnimTime = 0;
     this.refillTimer = 0;
     this.isRefilling = false;
   }
@@ -77,137 +79,155 @@ class Player {
     this.activeColorIndex = (this.activeColorIndex - 1 + this.colorOrder.length) % this.colorOrder.length;
   }
 
-  addAmmo(colorId, amount = 1) {
-    if (this.ammo[colorId] !== undefined) {
-      this.ammo[colorId] = Math.min(this.maxAmmo, this.ammo[colorId] + amount);
-    }
+  hasAmmo(colorId) {
+    return (this.ammo[colorId] || 0) > 0;
   }
 
-  triggerDash(dirX, dirY) {
-    if (this.dashCooldown > 0 || this.isDashing) return;
-
-    let len = Math.hypot(dirX, dirY);
-    if (len < 0.01) {
-      // Dash towards aim angle if no movement keys pressed
-      this.dashDirX = Math.cos(this.aimAngle);
-      this.dashDirY = Math.sin(this.aimAngle);
-    } else {
-      this.dashDirX = dirX / len;
-      this.dashDirY = dirY / len;
+  consumeAmmo(colorId) {
+    if (this.ammo[colorId] > 0) {
+      this.ammo[colorId]--;
+      return true;
     }
+    return false;
+  }
 
-    this.isDashing = true;
-    this.dashTimer = window.LightWars.GAME_CONFIG.playerDashDuration;
-    this.dashCooldown = window.LightWars.GAME_CONFIG.playerDashCooldown;
-    window.LightWars.sound.playDash();
+  addAmmo(colorId, count = 1) {
+    if (this.ammo[colorId] !== undefined) {
+      this.ammo[colorId] = Math.min(this.maxAmmo, this.ammo[colorId] + count);
+    }
   }
 
   shoot(targetX, targetY) {
-    if (this.shootCooldown > 0) return null;
+    if (!this.alive || this.shootCooldown > 0) return null;
 
-    const colorId = this.getActiveColorId();
-    if (this.ammo[colorId] <= 0) {
-      return { failed: true, reason: 'OUT_OF_AMMO', colorId };
+    const activeColor = this.getActiveColorId();
+    if (!this.consumeAmmo(activeColor)) {
+      if (window.LightWars.sound) window.LightWars.sound.playEmpty();
+      return null;
     }
 
-    // Deduct 1 ammo
-    this.ammo[colorId]--;
     this.shootCooldown = window.LightWars.GAME_CONFIG.laserCooldown;
 
-    // Calculate muzzle origin
-    const barrelDist = 32;
-    const muzzleX = this.x + Math.cos(this.aimAngle) * barrelDist;
-    const muzzleY = this.y + Math.sin(this.aimAngle) * barrelDist;
-
+    const angle = Math.atan2(targetY - this.y, targetX - this.x);
     const speed = window.LightWars.GAME_CONFIG.laserSpeed;
-    const vx = Math.cos(this.aimAngle) * speed;
-    const vy = Math.sin(this.aimAngle) * speed;
+    const vx = Math.cos(angle) * speed;
+    const vy = Math.sin(angle) * speed;
 
-    window.LightWars.sound.playLaser(colorId);
+    const spawnDist = 28;
+    const spawnX = this.x + Math.cos(angle) * spawnDist;
+    const spawnY = this.y + Math.sin(angle) * spawnDist;
 
-    return new window.LightWars.Laser(muzzleX, muzzleY, vx, vy, colorId, true);
+    if (window.LightWars.sound) {
+      window.LightWars.sound.playLaserFire(activeColor);
+    }
+
+    return new window.LightWars.Laser(spawnX, spawnY, vx, vy, activeColor, true);
   }
 
-  takeDamage(amount, sourceX, sourceY) {
-    if (this.invulnerableTimer > 0 || this.isDashing) return;
-
+  takeDamage(amount = 1, fromX = 0, fromY = 0) {
+    if (this.invulnerableTimer > 0 || !this.alive) return;
     this.health = Math.max(0, this.health - amount);
     this.invulnerableTimer = 1.0;
-    window.LightWars.sound.playPlayerHurt();
 
     // Knockback
-    const angle = Math.atan2(this.y - sourceY, this.x - sourceX);
-    this.x += Math.cos(angle) * 35;
-    this.y += Math.sin(angle) * 35;
+    if (fromX !== 0 || fromY !== 0) {
+      const angle = Math.atan2(this.y - fromY, this.x - fromX);
+      this.vx = Math.cos(angle) * 380;
+      this.vy = Math.sin(angle) * 380;
+    }
+
+    if (window.LightWars.sound) {
+      window.LightWars.sound.playPlayerHurt();
+    }
 
     if (this.health <= 0) {
       this.alive = false;
     }
   }
 
-  update(dt, input, arena) {
+  update(dt, input, arena, barrels = []) {
     if (!this.alive) return;
 
-    // Timers
-    if (this.shootCooldown > 0) this.shootCooldown -= dt;
     if (this.invulnerableTimer > 0) this.invulnerableTimer -= dt;
+    if (this.shootCooldown > 0) this.shootCooldown -= dt;
     if (this.dashCooldown > 0) this.dashCooldown -= dt;
 
-    // Update aim angle from mouse/reticle
-    const dx = input.mouseX - this.x;
-    const dy = input.mouseY - this.y;
-    this.aimAngle = Math.atan2(dy, dx);
+    // Decay knockback
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
+    this.vx *= Math.pow(0.1, dt);
+    this.vy *= Math.pow(0.1, dt);
+
+    // Aim Angle towards Mouse in World Space
+    this.aimAngle = Math.atan2(input.mouseY - this.y, input.mouseX - this.x);
 
     // Handle Dash
+    if (input.dashRequested && this.dashCooldown <= 0 && !this.isDashing) {
+      input.dashRequested = false;
+      this.isDashing = true;
+      this.dashTimer = window.LightWars.GAME_CONFIG.playerDashDuration;
+      this.dashCooldown = window.LightWars.GAME_CONFIG.playerDashCooldown;
+
+      let dx = 0, dy = 0;
+      if (input.keys['KeyW'] || input.keys['ArrowUp']) dy -= 1;
+      if (input.keys['KeyS'] || input.keys['ArrowDown']) dy += 1;
+      if (input.keys['KeyA'] || input.keys['ArrowLeft']) dx -= 1;
+      if (input.keys['KeyD'] || input.keys['ArrowRight']) dx += 1;
+
+      if (dx === 0 && dy === 0) {
+        dx = Math.cos(this.aimAngle);
+        dy = Math.sin(this.aimAngle);
+      }
+      const len = Math.hypot(dx, dy) || 1;
+      this.dashDirX = dx / len;
+      this.dashDirY = dy / len;
+
+      if (window.LightWars.sound) window.LightWars.sound.playDash();
+    }
+
     if (this.isDashing) {
       this.dashTimer -= dt;
+      const dashSpeed = window.LightWars.GAME_CONFIG.playerDashSpeed;
+      this.x += this.dashDirX * dashSpeed * dt;
+      this.y += this.dashDirY * dashSpeed * dt;
 
-      // Spawn dash ghost trail
-      this.dashGhosts.push({
-        x: this.x,
-        y: this.y,
-        angle: this.aimAngle,
-        alpha: 0.6
-      });
-
-      this.x += this.dashDirX * window.LightWars.GAME_CONFIG.playerDashSpeed * dt;
-      this.y += this.dashDirY * window.LightWars.GAME_CONFIG.playerDashSpeed * dt;
+      // Dash ghost particle
+      if (Math.random() < 0.45) {
+        this.dashGhosts.push({ x: this.x, y: this.y, alpha: 0.7 });
+      }
 
       if (this.dashTimer <= 0) {
         this.isDashing = false;
       }
     } else {
-      // Normal WASD movement
-      let mx = 0;
-      let my = 0;
+      // Normal WASD Movement
+      let mx = 0, my = 0;
       if (input.keys['KeyW'] || input.keys['ArrowUp']) my -= 1;
       if (input.keys['KeyS'] || input.keys['ArrowDown']) my += 1;
       if (input.keys['KeyA'] || input.keys['ArrowLeft']) mx -= 1;
       if (input.keys['KeyD'] || input.keys['ArrowRight']) mx += 1;
 
-      const len = Math.hypot(mx, my);
-      if (len > 0) {
-        this.vx = (mx / len) * this.speed;
-        this.vy = (my / len) * this.speed;
+      if (mx !== 0 || my !== 0) {
+        const len = Math.hypot(mx, my);
+        const normX = mx / len;
+        const normY = my / len;
+        this.x += normX * this.speed * dt;
+        this.y += normY * this.speed * dt;
         this.isMoving = true;
-        this.walkCycle += dt * 10;
+        this.walkAnimTime += dt * 12.0;
+
+        // Face movement direction
+        const moveAngle = Math.atan2(normY, normX);
+        this.facingDir = SpriteManager.getDirection8(moveAngle);
       } else {
-        this.vx = 0;
-        this.vy = 0;
         this.isMoving = false;
-      }
-
-      this.x += this.vx * dt;
-      this.y += this.vy * dt;
-
-      // Dash trigger check
-      if (input.dashRequested) {
-        this.triggerDash(mx, my);
-        input.dashRequested = false;
+        this.walkAnimTime = 0;
+        // When idle, face aim direction
+        this.facingDir = SpriteManager.getDirection8(this.aimAngle);
       }
     }
 
-    // Update dash ghosts
+    // Decay dash ghosts
     for (let i = this.dashGhosts.length - 1; i >= 0; i--) {
       this.dashGhosts[i].alpha -= dt * 3.5;
       if (this.dashGhosts[i].alpha <= 0) {
@@ -215,55 +235,78 @@ class Player {
       }
     }
 
-    // White Light Refill Check
-    this.isRefilling = false;
-    if (arena && arena.whiteLight) {
-      const distToSpawn = Math.hypot(this.x - arena.whiteLight.x, this.y - arena.whiteLight.y);
-      if (distToSpawn <= arena.whiteLight.radius) {
-        // Player is standing in the White Light!
-        const needsRefill = (this.ammo.RED < this.maxAmmo || this.ammo.GREEN < this.maxAmmo || this.ammo.BLUE < this.maxAmmo);
-        if (needsRefill) {
-          this.isRefilling = true;
-          this.refillTimer += dt;
-          if (this.refillTimer >= 0.28) {
-            this.refillTimer = 0;
-            if (this.ammo.RED < this.maxAmmo) this.ammo.RED++;
-            if (this.ammo.GREEN < this.maxAmmo) this.ammo.GREEN++;
-            if (this.ammo.BLUE < this.maxAmmo) this.ammo.BLUE++;
-            window.LightWars.sound.playRefill();
-          }
-        }
+    // 1. Boundary Slab Collision Resolution
+    if (arena && arena.resolveCircleCollision) {
+      const res = arena.resolveCircleCollision(this.x, this.y, this.radius);
+      this.x = res.x;
+      this.y = res.y;
+    }
+
+    // 2. Barrel Barricade Collision Resolution
+    for (const b of barrels) {
+      if (!b.alive) continue;
+      const res = b.resolveCircleCollision(this.x, this.y, this.radius);
+      if (res.collided) {
+        this.x = res.x;
+        this.y = res.y;
       }
     }
 
-    // Keep within arena
-    if (arena) {
-      this.x = Math.max(arena.minX + this.radius, Math.min(arena.maxX - this.radius, this.x));
-      this.y = Math.max(arena.minY + this.radius, Math.min(arena.maxY - this.radius, this.y));
+    // 3. White Light Sanctuary Refill Logic at (1352, 1502)
+    if (arena && arena.whiteLight) {
+      const wl = arena.whiteLight;
+      const dist = Math.hypot(this.x - wl.x, this.y - wl.y);
+      if (dist <= wl.radius) {
+        this.isRefilling = true;
+        this.refillTimer += dt;
+        if (this.refillTimer >= 0.25) {
+          this.refillTimer = 0;
+          let changed = false;
+
+          // Heal HP
+          if (this.health < this.maxHealth) {
+            this.health = Math.min(this.maxHealth, this.health + 1);
+            changed = true;
+          }
+
+          // Refill all 6 laser ammunition types
+          for (const c of this.colorOrder) {
+            if (this.ammo[c] < this.maxAmmo) {
+              this.ammo[c] = Math.min(this.maxAmmo, this.ammo[c] + 1);
+              changed = true;
+            }
+          }
+          if (changed && window.LightWars.sound) {
+            window.LightWars.sound.playLaserFire('WHITE');
+          }
+        }
+      } else {
+        this.isRefilling = false;
+        this.refillTimer = 0;
+      }
     }
   }
 
   draw(ctx, spriteManager) {
     if (!this.alive) return;
 
-    // Draw dash ghost silhouettes
+    // Dash ghost trails
     for (const ghost of this.dashGhosts) {
       ctx.save();
       ctx.translate(ghost.x, ghost.y);
       ctx.globalAlpha = ghost.alpha;
       ctx.fillStyle = 'rgba(0, 240, 255, 0.4)';
       ctx.beginPath();
-      ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, this.radius, this.radius * 0.5, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
 
-    // 2.5D Ground Shadow
-    const shadowScale = 1.0 + (this.isMoving ? Math.sin(this.walkCycle) * 0.08 : 0);
+    // 1. Solid Ground Shadow (anchored directly under feet at local ground position)
     ctx.save();
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.42)';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
     ctx.beginPath();
-    ctx.ellipse(this.x, this.y + this.radius * 0.85, this.radius * 1.1 * shadowScale, this.radius * 0.5 * shadowScale, 0, 0, Math.PI * 2);
+    ctx.ellipse(this.x, this.y, this.radius * 0.9, this.radius * 0.45, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
@@ -272,83 +315,24 @@ class Player {
       return;
     }
 
-    // Bobbing / Walk bounce
-    const bob = this.isMoving ? Math.abs(Math.sin(this.walkCycle)) * 4 : 0;
-    const drawY = this.y - bob;
-
     ctx.save();
-    ctx.translate(this.x, drawY);
+    ctx.translate(this.x, this.y);
 
-    // If custom sprite loaded, allow spriteManager to render
+    // 2. Render Hero Sprite via SpriteManager
     if (spriteManager && spriteManager.drawPlayer(ctx, this)) {
       ctx.restore();
       return;
     }
 
-    // Procedural 2.5D Brawl-Stars Style Brawler Hero
+    // Procedural Fallback
     const activeColor = this.getActiveColorData();
-
-    // Body suit (High-tech combat armor)
-    const bodyGrad = ctx.createRadialGradient(-this.radius * 0.3, -this.radius * 0.3, 2, 0, 0, this.radius);
-    bodyGrad.addColorStop(0, '#FFFFFF');
-    bodyGrad.addColorStop(0.3, '#E8E8FA');
-    bodyGrad.addColorStop(0.8, '#4E5370');
-    bodyGrad.addColorStop(1, '#1A1C29');
-
-    ctx.fillStyle = bodyGrad;
+    ctx.fillStyle = '#FFFFFF';
     ctx.beginPath();
-    ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+    ctx.arc(0, -this.radius * 0.8, this.radius * 0.7, 0, Math.PI * 2);
     ctx.fill();
-
-    // Comic bold outline
-    ctx.lineWidth = 3.5;
-    ctx.strokeStyle = '#12131C';
-    ctx.stroke();
-
-    // Hero visor glowing with selected laser color
-    ctx.save();
-    ctx.rotate(this.aimAngle);
-
-    // Chest / Visor Chromatic Arc
-    ctx.fillStyle = activeColor.hex;
-    ctx.shadowColor = activeColor.hex;
-    ctx.shadowBlur = 10;
-    ctx.beginPath();
-    ctx.roundRect(0, -7, 18, 14, 4);
-    ctx.fill();
-    ctx.lineWidth = 1.5;
-    ctx.strokeStyle = '#FFFFFF';
-    ctx.stroke();
-
-    // Dual Chromatic Laser Blaster Cannons
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = '#26293D';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.5;
     ctx.strokeStyle = '#111';
-
-    // Cannon barrels
-    ctx.beginPath();
-    ctx.roundRect(14, -14, 20, 7, 3);
-    ctx.roundRect(14, 7, 20, 7, 3);
-    ctx.fill();
     ctx.stroke();
-
-    // Cannon glowing tips
-    ctx.fillStyle = activeColor.hex;
-    ctx.shadowColor = activeColor.hex;
-    ctx.shadowBlur = 8;
-    ctx.beginPath();
-    ctx.roundRect(32, -13, 5, 5, 2);
-    ctx.roundRect(32, 8, 5, 5, 2);
-    ctx.fill();
-
-    ctx.restore();
-
-    // Hero helmet crest
-    ctx.fillStyle = '#FFDD00';
-    ctx.beginPath();
-    ctx.arc(0, -this.radius * 0.55, 5, 0, Math.PI * 2);
-    ctx.fill();
 
     ctx.restore();
   }

@@ -1,15 +1,14 @@
 /**
  * Light-Wars: Level 1 Wave Progression Director
- * Introduces Cyan enemies, Red Orb drops, Orb laser crafting, Green enemies, Red enemies, and the full combat loop.
+ * Supports all 8 Phases including Cyan, Magenta, Yellow, Red, Green, Blue troops
+ * and the climactic 6-troop chromatic battle.
  */
 
 class WaveDirector {
   constructor(game) {
     this.game = game;
     this.phase = 1;
-    this.phaseTimer = 0;
     this.cleared = false;
-    this.spawnQueue = [];
     this.enemiesRemainingInPhase = 0;
     this.stats = {
       enemiesKilled: 0,
@@ -27,72 +26,116 @@ class WaveDirector {
   initPhase1() {
     this.phase = 1;
     this.game.ui.setObjective(
-      "PHASE 1: THE CYAN ENCOUNTER",
-      "Press [1] for RED Laser. Red Laser destroys Cyan enemies!"
+      "PHASE 1: CYAN TROOPS INBOUND",
+      "Press [1] for RED Laser. Red Laser annihilates Cyan troops! (Cyan drops RED Orbs)"
     );
-    // Spawn 2 Cyan enemies
-    this.game.spawnEnemy(750, 400, 'CYAN');
-    this.game.spawnEnemy(750, 700, 'CYAN');
+    this.game.spawnEnemy(2180, 1310, 'CYAN');
+    this.game.spawnEnemy(2100, 1750, 'CYAN');
     this.enemiesRemainingInPhase = 2;
   }
 
   initPhase2() {
     this.phase = 2;
     this.game.ui.setObjective(
-      "PHASE 2: MAGENTA TROOP",
-      "Press [2] for GREEN Laser (or craft Magenta via Red Orb + Blue Laser) to defeat Magenta troop!"
+      "PHASE 2: MAGENTA TROOPS ARRIVING",
+      "Press [2] for GREEN Laser to defeat Magenta! (Magenta drops GREEN Orbs)"
     );
-    this.game.spawnEnemy(950, 550, 'MAGENTA');
-    this.enemiesRemainingInPhase = 1;
+    this.game.spawnEnemy(2600, 1420, 'MAGENTA');
+    this.game.spawnEnemy(2550, 1780, 'MAGENTA');
+    this.enemiesRemainingInPhase = 2;
   }
 
   initPhase3() {
     this.phase = 3;
     this.game.ui.setObjective(
-      "PHASE 3: YELLOW TROOP",
-      "Yellow troop approaches! Press [3] for BLUE Laser to eliminate it!"
+      "PHASE 3: YELLOW TROOP INVASION",
+      "Press [3] for BLUE Laser to eliminate Yellow! (Yellow drops BLUE Orbs)"
     );
-    this.game.spawnEnemy(1050, 550, 'YELLOW');
+    this.game.spawnEnemy(3100, 1500, 'YELLOW');
     this.enemiesRemainingInPhase = 1;
   }
 
   initPhase4() {
     this.phase = 4;
     this.game.ui.setObjective(
-      "CLIMAX WAVE: CHROMATIC SHOWDOWN",
-      "Cyan, Magenta, and Yellow troops attack! Use WHITE LIGHT at spawn to recharge RGB ammo!"
+      "PHASE 4: CMY TRIAD BATTLE",
+      "Cyan, Magenta, and Yellow troops attack together! Use the WHITE LIGHT sanctuary to recharge!"
     );
-    // Spawn Cyan, Magenta, Yellow troops
-    this.game.spawnEnemy(850, 320, 'CYAN');
-    this.game.spawnEnemy(1050, 550, 'MAGENTA');
-    this.game.spawnEnemy(900, 720, 'YELLOW');
+    this.game.spawnEnemy(2300, 1350, 'CYAN');
+    this.game.spawnEnemy(2700, 1600, 'MAGENTA');
+    this.game.spawnEnemy(3050, 1650, 'YELLOW');
     this.enemiesRemainingInPhase = 3;
+  }
+
+  initPhase5() {
+    this.phase = 5;
+    this.game.ui.setObjective(
+      "PHASE 5: CRIMSON RED CORPS INBOUND",
+      "Press [4] for CYAN Laser to defeat Red troops! (Red troops drop nothing)"
+    );
+    this.game.spawnEnemy(2350, 1300, 'RED');
+    this.game.spawnEnemy(2400, 1720, 'RED');
+    this.enemiesRemainingInPhase = 2;
+  }
+
+  initPhase6() {
+    this.phase = 6;
+    this.game.ui.setObjective(
+      "PHASE 6: EMERALD GREEN TROOP ASSAULT",
+      "Press [5] for MAGENTA Laser to extinguish Green troops! (Green troops drop nothing)"
+    );
+    this.game.spawnEnemy(2850, 1450, 'GREEN');
+    this.game.spawnEnemy(2950, 1680, 'GREEN');
+    this.enemiesRemainingInPhase = 2;
+  }
+
+  initPhase7() {
+    this.phase = 7;
+    this.game.ui.setObjective(
+      "PHASE 7: COBALT BLUE LEGION ADVANCING",
+      "Press [6] for YELLOW Laser to vanquish Blue troops! (Blue troops drop nothing)"
+    );
+    this.game.spawnEnemy(2700, 1400, 'BLUE');
+    this.game.spawnEnemy(3100, 1600, 'BLUE');
+    this.enemiesRemainingInPhase = 2;
+  }
+
+  initPhase8() {
+    this.phase = 8;
+    this.game.ui.setObjective(
+      "FINAL SHOWDOWN: FULL CHROMATIC WARFARE!",
+      "All 6 troop colors converge! Use your full laser arsenal [1-6] & Sanctuary!"
+    );
+    this.game.spawnEnemy(2200, 1310, 'RED');
+    this.game.spawnEnemy(2150, 1750, 'GREEN');
+    this.game.spawnEnemy(2650, 1450, 'BLUE');
+    this.game.spawnEnemy(2700, 1700, 'CYAN');
+    this.game.spawnEnemy(3150, 1550, 'MAGENTA');
+    this.game.spawnEnemy(3300, 1650, 'YELLOW');
+    this.enemiesRemainingInPhase = 6;
   }
 
   onEnemyDefeated(enemy) {
     this.stats.enemiesKilled++;
     this.enemiesRemainingInPhase = Math.max(0, this.enemiesRemainingInPhase - 1);
 
-    if (this.phase === 1 && this.enemiesRemainingInPhase <= 0) {
-      setTimeout(() => this.initPhase2(), 1000);
-    } else if (this.phase === 2 && this.enemiesRemainingInPhase <= 0) {
-      setTimeout(() => this.initPhase3(), 1000);
-    } else if (this.phase === 3 && this.enemiesRemainingInPhase <= 0) {
-      setTimeout(() => this.initPhase4(), 1200);
-    } else if (this.phase === 4 && this.enemiesRemainingInPhase <= 0) {
-      this.cleared = true;
-      this.game.onLevelComplete();
+    if (this.enemiesRemainingInPhase <= 0) {
+      if (this.phase === 1) setTimeout(() => this.initPhase2(), 1000);
+      else if (this.phase === 2) setTimeout(() => this.initPhase3(), 1000);
+      else if (this.phase === 3) setTimeout(() => this.initPhase4(), 1000);
+      else if (this.phase === 4) setTimeout(() => this.initPhase5(), 1000);
+      else if (this.phase === 5) setTimeout(() => this.initPhase6(), 1000);
+      else if (this.phase === 6) setTimeout(() => this.initPhase7(), 1000);
+      else if (this.phase === 7) setTimeout(() => this.initPhase8(), 1200);
+      else if (this.phase === 8) {
+        this.cleared = true;
+        this.game.onLevelComplete();
+      }
     }
   }
 
   onOrbCrafted(orbColor, laserColor, resultColor) {
     this.stats.orbsCrafted++;
-
-    if ((this.phase === 1 || this.phase === 2) && resultColor === 'MAGENTA') {
-      setTimeout(() => this.initPhase2Combat(), 800);
-    } else if ((this.phase === 2.5 || this.phase === 3) && resultColor === 'CYAN') {
-      setTimeout(() => this.initPhase3Combat(), 800);
-    }
   }
 }
 

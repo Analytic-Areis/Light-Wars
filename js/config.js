@@ -125,13 +125,11 @@ const ENEMY_INTERACTIONS = {
 };
 
 // Enemy death -> Orb drop mapping
+// (Cyan, Magenta, Yellow drop Red, Green, Blue respectively; RGB enemies drop nothing!)
 const ENEMY_ORB_DROPS = {
-  MAGENTA: 'GREEN',
-  YELLOW: 'BLUE',
   CYAN: 'RED',
-  RED: 'CYAN',      // For consistency in higher waves/invert mode
-  GREEN: 'MAGENTA',
-  BLUE: 'YELLOW'
+  MAGENTA: 'GREEN',
+  YELLOW: 'BLUE'
 };
 
 // Orb + Laser Shot -> New Laser Shot Conversion
@@ -145,12 +143,7 @@ const ORB_CONVERSIONS = {
   'RED_BLUE': 'MAGENTA',
   // Blue Orb:
   'BLUE_RED': 'MAGENTA',
-  'BLUE_GREEN': 'CYAN',
-
-  // White laser unlocks (post-Black boss):
-  'RED_CYAN': 'WHITE',
-  'GREEN_MAGENTA': 'WHITE',
-  'BLUE_YELLOW': 'WHITE'
+  'BLUE_GREEN': 'CYAN'
 };
 
 // Comic death words
@@ -158,18 +151,18 @@ const COMIC_DEATH_WORDS = ['KAABOOM!', 'BOOM!', '1CO!', 'POW!', 'ZAP!', 'CRASH!'
 
 // Game Tunings
 const GAME_CONFIG = {
-  arenaWidth: 1600,
-  arenaHeight: 1100,
+  arenaWidth: 5520,
+  arenaHeight: 3388,
   maxAmmoPerType: 6,
-  playerSpeed: 300,
-  playerDashSpeed: 680,
+  playerSpeed: 340,
+  playerDashSpeed: 780,
   playerDashDuration: 0.22,
   playerDashCooldown: 1.2,
   playerMaxHealth: 3,
-  laserSpeed: 750,
+  laserSpeed: 950,
   laserLifetime: 1.4,
   laserCooldown: 0.22,
-  whiteLightRadius: 90,
+  whiteLightRadius: 190,
   refillRate: 1.0 // seconds to fully refill RGB
 };
 
