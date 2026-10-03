@@ -31,6 +31,31 @@ class Enemy {
     this.knockbackVy = 0;
     this.aggroRange = 1200;
     this.attackCooldown = 0;
+    this.shootCooldown = 1.8 + Math.random() * 2.2;
+  }
+
+  shoot(targetX, targetY) {
+    if (!this.alive || this.shootCooldown > 0) return null;
+
+    // Reset slow shooting cooldown: 3.2 to 4.4 seconds (relative to player's 0.28s cooldown)
+    this.shootCooldown = 3.2 + Math.random() * 1.2;
+
+    const angle = Math.atan2(targetY - this.y, targetX - this.x);
+    // Slower dodgeable speed (420 px/s vs player's 820 px/s)
+    const speed = 420;
+    const vx = Math.cos(angle) * speed;
+    const vy = Math.sin(angle) * speed;
+
+    const spawnDist = 26;
+    const spawnX = this.x + Math.cos(angle) * spawnDist;
+    const spawnY = this.y + Math.sin(angle) * spawnDist;
+
+    if (window.LightWars.sound) {
+      window.LightWars.sound.playLaserFire(this.colorId);
+    }
+
+    // Enemy shoots its own color! isPlayer = false
+    return new window.LightWars.Laser(spawnX, spawnY, vx, vy, this.colorId, false);
   }
 
   setColor(newColorId) {
@@ -59,14 +84,22 @@ class Enemy {
     if (this.hurtFlash > 0) this.hurtFlash -= dt * 4;
     if (this.transformPulse > 0) this.transformPulse -= dt * 3;
     if (this.attackCooldown > 0) this.attackCooldown -= dt;
+    if (this.shootCooldown > 0) this.shootCooldown -= dt;
 
-    // AI navigation towards player
+    let firedLaser = null;
+
+    // AI navigation & shooting towards player
     if (player && player.alive) {
       const dx = player.x - this.x;
       const dy = player.y - this.y;
       const dist = Math.hypot(dx, dy);
 
       this.facingAngle = Math.atan2(dy, dx);
+
+      // Shoot slowly at player if within line of sight / engagement range
+      if (dist >= 60 && dist <= 750 && this.shootCooldown <= 0) {
+        firedLaser = this.shoot(player.x, player.y);
+      }
 
       if (dist > 35 && dist < this.aggroRange) {
         const nx = dx / dist;
@@ -109,6 +142,8 @@ class Enemy {
         this.y = res.y;
       }
     }
+
+    return firedLaser;
   }
 
   takeLaserHit(laserColorId, hitAngle) {

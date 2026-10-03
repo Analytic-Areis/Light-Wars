@@ -231,10 +231,75 @@ class LightWarsGame {
     this.state = 'PLAYING';
   }
 
+  getSafeEnemySpawnPos(targetX, targetY) {
+    if (!this.player || !this.arena) return { x: targetX, y: targetY };
+
+    const pGrid = this.arena.toGrid(this.player.x, this.player.y);
+    const sGrid = this.arena.toGrid(targetX, targetY);
+
+    // Exclusion distance: square of at least 3.2 tiles around the player
+    const minTileDist = 3.2;
+    const dx = Math.abs(sGrid.gx - pGrid.gx);
+    const dy = Math.abs(sGrid.gy - pGrid.gy);
+
+    const targetTx = Math.round(sGrid.gx);
+    const targetTy = Math.round(sGrid.gy);
+
+    // If proposed point is already outside the 3-tile square and is a walkable tile, keep it!
+    if ((dx >= minTileDist || dy >= minTileDist) && this.arena.isWalkableTile(targetTx, targetTy)) {
+      return { x: targetX, y: targetY };
+    }
+
+    // Otherwise, find a valid walkable arena tile that is strictly >= 3.2 tiles away from player
+    // Use Chebyshev norm so stepping outward guarantees being outside the 3-tile square
+    let dirGx = sGrid.gx - pGrid.gx;
+    let dirGy = sGrid.gy - pGrid.gy;
+    if (Math.abs(dirGx) < 0.1 && Math.abs(dirGy) < 0.1) {
+      dirGx = 1.0;
+      dirGy = 0.0;
+    }
+    const maxDelta = Math.max(Math.abs(dirGx), Math.abs(dirGy)) || 1.0;
+    const stepGx = dirGx / maxDelta; // Normalized so max component is 1.0
+    const stepGy = dirGy / maxDelta;
+
+    for (let extra = minTileDist; extra <= 14.0; extra += 0.8) {
+      const candGx = Math.round(pGrid.gx + stepGx * extra);
+      const candGy = Math.round(pGrid.gy + stepGy * extra);
+      const cdx = Math.abs(candGx - pGrid.gx);
+      const cdy = Math.abs(candGy - pGrid.gy);
+      if ((cdx >= minTileDist || cdy >= minTileDist) && this.arena.isWalkableTile(candGx, candGy)) {
+        return this.arena.toScreen(candGx, candGy);
+      }
+    }
+
+    // Fallback: search all walkable tiles in the arena outside the 3-tile square
+    let bestDist = Infinity;
+    let bestPos = { x: targetX, y: targetY };
+
+    for (let gx = 2; gx <= 19; gx++) {
+      for (let gy = 2; gy <= 15; gy++) {
+        if (!this.arena.isWalkableTile(gx, gy)) continue;
+        const dTileX = Math.abs(gx - pGrid.gx);
+        const dTileY = Math.abs(gy - pGrid.gy);
+        if (dTileX < minTileDist && dTileY < minTileDist) continue; // Inside 3-tile exclusion square
+
+        const screenPos = this.arena.toScreen(gx, gy);
+        const distToTarget = Math.hypot(screenPos.x - targetX, screenPos.y - targetY);
+        if (distToTarget < bestDist) {
+          bestDist = distToTarget;
+          bestPos = screenPos;
+        }
+      }
+    }
+
+    return bestPos;
+  }
+
   spawnEnemy(x, y, colorId) {
-    const enemy = new window.LightWars.Enemy(x, y, colorId);
+    const safePos = this.getSafeEnemySpawnPos(x, y);
+    const enemy = new window.LightWars.Enemy(safePos.x, safePos.y, colorId);
     this.enemies.push(enemy);
-    this.particles.spawnBurst(x, y, enemy.colorData.hex, 16);
+    this.particles.spawnBurst(safePos.x, safePos.y, enemy.colorData.hex, 16);
   }
 
   spawnOrb(x, y, colorId) {
@@ -300,7 +365,10 @@ class LightWarsGame {
       if (this.player && this.player.alive) {
         const dist = Math.hypot(this.player.x - c.x, this.player.y - c.y);
         if (dist <= c.pickupRadius + this.player.radius) {
-          c.collect(this.player, this);
+          // Cap check: player cannot collect crystal if inventory for that color is at max cap (6)
+          if (this.player.canAddAmmo(c.colorId)) {
+            c.collect(this.player, this);
+          }
         }
       }
     }
@@ -358,89 +426,110 @@ class LightWarsGame {
         continue;
       }
 
-      // 3. Collision with Orbs -> Spawn 2 Ammo Crystals!
-      let laserConsumed = false;
-      for (let j = this.orbs.length - 1; j >= 0; j--) {
-        const orb = this.orbs[j];
-        if (!orb.alive) continue;
-        const d = Math.hypot(laser.x - orb.x, laser.y - orb.y);
-        if (d < (orb.hitRadius || 32)) {
-          const res = orb.hitByLaser(laser.colorId);
-          if (res.success) {
+      // 3. Collision handling based on laser owner
+      if (laser.isPlayer) {
+        // Player Laser: Check collision with Orbs -> Spawn 2 Ammo Crystals!
+        let laserConsumed = false;
+        for (let j = this.orbs.length - 1; j >= 0; j--) {
+          const orb = this.orbs[j];
+          if (!orb.alive) continue;
+          const d = Math.hypot(laser.x - orb.x, laser.y - orb.y);
+          if (d < (orb.hitRadius || 32)) {
+            const res = orb.hitByLaser(laser.colorId);
+            if (res.success) {
+              laser.alive = false;
+              laserConsumed = true;
+
+              // Audio & comic banner
+              if (window.LightWars.sound) window.LightWars.sound.playOrbConvert();
+              this.particles.spawnBurst(orb.x, orb.y, window.LightWars.COLORS[res.resultColor].hex, 24);
+              this.particles.spawnComicText(orb.x, orb.y, 'CRAFTED!', window.LightWars.COLORS[res.resultColor].hex);
+
+              // Exact User Requirement: Place 2 crystals in the place of the orb for player to collect!
+              this.crystals.push(new window.LightWars.AmmoCrystal(orb.x, orb.y, res.resultColor, Math.PI));
+              this.crystals.push(new window.LightWars.AmmoCrystal(orb.x, orb.y, res.resultColor, 0));
+
+              this.waves.onOrbCrafted(orb.colorId, laser.colorId, res.resultColor);
+              break;
+            } else {
+              // Deflected off incompatible orb
+              this.particles.spawnBurst(laser.x, laser.y, '#FFFFFF', 6);
+              laser.alive = false;
+              laserConsumed = true;
+              break;
+            }
+          }
+        }
+
+        if (laserConsumed) {
+          this.lasers.splice(i, 1);
+          continue;
+        }
+
+        // Player Laser: Check collision with Enemies
+        for (let j = this.enemies.length - 1; j >= 0; j--) {
+          const enemy = this.enemies[j];
+          if (!enemy.alive) continue;
+          const d = Math.hypot(laser.x - enemy.x, laser.y - enemy.y);
+          if (d < enemy.radius + laser.radius) {
+            const hitAngle = Math.atan2(enemy.y - laser.y, enemy.x - laser.x);
+            const outcome = enemy.takeLaserHit(laser.colorId, hitAngle);
+
             laser.alive = false;
-            laserConsumed = true;
 
-            // Audio & comic banner
-            if (window.LightWars.sound) window.LightWars.sound.playOrbConvert();
-            this.particles.spawnBurst(orb.x, orb.y, window.LightWars.COLORS[res.resultColor].hex, 24);
-            this.particles.spawnComicText(orb.x, orb.y, 'CRAFTED!', window.LightWars.COLORS[res.resultColor].hex);
+            if (outcome.action === 'KILL') {
+              window.LightWars.sound.playKaboom();
+              this.camera.shake(9);
 
-            // Exact User Requirement: Place 2 crystals in the place of the orb for player to collect!
-            this.crystals.push(new window.LightWars.AmmoCrystal(orb.x, orb.y, res.resultColor, Math.PI));
-            this.crystals.push(new window.LightWars.AmmoCrystal(orb.x, orb.y, res.resultColor, 0));
+              this.particles.spawnBurst(enemy.x, enemy.y, window.LightWars.COLORS[enemy.colorId].hex, 28);
+              const deathWord = window.LightWars.COMIC_DEATH_WORDS[Math.floor(Math.random() * window.LightWars.COMIC_DEATH_WORDS.length)];
+              this.particles.spawnComicText(enemy.x, enemy.y, deathWord, window.LightWars.COLORS[enemy.colorId].hex);
 
-            this.waves.onOrbCrafted(orb.colorId, laser.colorId, res.resultColor);
-            break;
-          } else {
-            // Deflected off incompatible orb
-            this.particles.spawnBurst(laser.x, laser.y, '#FFFFFF', 6);
-            laser.alive = false;
-            laserConsumed = true;
+              // Drop orb: Cyan -> Red, Magenta -> Green, Yellow -> Blue; RGB troops drop nothing!
+              const dropColor = enemy.getOrbDrop();
+              if (dropColor) {
+                this.spawnOrb(enemy.x, enemy.y, dropColor);
+              }
+
+              this.waves.onEnemyDefeated(enemy);
+            } else if (outcome.action === 'TRANSFORM') {
+              window.LightWars.sound.playTransform();
+              this.particles.spawnBurst(enemy.x, enemy.y, window.LightWars.COLORS[outcome.target].hex, 20);
+              this.particles.spawnComicText(enemy.x, enemy.y, `➔ ${outcome.target}!`, window.LightWars.COLORS[outcome.target].hex);
+              enemy.setColor(outcome.target);
+            } else {
+              // Hit feedback
+              this.particles.spawnBurst(laser.x, laser.y, '#DDDDDD', 6);
+              this.particles.spawnComicText(enemy.x, enemy.y, 'HIT!', '#FFFFFF');
+            }
+
             break;
           }
         }
-      }
-
-      if (laserConsumed) {
-        this.lasers.splice(i, 1);
-        continue;
-      }
-
-      // 4. Collision with Enemies
-      for (let j = this.enemies.length - 1; j >= 0; j--) {
-        const enemy = this.enemies[j];
-        if (!enemy.alive) continue;
-        const d = Math.hypot(laser.x - enemy.x, laser.y - enemy.y);
-        if (d < enemy.radius + laser.radius) {
-          const hitAngle = Math.atan2(enemy.y - laser.y, enemy.x - laser.x);
-          const outcome = enemy.takeLaserHit(laser.colorId, hitAngle);
-
-          laser.alive = false;
-
-          if (outcome.action === 'KILL') {
-            window.LightWars.sound.playKaboom();
-            this.camera.shake(9);
-
-            this.particles.spawnBurst(enemy.x, enemy.y, window.LightWars.COLORS[enemy.colorId].hex, 28);
-            const deathWord = window.LightWars.COMIC_DEATH_WORDS[Math.floor(Math.random() * window.LightWars.COMIC_DEATH_WORDS.length)];
-            this.particles.spawnComicText(enemy.x, enemy.y, deathWord, window.LightWars.COLORS[enemy.colorId].hex);
-
-            // Drop orb: Cyan -> Red, Magenta -> Green, Yellow -> Blue; RGB troops drop nothing!
-            const dropColor = enemy.getOrbDrop();
-            if (dropColor) {
-              this.spawnOrb(enemy.x, enemy.y, dropColor);
+      } else {
+        // Enemy Laser: Check collision with Player!
+        if (this.player && this.player.alive) {
+          const d = Math.hypot(laser.x - this.player.x, laser.y - this.player.y);
+          if (d < this.player.radius + laser.radius) {
+            laser.alive = false;
+            this.player.takeDamage(1, laser.x, laser.y);
+            this.camera.shake(5);
+            this.particles.spawnBurst(laser.x, laser.y, window.LightWars.COLORS[laser.colorId].hex, 16);
+            this.particles.spawnComicText(this.player.x, this.player.y, 'ZAP!', '#FF2A4D');
+            if (window.LightWars.sound) {
+              window.LightWars.sound.playPlayerHurt();
             }
-
-            this.waves.onEnemyDefeated(enemy);
-          } else if (outcome.action === 'TRANSFORM') {
-            window.LightWars.sound.playTransform();
-            this.particles.spawnBurst(enemy.x, enemy.y, window.LightWars.COLORS[outcome.target].hex, 20);
-            this.particles.spawnComicText(enemy.x, enemy.y, `➔ ${outcome.target}!`, window.LightWars.COLORS[outcome.target].hex);
-            enemy.setColor(outcome.target);
-          } else {
-            // Hit feedback
-            this.particles.spawnBurst(laser.x, laser.y, '#DDDDDD', 6);
-            this.particles.spawnComicText(enemy.x, enemy.y, 'HIT!', '#FFFFFF');
           }
-
-          break;
         }
       }
     }
 
-    // Update Enemies
+    // Update Enemies & Enemy Shooting
     for (const enemy of this.enemies) {
-      enemy.update(dt, this.player, this.arena, this.barrels);
+      const enemyLaser = enemy.update(dt, this.player, this.arena, this.barrels);
+      if (enemyLaser) {
+        this.lasers.push(enemyLaser);
+      }
     }
     this.enemies = this.enemies.filter(e => e.alive);
 

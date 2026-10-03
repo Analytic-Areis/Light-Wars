@@ -98,6 +98,10 @@ class Player {
     }
   }
 
+  canAddAmmo(colorId) {
+    return (this.ammo[colorId] !== undefined) && (this.ammo[colorId] < this.maxAmmo);
+  }
+
   shoot(targetX, targetY) {
     if (!this.alive || this.shootCooldown > 0) return null;
 

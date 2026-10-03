@@ -25,7 +25,13 @@ class AmmoCrystal {
   }
 
   collect(player, game) {
-    if (this.isCollected || !this.alive) return;
+    if (this.isCollected || !this.alive) return false;
+
+    // Cap check: player cannot collect crystal if inventory of this color is already full
+    if (player && player.canAddAmmo && !player.canAddAmmo(this.colorId)) {
+      return false;
+    }
+
     this.isCollected = true;
     this.alive = false;
 
@@ -40,6 +46,7 @@ class AmmoCrystal {
       game.particles.spawnBurst(this.x, this.y, this.colorData.hex, 16);
       game.particles.spawnComicText(this.x, this.y - 20, `+1 ${this.colorId}!`, this.colorData.hex);
     }
+    return true;
   }
 
   draw(ctx) {
