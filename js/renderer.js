@@ -37,7 +37,14 @@ class SpriteManager {
       for (const d of dirs) {
         // Base / Idle frames
         this.loadSprite(`${charId}_${d}_idle`, `assets/sprites/${charId}/${d}_idle.png`);
-        this.loadSprite(`${charId}_${d}`, `assets/sprites/${charId}/${d}.png`);
+        // Directional idle frames (18 frames for hero idle)
+        if (charId === 'hero') {
+          for (let r = 0; r < 18; r++) {
+            const idleId = `hero_${d}_idle_${r}`;
+            const idlePath = `assets/sprites/hero/${d}_idle_${r}.png`;
+            this.loadSprite(idleId, idlePath);
+          }
+        }
 
         // Directional run frames (Full Luke sprite sheet frames for hero, 8 for troops)
         const frameCount = (charId === 'hero') ? (HERO_FRAME_COUNTS[d] || 8) : 8;
@@ -96,7 +103,9 @@ class SpriteManager {
             this.getSprite(`hero_${dir}`) ||
             this.getSprite('hero_S');
     } else {
-      img = this.getSprite(`hero_${dir}_idle`) ||
+      const idleIdx = Math.floor(player.idleAnimTime) % 18;
+      img = this.getSprite(`hero_${dir}_idle_${idleIdx}`) ||
+            this.getSprite(`hero_${dir}_idle`) ||
             this.getSprite(`hero_${dir}`) ||
             this.getSprite('hero_S');
     }
@@ -299,8 +308,16 @@ class Camera {
     // Clamp camera within arena bounds
     const halfW = this.viewportWidth / 2;
     const halfH = this.viewportHeight / 2;
-    this.x = Math.max(halfW, Math.min(arenaWidth - halfW, this.x));
-    this.y = Math.max(halfH, Math.min(arenaHeight - halfH, this.y));
+    if (this.viewportWidth < arenaWidth) {
+      this.x = Math.max(halfW, Math.min(arenaWidth - halfW, this.x));
+    } else {
+      this.x = arenaWidth / 2;
+    }
+    if (this.viewportHeight < arenaHeight) {
+      this.y = Math.max(halfH, Math.min(arenaHeight - halfH, this.y));
+    } else {
+      this.y = arenaHeight / 2;
+    }
   }
 
   apply(ctx) {

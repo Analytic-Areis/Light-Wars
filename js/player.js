@@ -52,6 +52,7 @@ class Player {
     this.isMoving = false;
     this.facingDir = 'S';
     this.walkAnimTime = 0;
+    this.idleAnimTime = 0;
     this.refillTimer = 0;
     this.isRefilling = false;
   }
@@ -233,6 +234,7 @@ class Player {
 
         this.isMoving = true;
         this.walkAnimTime += dt * 12.0;
+        this.idleAnimTime = 0;
 
         // Face movement direction
         const moveAngle = Math.atan2(normY, normX);
@@ -240,6 +242,7 @@ class Player {
       } else {
         this.isMoving = false;
         this.walkAnimTime = 0;
+        this.idleAnimTime += dt * 10.0;
         // When idle, face aim direction
         this.facingDir = SpriteManager.getDirection8(this.aimAngle);
       }

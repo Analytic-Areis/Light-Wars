@@ -59,24 +59,20 @@ class LightWarsGame {
   initWindow() {
     this.resizeCanvas();
     window.addEventListener('resize', () => this.resizeCanvas());
+    document.addEventListener('fullscreenchange', () => this.resizeCanvas());
   }
 
   resizeCanvas() {
-    // Keep 1280x720 internal aspect ratio while scaling gracefully to viewport
-    const aspect = 1280 / 720;
-    const windowWidth = window.innerWidth;
-    const windowHeight = window.innerHeight;
-
-    let targetWidth = windowWidth;
-    let targetHeight = windowWidth / aspect;
-
-    if (targetHeight > windowHeight) {
-      targetHeight = windowHeight;
-      targetWidth = windowHeight * aspect;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    this.canvas.width = w;
+    this.canvas.height = h;
+    this.canvas.style.width = `${w}px`;
+    this.canvas.style.height = `${h}px`;
+    if (this.camera) {
+      this.camera.viewportWidth = w;
+      this.camera.viewportHeight = h;
     }
-
-    this.canvas.style.width = `${Math.floor(targetWidth)}px`;
-    this.canvas.style.height = `${Math.floor(targetHeight)}px`;
   }
 
   bindEvents() {
@@ -102,6 +98,13 @@ class LightWarsGame {
       }
       if (e.code === 'KeyM') {
         window.LightWars.sound.toggleMute();
+      }
+      if (e.code === 'KeyF') {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        } else {
+          document.exitFullscreen().catch(() => {});
+        }
       }
       if (e.code === 'KeyP' && (this.state === 'PLAYING' || this.state === 'PAUSED')) {
         this.state = (this.state === 'PLAYING') ? 'PAUSED' : 'PLAYING';
@@ -213,16 +216,8 @@ class LightWarsGame {
     this.camera.x = this.player.x;
     this.camera.y = this.player.y;
 
-    // Tactical destructible Barrels along corridors matching Godot layout
-    const barrelPositions = [
-      { x: 2120, y: 1310 },
-      { x: 1900, y: 1800 },
-      { x: 2650, y: 1500 },
-      { x: 2650, y: 1720 },
-      { x: 3200, y: 1580 },
-      { x: 3600, y: 1750 }
-    ];
-    this.barrels = barrelPositions.map(p => new window.LightWars.Barrel(p.x, p.y));
+    // Open arena floor without obstacles
+    this.barrels = [];
 
     this.enemies = [];
     this.lasers = [];

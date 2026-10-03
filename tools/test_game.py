@@ -14,7 +14,7 @@ def run_test():
         '--remote-allow-origins=*',
         '--no-sandbox',
         '--disable-gpu',
-        '--window-size=1280,720',
+        '--window-size=1920,1080',
         'http://127.0.0.1:8000/'
     ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
@@ -62,74 +62,104 @@ def run_test():
                 window.game.startLevel1();
                 return {
                     state: window.game.state,
-                    orbsCount: window.game.orbs.length,
-                    playerAmmo: window.game.player.ammo,
+                    canvasWidth: window.game.canvas.width,
+                    canvasHeight: window.game.canvas.height,
+                    viewportWidth: window.game.camera.viewportWidth,
+                    viewportHeight: window.game.camera.viewportHeight,
+                    barrelsCount: window.game.barrels.length,
                     playerPos: { x: window.game.player.x, y: window.game.player.y }
                 };
             })()
         ''', 200)
-        print("1. Level 1 Started:", json.dumps(res_start, indent=2))
+        print("1. Level 1 Started & Fullscreen Window Test:", json.dumps(res_start, indent=2))
 
-        time.sleep(1.5)
+        time.sleep(1.0)
 
-        # 2. Check Sprites
+        # 2. Check Sprites & Idle Frames
         res_sprites = eval_js('''
             (function() {
                 const sm = window.game.spriteManager;
-                const heroSprites = Object.keys(sm.sprites).filter(k => k.startsWith('hero_'));
+                const heroIdleSprites = Object.keys(sm.sprites).filter(k => k.startsWith('hero_') && k.includes('_idle_'));
+                const p = window.game.player;
+                const initialIdle = p.idleAnimTime;
+                // Simulate stationary update
+                p.update(0.5, { keys: {} }, window.game.arena);
+                const afterIdle = p.idleAnimTime;
                 return {
-                    totalSpritesLoaded: Object.keys(sm.sprites).length,
-                    heroSpritesLoaded: heroSprites.length,
-                    sampleHeroSprites: heroSprites.slice(0, 8)
+                    heroIdleFramesLoaded: heroIdleSprites.length,
+                    sampleIdleSprites: heroIdleSprites.slice(0, 8),
+                    initialIdleTime: initialIdle,
+                    afterIdleTime: afterIdle,
+                    idleAdvancing: afterIdle > initialIdle
                 };
             })()
         ''', 300)
-        print("2. Sprites Info:", json.dumps(res_sprites, indent=2))
+        print("2. Idle Sprites & Animation Test:", json.dumps(res_sprites, indent=2))
 
-        # 3. Crystal & Ammo Mechanics
-        res_crystal = eval_js('''
+        # 3. Free Movement Across Floor Test (WASD)
+        res_movement = eval_js('''
             (function() {
                 const p = window.game.player;
-                const initialYellow = p.ammo.YELLOW;
-                const crystal1 = new window.LightWars.AmmoCrystal(p.x, p.y, 'YELLOW', 0);
-                crystal1.collect(p, window.game);
-                const after1 = p.ammo.YELLOW;
-                
-                const crystal2 = new window.LightWars.AmmoCrystal(p.x, p.y, 'YELLOW', 0);
-                crystal2.collect(p, window.game);
-                const after2 = p.ammo.YELLOW;
+                const startPos = { x: p.x, y: p.y };
+                // Move Right (D)
+                for (let i = 0; i < 10; i++) {
+                    p.update(0.1, { keys: { 'KeyD': true } }, window.game.arena);
+                }
+                const posAfterD = { x: p.x, y: p.y };
+                // Move Up (W)
+                for (let i = 0; i < 10; i++) {
+                    p.update(0.1, { keys: { 'KeyW': true } }, window.game.arena);
+                }
+                const posAfterW = { x: p.x, y: p.y };
 
                 return {
-                    initialYellow,
-                    after1stCrystal: after1,
-                    after2ndCrystal: after2,
-                    strictlyPlusOne: (after1 === initialYellow + 1) && (after2 === initialYellow + 2)
+                    startPos,
+                    posAfterD,
+                    posAfterW,
+                    movedX: Math.abs(posAfterD.x - startPos.x) > 50,
+                    movedY: Math.abs(posAfterW.y - posAfterD.y) > 50
                 };
             })()
         ''', 400)
-        print("3. Crystal Mechanics Test:", json.dumps(res_crystal, indent=2))
+        print("3. Free Movement Test:", json.dumps(res_movement, indent=2))
 
-        # 4. Recharge Station Check
-        res_station = eval_js('''
+        # 4. Perimeter Border Clamping Test (Attempt to walk out of map)
+        res_border = eval_js('''
             (function() {
                 const p = window.game.player;
-                p.x = 1352;
-                p.y = 1502;
-                for (let i = 0; i < 4; i++) {
-                    p.update(0.3, { keys: {} }, window.game.arena);
+                // Move aggressively towards the North-West border
+                for (let i = 0; i < 100; i++) {
+                    p.update(0.1, { keys: { 'KeyA': true, 'KeyW': true } }, window.game.arena);
                 }
+                const gridPos = window.game.arena.toGrid(p.x, p.y);
+                const isInsideWalkable = window.game.arena.isWalkableTile(Math.round(gridPos.gx), Math.round(gridPos.gy));
                 return {
-                    yellowAfterRechargeStation: p.ammo.YELLOW,
-                    redAmmo: p.ammo.RED,
-                    greenAmmo: p.ammo.GREEN,
-                    blueAmmo: p.ammo.BLUE,
-                    craftedAmmoPreserved: p.ammo.YELLOW === 2
+                    finalPlayerX: p.x,
+                    finalPlayerY: p.y,
+                    gridGx: gridPos.gx,
+                    gridGy: gridPos.gy,
+                    isInsideWalkable,
+                    stoppedAtBorder: gridPos.gx >= 0.5 && gridPos.gy >= 0.5
                 };
             })()
         ''', 500)
-        print("4. Recharge Station Check:", json.dumps(res_station, indent=2))
+        print("4. Border Clamping Test:", json.dumps(res_border, indent=2))
 
-        # 5. Screenshot
+        # Reset player to center of arena for the screenshot
+        eval_js('''
+            (function() {
+                window.game.player.x = 2650;
+                window.game.player.y = 1550;
+                window.game.camera.x = 2650;
+                window.game.camera.y = 1550;
+                window.game.player.facingDir = 'S';
+                window.game.player.idleAnimTime = 0;
+            })()
+        ''', 550)
+
+        time.sleep(0.5)
+
+        # 5. Capture Live In-Game Screenshot
         ws.send(json.dumps({'id': 600, 'method': 'Page.captureScreenshot'}))
         while True:
             resp = json.loads(ws.recv())
@@ -137,7 +167,7 @@ def run_test():
                 raw = base64.b64decode(resp['result']['data'])
                 with open('/home/srihith/.gemini/antigravity/brain/3e8c8e7e-a139-40cb-ba88-487ed13a12f9/game_live_screenshot.png', 'wb') as f:
                     f.write(raw)
-                print("5. Live screenshot saved!")
+                print("5. Live screenshot saved to game_live_screenshot.png!")
                 break
 
         ws.close()

@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 """
-Generate the 2.5D Lunar Dungeon Pathway Map using the Lunar Tileset (best.zip)
-and Lunar Props (Lander, Solar Panels, Satellite Dish, Craters, Moon Rocks).
-Integrates:
-- Seamless flat lunar diamond tiles for all walkable pathways
-- Perimeter curb trims and monolithic basalt pillars defining borders clearly
-- Authentic Lunar Lander, Solar Panels & Satellite Dish at the Recharge Station
-- Clean, non-distracting Recharge Station aesthetic
+Generate the 2.5D Lunar Arena Map using the Lunar Tileset (best.zip)
+Features:
+- Seamless solid flat lunar diamond floor across the entire arena (NO holes, NO internal obstacles)
+- Continuous enclosing perimeter walls: tall stone walls on North & West borders,
+  low protective balustrades on South & East borders
+- Clean Recharge Station at (1352, 1502) with sci-fi holographic energy ring
+- Props safely stationed outside the playable floor
 """
 
 import os
 import random
 import json
-import glob
 from PIL import Image, ImageDraw, ImageFilter
 
 ASSET_DIR = "assets/isometric_dungeon/Isometric"
@@ -39,7 +38,6 @@ def main():
 
     TW = 256
     TH = 128
-    TILE_H = 512
 
     min_sx = -(ROWS) * (TW // 2)
     max_sx = (COLS) * (TW // 2)
@@ -67,85 +65,33 @@ def main():
     else:
         f_stone = None
 
-    # Walls for back borders (North/West)
+    # Walls for borders
     w_n = load_img("stoneWall_N")
-    w_w = load_img("stoneWall_W")
-    if w_n:
-        wa = w_n.split()[3]
-        tint = Image.new("RGBA", w_n.size, (60, 66, 85, 255))
-        w_n = Image.blend(w_n, tint, 0.5)
-        w_n.putalpha(wa)
-    if w_w:
-        wa = w_w.split()[3]
-        tint = Image.new("RGBA", w_w.size, (60, 66, 85, 255))
-        w_w = Image.blend(w_w, tint, 0.5)
-        w_w.putalpha(wa)
+    w_corner = load_img("stoneWallCorner_N")
+    w_half_s = load_img("stoneWallHalf_S")
+
+    def tint_wall(w):
+        if not w: return None
+        wa = w.split()[3]
+        tint = Image.new("RGBA", w.size, (60, 66, 85, 255))
+        tw = Image.blend(w, tint, 0.5)
+        tw.putalpha(wa)
+        return tw
+
+    w_n = tint_wall(w_n)
+    w_w = w_n.transpose(Image.FLIP_LEFT_RIGHT) if w_n else None
+    w_corner = tint_wall(w_corner)
+    w_half_s = tint_wall(w_half_s)
+    w_half_e = w_half_s.transpose(Image.FLIP_LEFT_RIGHT) if w_half_s else None
 
     # 2. Seamless Flat Lunar Floor Tile
     flat_tile_path = os.path.join(LUNAR_TILE_DIR, "GroundTile-pure-flat.png")
     flat_tile = Image.open(flat_tile_path).convert("RGBA").resize((256, 134), Image.Resampling.LANCZOS)
 
-    # 3. Perimeter Curb Tiles
-    curb_n = Image.open(os.path.join(LUNAR_TILE_DIR, "GroundTile-3_0.png")).convert("RGBA").resize((256, 134), Image.Resampling.LANCZOS)
-    curb_s = Image.open(os.path.join(LUNAR_TILE_DIR, "GroundTile-3_2.png")).convert("RGBA").resize((256, 134), Image.Resampling.LANCZOS)
-
-    # 4. Basalt Rock Props
-    rock_props = [
-        load_prop("Rock-8_0"),
-        load_prop("Rock-8_1"),
-        load_prop("Rock-4_0"),
-        load_prop("Rock-7_0"),
-        load_prop("Rock-6_0"),
-        load_prop("Rock-11_0"),
-        load_prop("Rock-12_0"),
-    ]
-    rock_props = [r for r in rock_props if r is not None]
-
-    # 5. Define Walkable Grid (identical to current smooth collision grid)
+    # 3. Define Walkable Grid: Solid, open 20x16 arena with zero holes
     walkable = set()
-
-    # Room 1: Sanctuary Bastion (centered around player spawn gx=3.5, gy=13.5)
-    for x in range(2, 6):
-        for y in range(12, 16):
-            walkable.add((x, y))
-    for pt in [(1, 13), (1, 14), (6, 13), (6, 14), (3, 11), (4, 11), (3, 16), (4, 16)]:
-        walkable.add(pt)
-
-    # Route A: North Flank Corridor (spacious 3-4 tiles wide)
-    for x in range(3, 6):
-        for y in range(7, 12):
-            walkable.add((x, y))
-    for x in range(5, 11):
-        for y in range(5, 9):
-            walkable.add((x, y))
-
-    # Route B: South Bastion Corridor (spacious 3-4 tiles wide)
-    for x in range(6, 10):
-        for y in range(13, 17):
-            walkable.add((x, y))
-    for x in range(8, 13):
-        for y in range(12, 16):
-            walkable.add((x, y))
-    for x in range(10, 14):
-        for y in range(9, 13):
-            walkable.add((x, y))
-
-    # Room 2: Central Crossroads (spacious junction hall)
-    for x in range(10, 16):
-        for y in range(6, 11):
-            walkable.add((x, y))
-
-    # East Corridor
-    for x in range(14, 18):
-        for y in range(5, 9):
-            walkable.add((x, y))
-
-    # Room 3: Overlord Arena / Northern Bastion
-    for x in range(16, 21):
-        for y in range(2, 6):
-            walkable.add((x, y))
-    for x in range(17, 21):
-        for y in range(1, 3):
+    for x in range(1, 21):
+        for y in range(1, 17):
             walkable.add((x, y))
 
     def grid_to_screen(gx, gy, z=0):
@@ -157,11 +103,11 @@ def main():
         diamond_cy = sy + TH // 2 - (z * 78)
         return draw_x, draw_y, diamond_cx, diamond_cy
 
-    # 6. Canvas Initialization (Deep Lunar Space Void Background)
+    # 4. Canvas Initialization (Deep Lunar Space Void Background)
     canvas = Image.new("RGBA", (canvas_w, canvas_h), (8, 9, 14, 255))
     star_layer = Image.new("RGBA", (canvas_w, canvas_h), (0, 0, 0, 0))
     s_draw = ImageDraw.Draw(star_layer)
-    for _ in range(400):
+    for _ in range(500):
         sx = random.randint(0, canvas_w - 1)
         sy = random.randint(0, canvas_h - 1)
         sr = random.randint(1, 2)
@@ -169,66 +115,45 @@ def main():
         s_draw.ellipse([sx - sr, sy - sr, sx + sr, sy + sr], fill=(200, 225, 255, sa))
     canvas = Image.alpha_composite(canvas, star_layer)
 
-    # 7. Render Central Chasm craters & abyss backdrop
-    crater_1 = load_prop("Crater-4_0")
-    if crater_1:
-        c_sx, c_sy = 2050, 1550
-        c_scaled = crater_1.resize((int(crater_1.width * 0.8), int(crater_1.height * 0.8)))
-        canvas.paste(c_scaled, (c_sx, c_sy), c_scaled)
-
     all_coords = sorted(list(walkable), key=lambda c: (c[0] + c[1], c[1]))
 
-    # Base blocks
+    # Step 1: Base foundation blocks
     for gx, gy in all_coords:
         draw_x, draw_y, _, _ = grid_to_screen(gx, gy, 0)
         if f_stone:
             canvas.paste(f_stone, (draw_x, draw_y), f_stone)
 
-    # Back Walls on North/West boundaries
-    for gx, gy in all_coords:
-        draw_x, draw_y, _, _ = grid_to_screen(gx, gy, 0)
-        if (gx, gy - 1) not in walkable and w_n:
-            canvas.paste(w_n, (draw_x, draw_y), w_n)
-        elif (gx - 1, gy) not in walkable and w_w:
-            canvas.paste(w_w, (draw_x, draw_y), w_w)
-
-    # Seamless Lunar Diamond Surface Tiles (Placed ON TOP so lunar floor is 100% pristine)
+    # Step 2: Seamless Lunar Diamond Surface Tiles
     for gx, gy in all_coords:
         draw_x, draw_y, _, _ = grid_to_screen(gx, gy, 0)
         sx = draw_x
         sy = draw_y + 308
         canvas.paste(flat_tile, (sx, sy), flat_tile)
 
-    # 10. Basalt Rock Pillars on Perimeter Non-Walkable Points (behind walls or in chasm)
-    chasm_rocks = [
-        (7, 9), (8, 9), (9, 9),
-        (7, 10), (8, 10), (9, 10)
-    ]
-    rock_rand = random.Random(42)
-    for cx, cy in chasm_rocks:
-        _, _, dcx, dcy = grid_to_screen(cx, cy, 0)
-        rock = rock_rand.choice(rock_props)
-        rx = int(dcx - rock.width / 2)
-        ry = int(dcy - rock.height / 2)
-        canvas.paste(rock, (rx, ry), rock)
+    # Step 3: Perimeter Walls along Borders
+    for gx, gy in all_coords:
+        draw_x, draw_y, _, _ = grid_to_screen(gx, gy, 0)
+        # North-West Corner
+        if gx == 1 and gy == 1:
+            if w_corner:
+                canvas.paste(w_corner, (draw_x, draw_y), w_corner)
+            elif w_n:
+                canvas.paste(w_n, (draw_x, draw_y), w_n)
+        # North Border Wall
+        elif gy == 1 and w_n:
+            canvas.paste(w_n, (draw_x, draw_y), w_n)
+        # West Border Wall
+        elif gx == 1 and w_w:
+            canvas.paste(w_w, (draw_x, draw_y), w_w)
 
-    # 11. Lunar Lander & Solar Array at the edge of the Recharge Station Bastion
-    lander = load_prop("Lander_0")
-    if lander:
-        lw = int(lander.width * 0.72)
-        lh = int(lander.height * 0.72)
-        lander_scaled = lander.resize((lw, lh), Image.Resampling.LANCZOS)
-        canvas.paste(lander_scaled, (1265, 1180), lander_scaled)
+        # South Border Balustrade
+        if gy == 16 and w_half_s:
+            canvas.paste(w_half_s, (draw_x, draw_y), w_half_s)
+        # East Border Balustrade
+        if gx == 20 and w_half_e:
+            canvas.paste(w_half_e, (draw_x, draw_y), w_half_e)
 
-    solar = load_prop("SolarPanel_0")
-    if solar:
-        canvas.paste(solar, (1130, 1430), solar)
-
-    dish = load_prop("SatelliteDish_0")
-    if dish:
-        canvas.paste(dish, (1550, 1370), dish)
-
-    # 12. Clean Sci-Fi Recharge Station Holographic Ring on Floor at (1352, 1502)
+    # 5. Clean Sci-Fi Recharge Station Holographic Ring on Floor at (1352, 1502)
     spawn_gx, spawn_gy = 3.5, 13.5
     sp_sx = int((spawn_gx - spawn_gy) * (TW / 2) + origin_x + TW // 2)
     sp_sy = int((spawn_gx + spawn_gy) * (TH / 2) + origin_y + TH // 2)
@@ -272,65 +197,40 @@ def main():
     )
     canvas = Image.alpha_composite(canvas, rune_layer)
 
-    # 13. Boundaries (Solid Convex Polygon Slabs)
-    boundaries = []
-    for gx, gy in all_coords:
-        _, _, dcx, dcy = grid_to_screen(gx, gy, 0)
-        if (gx, gy - 1) not in walkable:
-            boundaries.append({
-                "poly": [
-                    {"x": dcx, "y": dcy - 64},
-                    {"x": dcx + 128, "y": dcy},
-                    {"x": dcx + 128 + 32, "y": dcy - 64},
-                    {"x": dcx + 32, "y": dcy - 128}
-                ]
-            })
-        if (gx + 1, gy) not in walkable:
-            boundaries.append({
-                "poly": [
-                    {"x": dcx + 128, "y": dcy},
-                    {"x": dcx, "y": dcy + 64},
-                    {"x": dcx + 64, "y": dcy + 64 + 32},
-                    {"x": dcx + 128 + 64, "y": dcy + 32}
-                ]
-            })
-        if (gx, gy + 1) not in walkable:
-            boundaries.append({
-                "poly": [
-                    {"x": dcx, "y": dcy + 64},
-                    {"x": dcx - 128, "y": dcy},
-                    {"x": dcx - 128 - 32, "y": dcy + 64},
-                    {"x": dcx - 32, "y": dcy + 128}
-                ]
-            })
-        if (gx - 1, gy) not in walkable:
-            boundaries.append({
-                "poly": [
-                    {"x": dcx - 128, "y": dcy},
-                    {"x": dcx, "y": dcy - 64},
-                    {"x": dcx - 64, "y": dcy - 64 - 32},
-                    {"x": dcx - 128 - 64, "y": dcy - 32}
-                ]
-            })
+    # 6. Props stationed cleanly OUTSIDE the playable arena
+    lander = load_prop("Lander_0")
+    if lander:
+        lw = int(lander.width * 0.7)
+        lh = int(lander.height * 0.7)
+        lander_scaled = lander.resize((lw, lh), Image.Resampling.LANCZOS)
+        canvas.paste(lander_scaled, (480, 1300), lander_scaled)
 
-    # 14. Subtle Ambient Cyan Sci-Fi Glow on Walls
+    solar = load_prop("SolarPanel_0")
+    if solar:
+        canvas.paste(solar, (420, 1500), solar)
+
+    dish = load_prop("SatelliteDish_0")
+    if dish:
+        canvas.paste(dish, (560, 1620), dish)
+
+    # 7. Subtle Ambient Cyan Sci-Fi Glow along North/West Walls
     glow_layer = Image.new("RGBA", (canvas_w, canvas_h), (0, 0, 0, 0))
     g_draw = ImageDraw.Draw(glow_layer)
     glow_points = [
-        (4, 7), (8, 5), (14, 6), (20, 2),
-        (7, 13), (12, 12), (18, 5)
+        (4, 1), (8, 1), (12, 1), (16, 1), (20, 1),
+        (1, 4), (1, 8), (1, 12), (1, 16)
     ]
     for tgx, tgy in glow_points:
         _, _, tcx, tcy = grid_to_screen(tgx, tgy, 0)
         ty = tcy - 110
-        g_draw.ellipse([tcx - 130, ty - 80, tcx + 130, ty + 80], fill=(0, 240, 255, 30))
-        g_draw.ellipse([tcx - 65, ty - 40, tcx + 65, ty + 40], fill=(0, 255, 255, 55))
-        g_draw.ellipse([tcx - 14, ty - 10, tcx + 14, ty + 10], fill=(220, 255, 255, 140))
+        g_draw.ellipse([tcx - 120, ty - 70, tcx + 120, ty + 70], fill=(0, 240, 255, 25))
+        g_draw.ellipse([tcx - 60, ty - 35, tcx + 60, ty + 35], fill=(0, 255, 255, 45))
+        g_draw.ellipse([tcx - 14, ty - 10, tcx + 14, ty + 10], fill=(220, 255, 255, 120))
 
     glow_layer = glow_layer.filter(ImageFilter.GaussianBlur(radius=15))
     canvas = Image.alpha_composite(canvas, glow_layer)
 
-    # 15. Save Map Textures & Map Data
+    # 8. Save Map Textures & Map Data
     out_floor = "assets/textures/dungeon_floor.png"
     out_png = "assets/textures/dungeon_arena.png"
     out_jpg = "assets/textures/arena_map.jpg"
@@ -352,7 +252,6 @@ def main():
             "radius": 190
         },
         "obstacles": [],
-        "boundary_slabs": boundaries,
         "walkable_tiles": list(walkable),
         "origin_x": origin_x,
         "origin_y": origin_y
@@ -364,8 +263,9 @@ def main():
         f.write("window.LightWars = window.LightWars || {};\n")
         f.write(f"window.LightWars.DUNGEON_MAP_DATA = {json.dumps(map_data)};\n")
 
-    print(f"Generated 2.5D Lunar Arena Map successfully!")
-    print(f"Floor size: {canvas.size}, boundary slabs: {len(boundaries)}")
+    print(f"Generated 2.5D Solid Lunar Arena Map successfully!")
+    print(f"Total walkable tiles: {len(walkable)} (No holes, no obstacles)")
+    print(f"Floor size: {canvas.size}")
     print(f"Recharge Station at ({sp_sx}, {sp_sy})")
 
 if __name__ == "__main__":
