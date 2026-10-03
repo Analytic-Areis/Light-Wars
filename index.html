@@ -10,69 +10,160 @@
   <div id="gameContainer">
     <canvas id="gameCanvas" width="1280" height="720"></canvas>
 
-    <!-- Comic-Strip Level Menu Overlay -->
+    <!-- Star Wars Authentic Comic-Strip Level Menu Overlay -->
     <div id="comicMenu" class="comic-menu-overlay">
-      <div class="comic-header">
-        <div class="comic-issue-tag">ISSUE #1 &bull; CHROMATIC ORIGINS</div>
-        <h1 class="comic-title">LIGHT-WARS</h1>
+      <!-- Comic Header Strip (Star Wars 1970s Marvel style) -->
+      <div class="sw-comic-header">
+        <div class="sw-comic-corner-box">
+          <div class="corner-brand">LIGHT-WARS</div>
+          <div class="corner-issue">#1</div>
+          <div class="corner-price">35¢</div>
+        </div>
+
+        <div class="sw-comic-title-wrap">
+          <div class="sw-comic-subtitle">A SPECTRUM ODYSSEY IN WAVELENGTH WARFARE</div>
+          <h1 class="sw-comic-title">LIGHT-WARS</h1>
+        </div>
+
+        <div class="sw-comic-page-tracker">
+          <span class="page-badge current">PAGE 01</span>
+          <span class="page-badge locked" id="page2TeaserBadge">PAGE 02 🔒</span>
+        </div>
       </div>
 
-      <!-- Comic Strip Panels Row -->
-      <div class="comic-strip-container">
-        <!-- Panel 1: Active Playable Level 1 -->
-        <div class="comic-panel active">
-          <div class="panel-tag">PANEL 01</div>
-          <div class="panel-art" style="background: radial-gradient(circle, #00F0FF33 0%, #0E1220 80%);">
-            <span class="level-art-icon">💥</span>
+      <!-- Comic Book Page 1 (The 5-Box Strip matching uploaded template) -->
+      <div class="sw-comic-page" id="comicPage1">
+        <!-- Row 1: Level 1 Story & Action -->
+        <div class="comic-row row-1">
+          <!-- Box 1: Episode 1 Story / Rebel Luke -->
+          <div class="comic-box box-1" id="comicBox1">
+            <div class="comic-box-bg" style="background-image: url('assets/comic_panels/panel_1_bg.png');"></div>
+            <div class="comic-caption-box top">
+              <span class="comic-chapter-tag">EPISODE I</span>
+              <span class="comic-caption-text">A SPECTRUM FAR, FAR AWAY...</span>
+            </div>
+            <div class="box-art-wrap">
+              <img src="assets/comic_art/luke_cutout.png" alt="Luke Commando" class="panel-char-img luke-img">
+            </div>
+            <div class="comic-sfx sfx-yellow">STANDBY!</div>
+            <div class="comic-caption-box bottom">
+              <p>DEFENDER OF THE WHITE LIGHT RECHARGE SANCTUARY!</p>
+            </div>
           </div>
-          <h2 class="panel-title">FIRST STRIKE</h2>
-          <p class="panel-desc">
-            Cyan enemies prowl the arena. Master RGB laser shifts, craft Magenta & Cyan ammo via Orbs, and return to the White Light to recharge!
-          </p>
-          <button id="startLevel1Btn" class="comic-btn">PLAY LEVEL 1</button>
+
+          <!-- Box 2: Mission 01 First Strike (Playable Level 1) -->
+          <div class="comic-box box-2 active-mission-box" id="comicBox2">
+            <div class="comic-box-bg" style="background-image: url('assets/comic_panels/panel_2_bg.png');"></div>
+            <div class="comic-caption-box top mission-header">
+              <span class="comic-mission-pill">MISSION 01</span>
+              <span class="comic-mission-name">FIRST STRIKE</span>
+              <span class="comic-status-pill ready">READY</span>
+            </div>
+            
+            <div class="box-art-wrap">
+              <img src="assets/comic_art/cyan_combat_cutout.png" alt="Cyan Infiltrator" class="panel-char-img combat-img">
+            </div>
+
+            <div class="comic-sfx sfx-red">PEW! PEW!</div>
+
+            <div class="mission-briefing-box">
+              <div class="briefing-rule">🔴 <b>RED LASER [1]</b> &bull; Annihilates Cyan Infiltrators</div>
+              <div class="briefing-rule">🟢 <b>GREEN ORB</b> &bull; Shoot with Red Laser &rarr; 2 🟡 Crystals</div>
+              <div class="briefing-rule">⚪ <b>WHITE LIGHT</b> &bull; Step on base to recharge ammo</div>
+            </div>
+
+            <button id="startLevel1Btn" class="comic-btn play-btn pulse-glow">
+              <span class="btn-icon">⚡</span> PLAY LEVEL 1 <span class="btn-icon">⚡</span>
+            </button>
+          </div>
         </div>
 
-        <!-- Panel 2: Locked -->
-        <div class="comic-panel locked">
-          <div class="panel-tag">PANEL 02</div>
-          <div class="panel-art">
-            <span class="level-art-icon">🔒</span>
+        <!-- Row 2: Level 2 Story & Mission -->
+        <div class="comic-row row-2">
+          <!-- Box 3: Episode 2 Dual Invasion -->
+          <div class="comic-box box-3" id="comicBox3">
+            <div class="comic-box-bg" style="background-image: url('assets/comic_panels/panel_3_bg.png');"></div>
+            <div class="comic-caption-box top">
+              <span class="comic-chapter-tag">EPISODE II</span>
+              <span class="comic-caption-text">THE SPECTRUM WAR ESCALATES!</span>
+            </div>
+            <div class="box-art-wrap">
+              <img src="assets/comic_art/dual_troops_cutout.png" alt="Dual Troops" class="panel-char-img troops-img">
+            </div>
+            <div class="comic-sfx sfx-magenta">BZZZT!</div>
+            <div class="comic-caption-box bottom">
+              <p>MAGENTA & YELLOW SQUADRONS GATHER IN FORMATION!</p>
+            </div>
           </div>
-          <h2 class="panel-title">ORB CATALYST</h2>
-          <p class="panel-desc">Advanced chromatic chain conversions and dual-enemy swarms.</p>
-          <span style="font-size: 11px; font-weight: 900; color: #5B6B98;">LOCKED</span>
+
+          <!-- Box 4: Mission 02 Orb Catalyst (Locked) -->
+          <div class="comic-box box-4 locked-box" id="comicBox4">
+            <div class="comic-box-bg" style="background-image: url('assets/comic_panels/panel_4_bg.png');"></div>
+            <div class="comic-caption-box top mission-header">
+              <span class="comic-mission-pill locked">MISSION 02</span>
+              <span class="comic-mission-name">ORB CATALYST</span>
+              <span class="comic-status-pill locked">LOCKED</span>
+            </div>
+            <div class="box-content-locked">
+              <div class="comic-lock-icon">🔒</div>
+              <p class="locked-desc">Multi-color crystal ammunition synthesis & dual swarm counter combat.</p>
+              <div class="comic-stamp">CLEAR LEVEL 1 TO UNLOCK</div>
+            </div>
+          </div>
         </div>
 
-        <!-- Panel 3: Locked -->
-        <div class="comic-panel locked">
-          <div class="panel-tag">PANEL 03</div>
-          <div class="panel-art">
-            <span class="level-art-icon">🔒</span>
-          </div>
-          <h2 class="panel-title">INVERT FRAME</h2>
-          <p class="panel-desc">The battlefield flips: rules reverse into same-colour chromatic annihilation.</p>
-          <span style="font-size: 11px; font-weight: 900; color: #5B6B98;">LOCKED</span>
-        </div>
+        <!-- Row 3: Final Boss (Wide Panel Spanning Bottom) -->
+        <div class="comic-row row-3">
+          <!-- Box 5: The Boss Box -->
+          <div class="comic-box box-5 boss-box" id="comicBox5">
+            <div class="comic-box-bg" style="background-image: url('assets/comic_panels/panel_5_bg.png');"></div>
+            
+            <!-- Dynamic Boss Badge (Changes from FINAL BOSS to MINI BOSS when defeated!) -->
+            <div class="boss-banner-header">
+              <div class="boss-role-badge" id="bossRoleBadge">★ FINAL BOSS ★</div>
+              <h2 class="boss-name" id="bossNameTitle">THE BLACK BOSS &bull; VOID OVERLORD</h2>
+              <div class="boss-threat-tag">THREAT: OMEGA</div>
+            </div>
 
-        <!-- Panel 4: Boss Teaser -->
-        <div class="comic-panel locked boss-panel">
-          <div class="panel-tag" style="color: #FF2A4D; border-color: #FF2A4D;">BOSS</div>
-          <div class="panel-art" style="background: #05060A;">
-            <span class="level-art-icon" style="filter: drop-shadow(0 0 10px #FF2A4D);">👁️‍🗨️</span>
+            <div class="boss-panel-body">
+              <div class="boss-art-wrap">
+                <img src="assets/comic_art/black_boss_cutout.png" alt="The Black Boss" class="boss-figure-img">
+              </div>
+
+              <div class="boss-lore-wrap">
+                <div class="comic-caption-box boss-lore-caption">
+                  <p>"HE WHO DEVOURS ALL VISIBLE WAVELENGTHS INTO TOTAL DARKNESS!"</p>
+                  <p class="boss-subtext">The sinister ruler of the void realm awaits at the end of the strip...</p>
+                </div>
+                
+                <div class="boss-encounter-status" id="bossEncounterStatus">
+                  <div class="comic-stamp boss-stamp">
+                    🔒 CLASSIFIED BOSS ENCOUNTER<br>
+                    <small>DEFEAT MISSIONS 01 & 02 TO CHALLENGE</small>
+                  </div>
+                </div>
+
+                <!-- Plot twist reveal section (reveals White Boss when Black Boss is defeated) -->
+                <div class="boss-plot-twist-reveal" id="bossPlotTwistReveal" style="display: none;">
+                  <div class="twist-alert-badge">⚡ SPECTRAL REVELATION ⚡</div>
+                  <p class="twist-text">THE BLACK BOSS HAS FALLEN! But as the shadows parted, the TRUE MASTER of the galaxy was revealed: THE WHITE BOSS! The strip expands!</p>
+                  <button id="goToPage2Btn" class="comic-btn page2-action-btn">
+                    PAGE 02: THE WHITE AWAKENING ▶
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-          <h2 class="panel-title" style="color: #FF2A4D;">THE BLACK BOSS</h2>
-          <p class="panel-desc">An ominous entity cloaked in total darkness awaits at the end of the strip...</p>
-          <span style="font-size: 11px; font-weight: 900; color: #FF2A4D;">LOCKED</span>
         </div>
       </div>
 
       <div class="comic-footer-legend">
         <div><span>[WASD]</span> MOVE</div>
         <div><span>[MOUSE]</span> AIM & SHOOT</div>
-        <div><span>[1-6 / Q-E / SCROLL]</span> CHANGE LASER COLOR</div>
+        <div><span>[1-6 / Q-E / SCROLL]</span> LASER COLOR</div>
         <div><span>[SPACE / RMB]</span> DASH</div>
         <div><span>[F]</span> FULLSCREEN</div>
-        <div><span>[M]</span> MUTE AUDIO</div>
+        <div><span>[M]</span> AUDIO</div>
       </div>
     </div>
 

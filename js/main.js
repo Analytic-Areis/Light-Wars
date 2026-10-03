@@ -197,10 +197,76 @@ class LightWarsGame {
         this.showMenu();
       });
     }
+
+    const page2Btn = document.getElementById('goToPage2Btn');
+    if (page2Btn) {
+      page2Btn.addEventListener('click', () => {
+        alert("ISSUE #2 &bull; THE WHITE BOSS AWAKENING\\nComing in the next chapter of the chromatic war!");
+      });
+    }
+
+    this.updateComicMenuBossState();
+  }
+
+  updateComicMenuBossState() {
+    const isBlackBossDefeated = localStorage.getItem('lightwars_black_boss_defeated') === 'true';
+    const bossRoleBadge = document.getElementById('bossRoleBadge');
+    const bossNameTitle = document.getElementById('bossNameTitle');
+    const bossEncounterStatus = document.getElementById('bossEncounterStatus');
+    const bossPlotTwistReveal = document.getElementById('bossPlotTwistReveal');
+    const page2TeaserBadge = document.getElementById('page2TeaserBadge');
+    const bossLoreCaption = document.querySelector('.boss-lore-caption');
+
+    if (isBlackBossDefeated) {
+      if (bossRoleBadge) {
+        bossRoleBadge.innerText = '⚔️ MINI BOSS ⚔️';
+        bossRoleBadge.classList.add('mini-boss-mode');
+      }
+      if (bossNameTitle) {
+        bossNameTitle.innerText = 'THE BLACK BOSS • SHADOW APPRENTICE';
+      }
+      if (bossEncounterStatus) {
+        bossEncounterStatus.style.display = 'none';
+      }
+      if (bossLoreCaption) {
+        bossLoreCaption.style.display = 'none';
+      }
+      if (bossPlotTwistReveal) {
+        bossPlotTwistReveal.style.display = 'block';
+      }
+      if (page2TeaserBadge) {
+        page2TeaserBadge.innerText = 'PAGE 02 (NEW!)';
+        page2TeaserBadge.classList.remove('locked');
+        page2TeaserBadge.classList.add('unlocked');
+      }
+    } else {
+      if (bossRoleBadge) {
+        bossRoleBadge.innerText = '★ FINAL BOSS ★';
+        bossRoleBadge.classList.remove('mini-boss-mode');
+      }
+      if (bossNameTitle) {
+        bossNameTitle.innerText = 'THE BLACK BOSS • VOID OVERLORD';
+      }
+      if (bossLoreCaption) {
+        bossLoreCaption.style.display = 'block';
+      }
+      if (bossEncounterStatus) {
+        bossEncounterStatus.style.display = 'block';
+      }
+      if (bossPlotTwistReveal) {
+        bossPlotTwistReveal.style.display = 'none';
+      }
+      if (page2TeaserBadge) {
+        page2TeaserBadge.innerText = 'PAGE 02 🔒';
+        page2TeaserBadge.classList.add('locked');
+        page2TeaserBadge.classList.remove('unlocked');
+      }
+    }
   }
 
   showMenu() {
     this.state = 'MENU';
+    this.updateComicMenuBossState();
     document.getElementById('comicMenu').style.display = 'flex';
     document.getElementById('levelClearModal').style.display = 'none';
     document.getElementById('gameOverModal').style.display = 'none';
