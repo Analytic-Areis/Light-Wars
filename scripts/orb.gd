@@ -112,7 +112,9 @@ func on_laser_hit(laser_col: String) -> void:
 		if main and main.has_method("on_orb_converted"):
 			main.on_orb_converted(color_id, laser_col, result_color)
 		
-		queue_free()
+		set_deferred("monitoring", false)
+		set_deferred("monitorable", false)
+		call_deferred("queue_free")
 	else:
 		# Wrong laser combination: deflects and stays alive
 		if main and main.has_method("spawn_comic_floater"):

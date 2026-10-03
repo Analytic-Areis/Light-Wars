@@ -21,10 +21,10 @@ func setup(tex_name: String, obs_type: String) -> void:
 				Vector2(0, -18), Vector2(25, 0), Vector2(0, 18), Vector2(-25, 0)
 			])
 		elif obs_type in ["crates", "barrel", "chest"]:
-			# Smooth 8-sided circle so character glides effortlessly around barrels and crates
+			# Substantial 8-sided rounded footprint matching barrel width (32px radius)
 			col_poly.polygon = PackedVector2Array([
-				Vector2(22, 0), Vector2(16, 15), Vector2(0, 22), Vector2(-16, 15),
-				Vector2(-22, 0), Vector2(-16, -15), Vector2(0, -22), Vector2(16, -15)
+				Vector2(32, 0), Vector2(23, 16), Vector2(0, 24), Vector2(-23, 16),
+				Vector2(-32, 0), Vector2(-23, -16), Vector2(0, -24), Vector2(23, -16)
 			])
 		elif obs_type in ["wall", "corner"]:
 			add_to_group("walls")

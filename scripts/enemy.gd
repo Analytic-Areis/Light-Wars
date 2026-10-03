@@ -134,7 +134,8 @@ func take_laser_hit(laser_col: String, hit_dir: Vector2) -> void:
 			if main and main.has_method("on_enemy_killed"):
 				main.on_enemy_killed(self)
 				
-			queue_free()
+			$CollisionShape2D.set_deferred("disabled", true)
+			call_deferred("queue_free")
 			
 		"TRANSFORM":
 			var target_color = interaction.get("target")

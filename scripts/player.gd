@@ -29,9 +29,11 @@ var dash_dir: Vector2 = Vector2.ZERO
 var shoot_cooldown: float = 0.0
 var walk_anim_time: float = 0.0
 var idle_anim_time: float = 0.0
+var attack_anim_time: float = 0.0
+var is_attacking: bool = false
 var current_dir: String = "S"
 
-# Cached sprites: dir -> { "idle": [tex0..tex3], "run": [tex0..tex7] }
+# Cached sprites: dir -> { "idle": [], "run": [], "attack": [] }
 var character_sprites: Dictionary = {}
 
 @onready var sprite_2d: Sprite2D = $Sprite2D
@@ -49,7 +51,7 @@ func load_hero_sprites() -> void:
 	character_sprites.clear()
 	var dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
 	for d in dirs:
-		character_sprites[d] = { "idle": [], "run": [] }
+		character_sprites[d] = { "idle": [], "run": [], "attack": [] }
 		
 		# Load idle frames from new_girl (up to 20)
 		for i in range(20):
@@ -66,6 +68,12 @@ func load_hero_sprites() -> void:
 			var r_path = "res://assets/sprites/hero/" + d + "_run_" + str(r) + ".png"
 			if ResourceLoader.exists(r_path):
 				character_sprites[d]["run"].append(load(r_path))
+
+		# Load attack frames from Fireball (up to 25)
+		for a in range(25):
+			var a_path = "res://assets/sprites/hero/" + d + "_attack_" + str(a) + ".png"
+			if ResourceLoader.exists(a_path):
+				character_sprites[d]["attack"].append(load(a_path))
 
 func get_active_color() -> String:
 	return color_order[active_color_idx]
@@ -122,6 +130,13 @@ func _physics_process(delta: float) -> void:
 	if dash_cooldown > 0.0:
 		dash_cooldown -= delta
 
+	if is_attacking:
+		attack_anim_time += delta * 32.0
+		var att_frames = character_sprites.get(current_dir, {}).get("attack", [])
+		if att_frames.is_empty() or attack_anim_time >= att_frames.size():
+			is_attacking = false
+			attack_anim_time = 0.0
+
 	# Aim direction for shooting
 	var mouse_pos = get_global_mouse_position()
 	var to_mouse = (mouse_pos - global_position).normalized()
@@ -141,7 +156,8 @@ func _physics_process(delta: float) -> void:
 			# When pressing D, character moves Down-Right (isometric East)
 			# When pressing A, character moves Up-Left (isometric West)
 			var iso_dir = Vector2(input_vec.x - input_vec.y, input_vec.x + input_vec.y).normalized()
-			current_dir = GameManager.get_direction_8(iso_dir)
+			if not is_attacking:
+				current_dir = GameManager.get_direction_8(iso_dir)
 			velocity = iso_dir * speed
 			walk_anim_time += delta * 11.0
 			idle_anim_time = 0.0
@@ -163,7 +179,11 @@ func update_sprite(is_idle: bool) -> void:
 		return
 		
 	var dir_data = character_sprites[current_dir]
-	if is_idle:
+	if is_attacking and not dir_data["attack"].is_empty():
+		var att_frames = dir_data["attack"]
+		var f_idx = clamp(int(attack_anim_time), 0, att_frames.size() - 1)
+		sprite_2d.texture = att_frames[f_idx]
+	elif is_idle:
 		var idle_frames = dir_data["idle"]
 		if not idle_frames.is_empty():
 			var f_idx = int(idle_anim_time) % idle_frames.size()
@@ -182,6 +202,12 @@ func try_shoot(aim_dir: Vector2) -> void:
 	ammo[active_col] -= 1
 	shoot_cooldown = 0.20
 	emit_signal("ammo_changed", ammo, active_col)
+	
+	# Trigger attack animation facing aim direction
+	current_dir = GameManager.get_direction_8(aim_dir)
+	is_attacking = true
+	attack_anim_time = 0.0
+	update_sprite(false)
 	
 	# Small muzzle kick recoil
 	velocity -= aim_dir * 50.0

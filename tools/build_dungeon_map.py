@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """
-Generate a complete, high-resolution isometric dungeon arena map from Kenney Isometric Dungeon (darked_tones) assets.
-Uses ONLY flat tiles (no manholes / missing tiles / uneven) and places tactical barrels.
+Generate a complete, high-resolution 2.5D isometric dungeon floor with platform cliff edges from darked_tones assets.
+Uses ONLY flat tiles (no manholes) and renders 3D vertical platform edges on the perimeter.
 """
 
 import os
 import random
-import json
 from PIL import Image, ImageDraw
 
 ASSET_DIR = "assets/isometric_dungeon/Isometric"
@@ -43,13 +42,15 @@ def main():
     
     floor_canvas = Image.new("RGBA", (canvas_w, canvas_h), (8, 9, 14, 255))
     
-    # 1. Floor assets: ONLY FLAT TILES! No manholes / missing tiles / uneven tiles!
-    tiles_floor = [
-        load_img("stone_N"),
-        load_img("stoneTile_N")
-    ]
+    # Floor assets: ONLY FLAT TILES from darked_tones! (No manholes / missing tiles / uneven)
+    tile_stone = load_img("stone_N")
+    tile_stone_tile = load_img("stoneTile_N")
     
-    # Draw all floors
+    # 3D Platform vertical cliff side faces
+    side_s = load_img("stoneSide_S")
+    side_w = load_img("stoneSide_W")
+    corner_s = load_img("stoneCorner_S")
+    
     coords = [(gx, gy) for gx in range(COLS) for gy in range(ROWS)]
     coords.sort(key=lambda c: (c[0] + c[1], c[1]))
     
@@ -59,8 +60,17 @@ def main():
         draw_x = sx
         draw_y = sy + TH - TILE_H
         
-        r = random.random()
-        tile_img = tiles_floor[0] if r < 0.65 else tiles_floor[1]
+        # Determine tile
+        if gx == 0 and gy == ROWS - 1:
+            tile_img = corner_s if corner_s else tile_stone
+        elif gx == 0:
+            tile_img = side_w if side_w else tile_stone
+        elif gy == ROWS - 1:
+            tile_img = side_s if side_s else tile_stone
+        else:
+            r = random.random()
+            tile_img = tile_stone if r < 0.60 else tile_stone_tile
+            
         floor_canvas.paste(tile_img, (draw_x, draw_y), tile_img)
         
     # White Light Rune Circle at sanctuary (gx=3.5, gy=13.5)
@@ -92,12 +102,10 @@ def main():
     )
     floor_canvas = Image.alpha_composite(floor_canvas, rune_layer)
     
-    # Save dungeon_floor.png for Godot
     out_floor = "assets/textures/dungeon_floor.png"
     floor_canvas.save(out_floor)
-    print(f"Generated {out_floor} size: {floor_canvas.size} with pure flat darked_tones tiles!")
+    print(f"Generated {out_floor} size: {floor_canvas.size} with 2.5D cliff edges and flat darked_tones tiles!")
     
-    # Save dungeon_arena.png and arena_map.jpg for web / standalone
     out_png = "assets/textures/dungeon_arena.png"
     out_jpg = "assets/textures/arena_map.jpg"
     floor_canvas.save(out_png)

@@ -47,15 +47,17 @@ func _draw() -> void:
 	draw_circle(Vector2(-36, 0), 3.5, Color(laser_color.r, laser_color.g, laser_color.b, 0.3))
 
 func _on_body_entered(body: Node2D) -> void:
+	set_deferred("monitoring", false)
+	set_deferred("monitorable", false)
 	if body.is_in_group("enemies"):
 		if body.has_method("take_laser_hit"):
 			body.take_laser_hit(color_id, direction)
-		queue_free()
-	elif body.is_in_group("obstacles") or body.is_in_group("walls"):
-		queue_free()
+	call_deferred("queue_free")
 
 func _on_area_entered(area: Area2D) -> void:
+	set_deferred("monitoring", false)
+	set_deferred("monitorable", false)
 	if area.is_in_group("orbs"):
 		if area.has_method("on_laser_hit"):
 			area.on_laser_hit(color_id)
-		queue_free()
+	call_deferred("queue_free")
