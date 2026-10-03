@@ -1,6 +1,14 @@
-[gd_scene load_steps=4 format=3 uid="uid://c5hud2d01"]
+[gd_scene load_steps=6 format=3 uid="uid://c5hud2d01"]
 
 [ext_resource type="Script" path="res://scripts/hud.gd" id="1_hud"]
+[ext_resource type="Shader" path="res://assets/shaders/vision_vignette.gdshader" id="2_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_Vision"]
+shader = ExtResource("2_shader")
+shader_parameter/player_screen_pos = Vector2(800, 450)
+shader_parameter/vision_radius = 420.0
+shader_parameter/vision_softness = 160.0
+shader_parameter/darkness_color = Color(0.04, 0.05, 0.08, 0.96)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Banner"]
 bg_color = Color(0.06, 0.08, 0.16, 0.92)
@@ -36,29 +44,45 @@ script = ExtResource("1_hud")
 [node name="MarginContainer" type="MarginContainer" parent="."]
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 70.0
+offset_bottom = 76.0
 grow_horizontal = 2
 theme_override_constants/margin_left = 30
 theme_override_constants/margin_top = 20
 
-[node name="HealthBar" type="HBoxContainer" parent="MarginContainer"]
+[node name="HealthPanel" type="PanelContainer" parent="MarginContainer"]
+custom_minimum_size = Vector2(240, 52)
 layout_mode = 2
-theme_override_constants/separation = 12
+size_flags_horizontal = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_Banner")
 
-[node name="Heart1" type="ColorRect" parent="MarginContainer/HealthBar"]
-custom_minimum_size = Vector2(28, 28)
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/HealthPanel"]
 layout_mode = 2
-color = Color(1, 0.16, 0.3, 1)
+theme_override_constants/separation = 4
 
-[node name="Heart2" type="ColorRect" parent="MarginContainer/HealthBar"]
-custom_minimum_size = Vector2(28, 28)
+[node name="HPHeader" type="HBoxContainer" parent="MarginContainer/HealthPanel/VBox"]
 layout_mode = 2
-color = Color(1, 0.16, 0.3, 1)
 
-[node name="Heart3" type="ColorRect" parent="MarginContainer/HealthBar"]
-custom_minimum_size = Vector2(28, 28)
+[node name="Title" type="Label" parent="MarginContainer/HealthPanel/VBox/HPHeader"]
 layout_mode = 2
-color = Color(1, 0.16, 0.3, 1)
+theme_override_colors/font_color = Color(0.75, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "SHIELD INTEGRITY"
+
+[node name="HPValueLabel" type="Label" parent="MarginContainer/HealthPanel/VBox/HPHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.15, 0.95, 0.45, 1)
+theme_override_font_sizes/font_size = 13
+text = "10 / 10 HP"
+horizontal_alignment = 2
+
+[node name="ProgressBar" type="ProgressBar" parent="MarginContainer/HealthPanel/VBox"]
+custom_minimum_size = Vector2(210, 14)
+layout_mode = 2
+max_value = 10.0
+step = 1.0
+value = 10.0
+show_percentage = false
 
 [node name="TopBanner" type="PanelContainer" parent="."]
 anchors_preset = 5

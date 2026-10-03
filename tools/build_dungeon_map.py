@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """
-Generate a complete, high-resolution 2.5D isometric dungeon floor with platform cliff edges from darked_tones assets.
-Uses ONLY flat tiles (no manholes) and renders 3D vertical platform edges on the perimeter.
+Generate a complete, high-resolution isometric dungeon arena map from Kenney Isometric Dungeon assets.
 """
 
 import os
 import random
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 
 ASSET_DIR = "assets/isometric_dungeon/Isometric"
 
@@ -40,17 +39,94 @@ def main():
     origin_x = -min_sx + margin_x
     origin_y = margin_y
     
-    floor_canvas = Image.new("RGBA", (canvas_w, canvas_h), (8, 9, 14, 255))
+    canvas = Image.new("RGBA", (canvas_w, canvas_h), (12, 14, 20, 255))
     
-    # Floor assets: ONLY FLAT TILES from darked_tones! (No manholes / missing tiles / uneven)
-    tile_stone = load_img("stone_N")
-    tile_stone_tile = load_img("stoneTile_N")
+    # Floor assets
+    tiles_floor = [
+        load_img("stone_N"),
+        load_img("stoneTile_N"),
+        load_img("stoneUneven_N"),
+        load_img("stoneMissingTiles_N")
+    ]
+    tile_dirt = load_img("dirtTiles_N") or load_img("dirt_N")
     
-    # 3D Platform vertical cliff side faces
-    side_s = load_img("stoneSide_S")
-    side_w = load_img("stoneSide_W")
-    corner_s = load_img("stoneCorner_S")
+    # Wall assets
+    w_n = load_img("stoneWall_N")
+    w_w = load_img("stoneWall_W")
+    w_s = load_img("stoneWall_S")
+    w_e = load_img("stoneWall_E")
     
+    c_n = load_img("stoneWallCorner_N")
+    c_e = load_img("stoneWallCorner_E")
+    c_s = load_img("stoneWallCorner_S")
+    c_w = load_img("stoneWallCorner_W")
+    
+    arch_n = load_img("stoneWallArchway_N")
+    gate_w = load_img("stoneWallGateOpen_W") or load_img("stoneWallGateOpen_N")
+    door_s = load_img("stoneWallDoorOpen_S") or w_s
+    door_e = load_img("stoneWallDoorOpen_E") or w_e
+    
+    # Prop assets
+    col = load_img("stoneColumn_N")
+    col_wood = load_img("stoneColumnWood_N")
+    crates = load_img("woodenCrates_N")
+    crate_s = load_img("woodenCrate_N")
+    barrels = load_img("barrelsStacked_N")
+    barrel_s = load_img("barrels_N")
+    chest = load_img("chestClosed_N")
+    
+    # Grid of props: (gx, gy) -> Image
+    props = {}
+    
+    # 1. Perimeter Walls & Corners
+    for gx in range(COLS):
+        for gy in range(ROWS):
+            # Corners
+            if gx == COLS - 1 and gy == 0:
+                props[(gx, gy)] = c_n
+            elif gx == COLS - 1 and gy == ROWS - 1:
+                props[(gx, gy)] = c_e
+            elif gx == 0 and gy == ROWS - 1:
+                props[(gx, gy)] = c_s
+            elif gx == 0 and gy == 0:
+                props[(gx, gy)] = c_w
+            # Walls
+            elif gy == 0:
+                props[(gx, gy)] = arch_n if gx == COLS // 2 else w_n
+            elif gx == COLS - 1:
+                props[(gx, gy)] = gate_w if gy == ROWS // 2 else w_w
+            elif gy == ROWS - 1:
+                props[(gx, gy)] = door_s if gx == COLS // 2 else w_s
+            elif gx == 0:
+                props[(gx, gy)] = door_e if gy == ROWS // 2 else w_e
+
+    # 2. Inner Tactical Obstacles
+    # Center monument
+    props[(10, 8)] = col
+    props[(11, 8)] = chest
+    props[(12, 8)] = col
+    
+    # Upper-left crates & barrels
+    props[(6, 4)] = crates
+    props[(7, 4)] = barrel_s
+    props[(6, 5)] = crate_s
+    
+    # Upper-right column & barricade
+    props[(16, 5)] = col_wood
+    props[(17, 5)] = crates
+    props[(16, 6)] = barrels
+    
+    # Lower-right crates & barrels
+    props[(15, 12)] = barrels
+    props[(16, 12)] = crates
+    props[(15, 13)] = barrel_s
+    
+    # Sanctuary sanctuary columns (gx=3.5, gy=13.5 area)
+    props[(2, 11)] = col
+    props[(2, 15)] = col
+    props[(5, 15)] = col
+
+    # Draw all floors first
     coords = [(gx, gy) for gx in range(COLS) for gy in range(ROWS)]
     coords.sort(key=lambda c: (c[0] + c[1], c[1]))
     
@@ -60,20 +136,29 @@ def main():
         draw_x = sx
         draw_y = sy + TH - TILE_H
         
-        # Determine tile
-        if gx == 0 and gy == ROWS - 1:
-            tile_img = corner_s if corner_s else tile_stone
-        elif gx == 0:
-            tile_img = side_w if side_w else tile_stone
-        elif gy == ROWS - 1:
-            tile_img = side_s if side_s else tile_stone
+        # Floor variation
+        r = random.random()
+        if gx < 6 and gy > 11:
+            tile_img = tiles_floor[0]
+        elif (gx in [10, 11, 12] and gy in [7, 8, 9]) or (gx in [15, 16] and gy in [11, 12]):
+            tile_img = tile_dirt if tile_dirt else tiles_floor[2]
+        elif r < 0.65:
+            tile_img = tiles_floor[0]
+        elif r < 0.82:
+            tile_img = tiles_floor[1]
+        elif r < 0.92:
+            tile_img = tiles_floor[2]
         else:
-            r = random.random()
-            tile_img = tile_stone if r < 0.60 else tile_stone_tile
+            tile_img = tiles_floor[3]
             
-        floor_canvas.paste(tile_img, (draw_x, draw_y), tile_img)
+        canvas.paste(tile_img, (draw_x, draw_y), tile_img)
         
-    # White Light Rune Circle at sanctuary (gx=3.5, gy=13.5)
+        # Draw prop if present
+        if (gx, gy) in props and props[(gx, gy)]:
+            p_img = props[(gx, gy)]
+            canvas.paste(p_img, (draw_x, draw_y), p_img)
+            
+    # Add White Light Rune Circle at sanctuary (gx=3.5, gy=13.5)
     spawn_gx, spawn_gy = 3.5, 13.5
     sp_sx = int((spawn_gx - spawn_gy) * (TW / 2) + origin_x + TW // 2)
     sp_sy = int((spawn_gx + spawn_gy) * (TH / 2) + origin_y + TH // 2)
@@ -100,20 +185,30 @@ def main():
         [sp_sx - 20, sp_sy - 10, sp_sx + 20, sp_sy + 10],
         fill=(220, 250, 255, 180)
     )
-    floor_canvas = Image.alpha_composite(floor_canvas, rune_layer)
+    canvas = Image.alpha_composite(canvas, rune_layer)
     
-    out_floor = "assets/textures/dungeon_floor.png"
-    floor_canvas.save(out_floor)
-    print(f"Generated {out_floor} size: {floor_canvas.size} with 2.5D cliff edges and flat darked_tones tiles!")
-    
+    # Crop canvas to content
+    bbox = canvas.getbbox()
+    if bbox:
+        pad = 40
+        crop_box = (
+            max(0, bbox[0] - pad),
+            max(0, bbox[1] - pad),
+            min(canvas_w, bbox[2] + pad),
+            min(canvas_h, bbox[3] + pad)
+        )
+        canvas = canvas.crop(crop_box)
+        
     out_png = "assets/textures/dungeon_arena.png"
     out_jpg = "assets/textures/arena_map.jpg"
-    floor_canvas.save(out_png)
+    canvas.save(out_png)
     
-    rgb_canvas = Image.new("RGB", floor_canvas.size, (8, 9, 14))
-    rgb_canvas.paste(floor_canvas, mask=floor_canvas.split()[3])
+    # Save optimized JPG as arena_map.jpg for both Godot and Web!
+    rgb_canvas = Image.new("RGB", canvas.size, (12, 14, 20))
+    rgb_canvas.paste(canvas, mask=canvas.split()[3])
     rgb_canvas.save(out_jpg, quality=94)
-    print(f"Saved {out_png} and {out_jpg}")
+    
+    print(f"Generated {out_png} and {out_jpg} size: {canvas.size}")
 
 if __name__ == "__main__":
     main()

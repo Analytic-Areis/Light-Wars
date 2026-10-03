@@ -12,12 +12,13 @@ var knockback_vel: Vector2 = Vector2.ZERO
 
 var troop_sprites: Dictionary = {}
 @onready var sprite_2d: Sprite2D = $Sprite2D
-var is_dead: bool = false
 var orb_scene = preload("res://scenes/orb.tscn")
+var bullet_scene = preload("res://scenes/enemy_bullet.tscn")
+var shoot_timer: float = 0.0
+var shoot_interval: float = 2.4
 
 func _ready() -> void:
 	add_to_group("enemies")
-	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	load_sprites_for_color()
 	update_sprite(true)
 
@@ -66,9 +67,15 @@ func _physics_process(delta: float) -> void:
 		knockback_vel = knockback_vel.move_toward(Vector2.ZERO, delta * 900.0)
 	else:
 		var player = get_tree().get_first_node_in_group("player")
-		if player:
+		if player and player.health > 0:
 			var to_player = player.global_position - global_position
 			var dist = to_player.length()
+			
+			# Shooting AI: shoot slow chromatic bullets periodically
+			shoot_timer += delta
+			if shoot_timer >= shoot_interval and dist < 750.0:
+				shoot_timer = randf_range(-0.4, 0.3)
+				shoot_bullet_at(player.global_position)
 			
 			if dist > 35.0:
 				var move_dir = to_player.normalized()
@@ -89,6 +96,17 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 
+func shoot_bullet_at(target_pos: Vector2) -> void:
+	if not bullet_scene: return
+	var dir = (target_pos - global_position).normalized()
+	var bullet = bullet_scene.instantiate()
+	var main = get_tree().current_scene
+	if main and main.get_node_or_null("Entities"):
+		main.get_node("Entities").add_child(bullet)
+	else:
+		get_parent().add_child(bullet)
+	bullet.setup(global_position + dir * 28.0, dir, color_id)
+
 func update_sprite(is_idle: bool) -> void:
 	if not sprite_2d or not troop_sprites.has(current_dir):
 		return
@@ -102,8 +120,6 @@ func update_sprite(is_idle: bool) -> void:
 		sprite_2d.texture = frames[f_idx]
 
 func take_laser_hit(laser_col: String, hit_dir: Vector2) -> void:
-	if is_dead:
-		return
 	hurt_flash_timer = 0.22
 	knockback_vel = hit_dir.normalized() * 320.0
 	
@@ -113,7 +129,6 @@ func take_laser_hit(laser_col: String, hit_dir: Vector2) -> void:
 	
 	match interaction.get("action"):
 		"KILL":
-			is_dead = true
 			if main and main.has_method("spawn_comic_floater"):
 				var word = GameManager.COMIC_WORDS[randi() % GameManager.COMIC_WORDS.size()]
 				main.spawn_comic_floater(global_position + Vector2(0, -40), word, GameManager.COLORS[color_id]["color"])
@@ -134,8 +149,7 @@ func take_laser_hit(laser_col: String, hit_dir: Vector2) -> void:
 			if main and main.has_method("on_enemy_killed"):
 				main.on_enemy_killed(self)
 				
-			$CollisionShape2D.set_deferred("disabled", true)
-			call_deferred("queue_free")
+			queue_free()
 			
 		"TRANSFORM":
 			var target_color = interaction.get("target")

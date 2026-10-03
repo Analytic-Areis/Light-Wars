@@ -6,8 +6,8 @@ signal ammo_changed(ammo_dict: Dictionary, active_col: String)
 @export var speed: float = 320.0
 @export var dash_speed: float = 750.0
 
-var max_health: int = 3
-var health: int = 3
+var max_health: int = 10
+var health: int = 10
 
 var max_ammo_per_color: int = 6
 var ammo: Dictionary = {
@@ -29,11 +29,9 @@ var dash_dir: Vector2 = Vector2.ZERO
 var shoot_cooldown: float = 0.0
 var walk_anim_time: float = 0.0
 var idle_anim_time: float = 0.0
-var attack_anim_time: float = 0.0
-var is_attacking: bool = false
 var current_dir: String = "S"
 
-# Cached sprites: dir -> { "idle": [], "run": [], "attack": [] }
+# Cached sprites: dir -> { "idle": [tex0..tex3], "run": [tex0..tex7] }
 var character_sprites: Dictionary = {}
 
 @onready var sprite_2d: Sprite2D = $Sprite2D
@@ -41,7 +39,6 @@ var laser_scene = preload("res://scenes/laser.tscn")
 
 func _ready() -> void:
 	add_to_group("player")
-	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	load_hero_sprites()
 	update_sprite(true)
 	emit_signal("health_changed", health, max_health)
@@ -51,29 +48,17 @@ func load_hero_sprites() -> void:
 	character_sprites.clear()
 	var dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
 	for d in dirs:
-		character_sprites[d] = { "idle": [], "run": [], "attack": [] }
-		
-		# Load idle frames from new_girl (up to 20)
-		for i in range(20):
-			var idle_path = "res://assets/sprites/hero/" + d + "_idle_" + str(i) + ".png"
-			if ResourceLoader.exists(idle_path):
-				character_sprites[d]["idle"].append(load(idle_path))
-		if character_sprites[d]["idle"].is_empty():
-			var fallback_idle = "res://assets/sprites/hero/" + d + "_idle.png"
-			if ResourceLoader.exists(fallback_idle):
-				character_sprites[d]["idle"].append(load(fallback_idle))
+		character_sprites[d] = { "idle": null, "run": [] }
+		var idle_path = "res://assets/sprites/hero/" + d + "_idle.png"
+		if ResourceLoader.exists(idle_path):
+			character_sprites[d]["idle"] = load(idle_path)
+		elif ResourceLoader.exists("res://assets/sprites/hero/" + d + ".png"):
+			character_sprites[d]["idle"] = load("res://assets/sprites/hero/" + d + ".png")
 			
-		# Load run frames from new_girl (up to 20)
-		for r in range(20):
+		for r in range(8):
 			var r_path = "res://assets/sprites/hero/" + d + "_run_" + str(r) + ".png"
 			if ResourceLoader.exists(r_path):
 				character_sprites[d]["run"].append(load(r_path))
-
-		# Load attack frames from Fireball (up to 25)
-		for a in range(25):
-			var a_path = "res://assets/sprites/hero/" + d + "_attack_" + str(a) + ".png"
-			if ResourceLoader.exists(a_path):
-				character_sprites[d]["attack"].append(load(a_path))
 
 func get_active_color() -> String:
 	return color_order[active_color_idx]
@@ -113,8 +98,9 @@ func request_dash() -> void:
 	if dash_cooldown <= 0.0 and not is_dashing:
 		var input_vec = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 		if input_vec.length_squared() > 0.01:
-			var iso_dir = Vector2(input_vec.x - input_vec.y, input_vec.x + input_vec.y).normalized()
-			dash_dir = iso_dir
+			var iso_x = input_vec.x - input_vec.y
+			var iso_y = (input_vec.x + input_vec.y) * 0.5
+			dash_dir = Vector2(iso_x, iso_y).normalized()
 		else:
 			dash_dir = (get_global_mouse_position() - global_position).normalized()
 		is_dashing = true
@@ -130,18 +116,11 @@ func _physics_process(delta: float) -> void:
 	if dash_cooldown > 0.0:
 		dash_cooldown -= delta
 
-	if is_attacking:
-		attack_anim_time += delta * 32.0
-		var att_frames = character_sprites.get(current_dir, {}).get("attack", [])
-		if att_frames.is_empty() or attack_anim_time >= att_frames.size():
-			is_attacking = false
-			attack_anim_time = 0.0
-
 	# Aim direction for shooting
 	var mouse_pos = get_global_mouse_position()
 	var to_mouse = (mouse_pos - global_position).normalized()
 
-	# Movement
+	# Movement: Isometric WASD (W -> NE, S -> SW, A -> NW, D -> SE)
 	if is_dashing:
 		dash_timer -= delta
 		velocity = dash_dir * dash_speed
@@ -150,22 +129,24 @@ func _physics_process(delta: float) -> void:
 	else:
 		var input_vec = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 		if input_vec.length_squared() > 0.01:
-			# Isometric 45-degree conversion:
-			# When pressing W, character moves Up-Right (isometric North, exactly what W+D did)
-			# When pressing S, character moves Down-Left (isometric South)
-			# When pressing D, character moves Down-Right (isometric East)
-			# When pressing A, character moves Up-Left (isometric West)
-			var iso_dir = Vector2(input_vec.x - input_vec.y, input_vec.x + input_vec.y).normalized()
-			if not is_attacking:
-				current_dir = GameManager.get_direction_8(iso_dir)
-			velocity = iso_dir * speed
-			walk_anim_time += delta * 11.0
+			# Isometric mapping:
+			# W (input_vec=(0,-1)) -> North-East (Vector2(1.0, -0.5))
+			# S (input_vec=(0,1)) -> South-West (Vector2(-1.0, 0.5))
+			# A (input_vec=(-1,0)) -> North-West (Vector2(-1.0, -0.5))
+			# D (input_vec=(1,0)) -> South-East (Vector2(1.0, 0.5))
+			var iso_x = input_vec.x - input_vec.y
+			var iso_y = (input_vec.x + input_vec.y) * 0.5
+			var move_dir = Vector2(iso_x, iso_y).normalized()
+			
+			current_dir = GameManager.get_direction_8(move_dir)
+			velocity = move_dir * speed
+			walk_anim_time += delta * 12.0
 			idle_anim_time = 0.0
 			update_sprite(false)
 		else:
 			velocity = Vector2.ZERO
 			walk_anim_time = 0.0
-			idle_anim_time += delta * 8.0
+			idle_anim_time += delta * 4.0
 			update_sprite(true)
 
 	move_and_slide()
@@ -179,20 +160,13 @@ func update_sprite(is_idle: bool) -> void:
 		return
 		
 	var dir_data = character_sprites[current_dir]
-	if is_attacking and not dir_data["attack"].is_empty():
-		var att_frames = dir_data["attack"]
-		var f_idx = clamp(int(attack_anim_time), 0, att_frames.size() - 1)
-		sprite_2d.texture = att_frames[f_idx]
-	elif is_idle:
-		var idle_frames = dir_data["idle"]
-		if not idle_frames.is_empty():
-			var f_idx = int(idle_anim_time) % idle_frames.size()
-			sprite_2d.texture = idle_frames[f_idx]
+	if is_idle or dir_data["run"].is_empty():
+		if dir_data["idle"]:
+			sprite_2d.texture = dir_data["idle"]
 	else:
-		var run_frames = dir_data["run"]
-		if not run_frames.is_empty():
-			var f_idx = int(walk_anim_time) % run_frames.size()
-			sprite_2d.texture = run_frames[f_idx]
+		var frames = dir_data["run"]
+		var f_idx = int(walk_anim_time) % frames.size()
+		sprite_2d.texture = frames[f_idx]
 
 func try_shoot(aim_dir: Vector2) -> void:
 	var active_col = get_active_color()
@@ -202,12 +176,6 @@ func try_shoot(aim_dir: Vector2) -> void:
 	ammo[active_col] -= 1
 	shoot_cooldown = 0.20
 	emit_signal("ammo_changed", ammo, active_col)
-	
-	# Trigger attack animation facing aim direction
-	current_dir = GameManager.get_direction_8(aim_dir)
-	is_attacking = true
-	attack_anim_time = 0.0
-	update_sprite(false)
 	
 	# Small muzzle kick recoil
 	velocity -= aim_dir * 50.0

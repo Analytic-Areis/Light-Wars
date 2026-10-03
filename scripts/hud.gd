@@ -1,6 +1,7 @@
 extends CanvasLayer
 
-@onready var health_container: HBoxContainer = $MarginContainer/HealthBar
+@onready var hp_progress: ProgressBar = $MarginContainer/HealthPanel/VBox/ProgressBar
+@onready var hp_label: Label = $MarginContainer/HealthPanel/VBox/HPHeader/HPValueLabel
 @onready var ammo_container: HBoxContainer = $BottomBar/AmmoRack
 @onready var objective_title: Label = $TopBanner/VBox/TitleLabel
 @onready var objective_desc: Label = $TopBanner/VBox/DescLabel
@@ -19,11 +20,17 @@ func set_objective(title: String, desc: String) -> void:
 	if objective_desc: objective_desc.text = desc
 
 func update_health(current: int, max_hp: int) -> void:
-	if not health_container: return
-	for i in range(health_container.get_child_count()):
-		var heart = health_container.get_child(i)
-		if heart is TextureRect or heart is ColorRect:
-			heart.modulate = Color.RED if i < current else Color(0.3, 0.3, 0.3, 0.5)
+	if hp_progress:
+		hp_progress.max_value = max_hp
+		hp_progress.value = current
+	if hp_label:
+		hp_label.text = str(current) + " / " + str(max_hp) + " HP"
+		if current > 6:
+			hp_label.modulate = Color(0.2, 0.95, 0.4)
+		elif current > 3:
+			hp_label.modulate = Color(1.0, 0.85, 0.1)
+		else:
+			hp_label.modulate = Color(1.0, 0.2, 0.2)
 
 func update_ammo(ammo_dict: Dictionary, active_col: String) -> void:
 	if not ammo_container: return
