@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-Generate a structured 2.5D Isometric Dungeon Pathway Map using Kenney Isometric Dungeon assets.
+Generate a spacious, structured 2.5D Isometric Dungeon Pathway Map with clear visible borders,
+railings, and thick boundary collision barriers.
 Features:
-- Structured dungeon pathways and branching corridors instead of an open flat square arena
-- Distinct Sanctuary Chamber with White Light runic altar at (1352, 1502)
-- Dual branching pathways (North Flank Route & South Bastion Route) separated by a deep central chasm
-- Central Crossroads Junction Hall with tactical cover and monument
-- East Pass leading to the Northern Overlord Arena
-- 3D stone cliff drop-offs (stoneSide_S, stoneSide_W, stoneSide_E) along all abyss borders
-- Multi-tier upper battlement connected by stone stairs
-- Soft directional drop shadows and warm torchlight atmosphere
-- Exports high-resolution dungeon_floor.png, dungeon_arena.png, arena_map.jpg, and dungeon_map_data.json
+- Extra-wide 4-tile corridors (500px wide) allowing smooth, frictionless movement with zero snagging
+- Clear visible architectural borders:
+  * High stone fortress walls (stoneWall_N, stoneWall_W) on North & West boundaries
+  * Stone balustrade half-walls (stoneWallHalf_S, stoneWallHalf_E) on South & East boundaries
+  * Deep central chasm enclosed with stone balustrades and 3D foundation cliffs
+- Thick convex polygon collision slabs for all boundaries preventing walking out of the map or tunneling
+- Luminous White Light Sanctuary runic circle at (1352, 1502)
+- Exports high-res dungeon_floor.png, dungeon_arena.png, arena_map.jpg, and dungeon_map_data.json
 """
 
 import os
@@ -59,84 +59,67 @@ def main():
     f_missing = load_img("stoneMissingTiles_N")
     f_dirt = load_img("dirtTiles_N") or load_img("dirt_N")
     
-    steps_n = load_img("stoneSteps_N")
-    
-    w_n = load_img("stoneWall_N")
-    w_w = load_img("stoneWall_W")
-    w_s = load_img("stoneWallHalf_S") or load_img("stoneWall_S")
-    w_e = load_img("stoneWallHalf_E") or load_img("stoneWall_E")
-    
-    c_n = load_img("stoneWallCorner_N")
-    c_e = load_img("stoneWallCorner_E")
-    c_s = load_img("stoneWallCorner_S")
-    c_w = load_img("stoneWallCorner_W")
-    
-    arch_n = load_img("stoneWallArchway_N")
-    win_n = load_img("stoneWallWindowBars_N")
-    broken_n = load_img("stoneWallBroken_N")
-    
-    col = load_img("stoneColumn_N")
-    col_wood = load_img("stoneColumnWood_N")
-    chest = load_img("chestClosed_N")
-    
     cliff_s = load_img("stoneSide_S")
     cliff_w = load_img("stoneSide_W")
     cliff_e = load_img("stoneSide_E")
+    
+    w_n = load_img("stoneWall_N")
+    w_w = load_img("stoneWall_W")
+    w_half_s = load_img("stoneWallHalf_S") or load_img("stoneWall_S")
+    w_half_e = load_img("stoneWallHalf_E") or load_img("stoneWall_E")
+    
+    win_n = load_img("stoneWallWindowBars_N")
+    arch_n = load_img("stoneWallArchway_N")
+    col = load_img("stoneColumn_N")
 
-    # 2. Define Pathway Layout (Walkable Grid Coordinates)
+    # 2. Define Spacious Walkable Grid
     walkable = set()
     
-    # Room 1: Sanctuary Bastion (around player spawn gx=3.5, gy=13.5)
+    # Room 1: Sanctuary Bastion (centered around player spawn gx=3.5, gy=13.5)
     for x in range(2, 6):
         for y in range(12, 16):
             walkable.add((x, y))
     for pt in [(1, 13), (1, 14), (6, 13), (6, 14), (3, 11), (4, 11), (3, 16), (4, 16)]:
         walkable.add(pt)
         
-    # Route A: Northern Flank Corridor (width 2-3 tiles)
+    # Route A: North Flank Corridor (spacious 3-4 tiles wide)
     for x in range(3, 6):
-        for y in range(8, 12):
+        for y in range(7, 12):
             walkable.add((x, y))
     for x in range(5, 11):
-        for y in range(6, 9):
+        for y in range(5, 9):
             walkable.add((x, y))
             
-    # Route B: Southern Bastion Corridor (width 2-3 tiles)
-    for x in range(6, 11):
-        for y in range(13, 16):
+    # Route B: South Bastion Corridor (spacious 3-4 tiles wide)
+    for x in range(6, 10):
+        for y in range(13, 17):
             walkable.add((x, y))
-    for x in range(10, 13):
-        for y in range(11, 14):
+    for x in range(8, 13):
+        for y in range(12, 16):
+            walkable.add((x, y))
+    for x in range(10, 14):
+        for y in range(9, 13):
             walkable.add((x, y))
             
-    # Note: gx in [6..9] and gy in [9..12] is an interior chasm dividing Route A and Route B!
+    # Central Chasm: (7..9, 9..11) is non-walkable abyss separating Route A and Route B
     
-    # Room 2: Central Crossroads & Grand Hall (convergence of Route A & B)
+    # Room 2: Central Crossroads (spacious junction hall)
     for x in range(10, 16):
-        for y in range(7, 11):
+        for y in range(6, 11):
             walkable.add((x, y))
             
-    # East Corridor towards Enemy Arena
+    # East Corridor
     for x in range(14, 18):
-        for y in range(5, 8):
+        for y in range(5, 9):
             walkable.add((x, y))
             
-    # Room 3: Overlord Enemy Arena / Northern Bastion
+    # Room 3: Overlord Arena / Northern Bastion
     for x in range(16, 21):
         for y in range(2, 6):
             walkable.add((x, y))
     for x in range(17, 21):
         for y in range(1, 3):
             walkable.add((x, y))
-
-    # Elevation & Stairs
-    elevation = {pt: 0 for pt in walkable}
-    stairs = {(18, 2): "steps_n"}
-    # Raised terrace in Overlord Arena
-    for x in range(17, 21):
-        for y in range(1, 3):
-            if (x, y) not in stairs:
-                elevation[(x, y)] = 1
 
     # Coordinate conversion
     def grid_to_screen(gx, gy, z=0):
@@ -153,110 +136,23 @@ def main():
     shadow_layer = Image.new("RGBA", (canvas_w, canvas_h), (0, 0, 0, 0))
     shadow_draw = ImageDraw.Draw(shadow_layer)
 
-    # 4. Define Walls, Columns and Props
-    # (gx, gy) -> (img, type_name, tex_name)
-    walls_and_props = {}
-    
-    # Northern boundary walls
-    north_wall_defs = [
-        (17, 1, win_n, "wall", "stoneWallWindowBars_N"),
-        (18, 1, arch_n, "wall", "stoneWallArchway_N"),
-        (19, 1, w_n, "wall", "stoneWall_N"),
-        (20, 1, broken_n, "wall", "stoneWallBroken_N"),
-        (16, 2, w_n, "wall", "stoneWall_N"),
-        (14, 5, w_n, "wall", "stoneWall_N"),
-        (15, 5, w_n, "wall", "stoneWall_N"),
-        (10, 6, w_n, "wall", "stoneWall_N"),
-        (11, 6, win_n, "wall", "stoneWallWindowBars_N"),
-        (12, 6, w_n, "wall", "stoneWall_N"),
-        (13, 6, broken_n, "wall", "stoneWallBroken_N"),
-        (6, 6, w_n, "wall", "stoneWall_N"),
-        (7, 6, w_n, "wall", "stoneWall_N"),
-        (8, 6, w_n, "wall", "stoneWall_N"),
-        (9, 6, w_n, "wall", "stoneWall_N"),
-        (3, 8, w_n, "wall", "stoneWall_N"),
-        (4, 8, w_n, "wall", "stoneWall_N"),
-        (5, 8, w_n, "wall", "stoneWall_N")
-    ]
-    for gx, gy, img, p_type, tex in north_wall_defs:
-        walls_and_props[(gx, gy)] = (img, p_type, tex)
-
-    # Architectural columns & markers along the path network
-    col_defs = [
-        # Sanctuary boundary (grand circular frame, clear inside)
-        (1, 13, col, "column", "stoneColumn_N"),
-        (1, 14, col, "column", "stoneColumn_N"),
-        (3, 16, col, "column", "stoneColumn_N"),
-        (4, 16, col, "column", "stoneColumn_N"),
-        # Central chasm border columns (preventing falling into abyss)
-        (6, 12, col, "column", "stoneColumn_N"),
-        (7, 12, col, "column", "stoneColumn_N"),
-        (8, 11, col, "column", "stoneColumn_N"),
-        (6, 9, col, "column", "stoneColumn_N"),
-        (7, 9, col, "column", "stoneColumn_N"),
-        (8, 9, col, "column", "stoneColumn_N"),
-        # South path boundary
-        (6, 15, col, "column", "stoneColumn_N"),
-        (10, 15, col, "column", "stoneColumn_N"),
-        (12, 13, col, "column", "stoneColumn_N"),
-        # Crossroads grand monument & cover
-        (12, 8, col, "column", "stoneColumn_N"),
-        (13, 8, chest, "chest", "chestClosed_N"),
-        (14, 8, col, "column", "stoneColumn_N"),
-        # East corridor & Overlord arena
-        (16, 5, col, "column", "stoneColumn_N"),
-        (18, 4, col, "column", "stoneColumn_N"),
-        (20, 3, col, "column", "stoneColumn_N"),
-        (17, 3, col_wood, "column", "stoneColumnWood_N")
-    ]
-    for gx, gy, img, p_type, tex in col_defs:
-        walls_and_props[(gx, gy)] = (img, p_type, tex)
-
-    # 5. Generate Drop Shadows for Walls and Columns
-    for (gx, gy), (p_img, p_type, _) in walls_and_props.items():
-        z = elevation.get((gx, gy), 0)
-        _, _, dcx, dcy = grid_to_screen(gx, gy, z)
-        if p_type in ["column", "corner"]:
-            shadow_draw.ellipse([dcx - 42, dcy - 18, dcx + 68, dcy + 22], fill=(0, 0, 0, 110))
-        elif p_type in ["wall", "gate", "door"]:
-            poly = [
-                (dcx - 85, dcy - 10),
-                (dcx + 85, dcy + 10),
-                (dcx + 120, dcy + 38),
-                (dcx - 50, dcy + 24)
-            ]
-            shadow_draw.polygon(poly, fill=(0, 0, 0, 125))
-        elif p_type in ["chest", "crates"]:
-            shadow_draw.ellipse([dcx - 45, dcy - 18, dcx + 60, dcy + 20], fill=(0, 0, 0, 95))
-
-    shadow_layer = shadow_layer.filter(ImageFilter.GaussianBlur(radius=8))
-
-    # 6. Render 3D Foundation Cliffs on Abyss Borders
     all_coords = sorted(list(walkable), key=lambda c: (c[0] + c[1], c[1]))
-    
+
+    # 4. Foundation Cliffs along abyss drop-offs (South, East, West borders)
     for gx, gy in all_coords:
         draw_x, draw_y, _, _ = grid_to_screen(gx, gy, 0)
-        # South edge: stoneSide_S
         if (gx, gy + 1) not in walkable:
             canvas.paste(cliff_s, (draw_x, draw_y + 40), cliff_s)
-        # East edge: stoneSide_E
         if (gx + 1, gy) not in walkable and cliff_e:
             canvas.paste(cliff_e, (draw_x, draw_y + 40), cliff_e)
-        # West edge: stoneSide_W
         if (gx - 1, gy) not in walkable and cliff_w:
             canvas.paste(cliff_w, (draw_x, draw_y + 40), cliff_w)
 
-    # 7. Render Floor Tiles
+    # 5. Render Floor Tiles
     for gx, gy in all_coords:
-        z = elevation.get((gx, gy), 0)
-        draw_x, draw_y, _, _ = grid_to_screen(gx, gy, z)
-        
-        if (gx, gy) in stairs:
-            canvas.paste(steps_n, (draw_x, draw_y), steps_n)
-            continue
-            
+        draw_x, draw_y, _, _ = grid_to_screen(gx, gy, 0)
         r = random.random()
-        if (gx in [11, 12, 13] and gy in [8, 9]):
+        if (gx in [13, 14, 15] and gy in [7, 8]):
             t_img = f_dirt if f_dirt else f_uneven
         elif r < 0.65:
             t_img = f_stone
@@ -266,13 +162,9 @@ def main():
             t_img = f_uneven
         else:
             t_img = f_missing
-            
         canvas.paste(t_img, (draw_x, draw_y), t_img)
 
-    # 8. Apply Shadow Layer onto the Floor
-    canvas = Image.alpha_composite(canvas, shadow_layer)
-
-    # 9. Render White Light Sanctuary Rune Circle (clean open center at 1352, 1502)
+    # 6. Render White Light Sanctuary Rune Circle at (1352, 1502)
     spawn_gx, spawn_gy = 3.5, 13.5
     sp_sx = int((spawn_gx - spawn_gy) * (TW / 2) + origin_x + TW // 2)
     sp_sy = int((spawn_gx + spawn_gy) * (TH / 2) + origin_y + TH // 2)
@@ -311,54 +203,88 @@ def main():
     )
     canvas = Image.alpha_composite(canvas, rune_layer)
 
-    # 10. Prepare Godot Obstacles list
-    godot_obstacles = []
+    # 7. Render Clear Architectural Borders (Walls on North/West, Balustrades on South/East)
+    # High back walls (North & West boundaries)
     for gx, gy in all_coords:
-        if (gx, gy) in walls_and_props:
-            p_img, p_type, tex_name = walls_and_props[(gx, gy)]
-            z = elevation.get((gx, gy), 0)
-            draw_x, draw_y, dcx, dcy = grid_to_screen(gx, gy, z)
-            
-            # Paste into visual map
-            canvas.paste(p_img, (draw_x, draw_y), p_img)
-            
-            godot_obstacles.append({
-                "name": f"{p_type}_{gx}_{gy}",
-                "tex": tex_name,
-                "x": dcx,
-                "y": dcy,
-                "type": p_type,
-                "gx": gx,
-                "gy": gy,
-                "z": z
-            })
+        draw_x, draw_y, _, _ = grid_to_screen(gx, gy, 0)
+        if (gx, gy - 1) not in walkable:
+            canvas.paste(w_n, (draw_x, draw_y), w_n)
+        elif (gx - 1, gy) not in walkable:
+            canvas.paste(w_w, (draw_x, draw_y), w_w)
 
-    # 11. Generate Path Boundary Collisions along all borders and central chasm
-    borders = []
+    # Front stone balustrades (South & East boundaries and central chasm)
+    for gx, gy in all_coords:
+        draw_x, draw_y, _, _ = grid_to_screen(gx, gy, 0)
+        if (gx, gy + 1) not in walkable:
+            canvas.paste(w_half_s, (draw_x, draw_y), w_half_s)
+        elif (gx + 1, gy) not in walkable:
+            canvas.paste(w_half_e, (draw_x, draw_y), w_half_e)
+
+    # Corner Columns to clearly anchor the rooms
+    corner_pillars = [
+        (1, 13), (1, 15), (3, 17), (5, 17),
+        (7, 13), (7, 10), (10, 10), (14, 10),
+        (18, 6), (23, 2), (23, 6)
+    ]
+    for gx, gy in corner_pillars:
+        draw_x, draw_y, _, _ = grid_to_screen(gx, gy, 0)
+        canvas.paste(col, (draw_x, draw_y), col)
+
+    # 8. Generate Solid Convex Polygon Slabs for Map Boundaries (No thin segments!)
+    # Each slab is a 70px thick convex polygon sitting in the void, flush with the walkway edge.
+    boundaries = []
     for gx, gy in all_coords:
         _, _, dcx, dcy = grid_to_screen(gx, gy, 0)
-        # NE edge
+        # NE edge (bordering gy - 1)
         if (gx, gy - 1) not in walkable:
-            borders.append({"x1": dcx, "y1": dcy - 64, "x2": dcx + 128, "y2": dcy})
-        # SE edge
+            boundaries.append({
+                "poly": [
+                    {"x": dcx, "y": dcy - 64},
+                    {"x": dcx + 128, "y": dcy},
+                    {"x": dcx + 128 + 32, "y": dcy - 64},
+                    {"x": dcx + 32, "y": dcy - 128}
+                ]
+            })
+        # SE edge (bordering gx + 1)
         if (gx + 1, gy) not in walkable:
-            borders.append({"x1": dcx + 128, "y1": dcy, "x2": dcx, "y2": dcy + 64})
-        # SW edge
+            boundaries.append({
+                "poly": [
+                    {"x": dcx + 128, "y": dcy},
+                    {"x": dcx, "y": dcy + 64},
+                    {"x": dcx + 64, "y": dcy + 64 + 32},
+                    {"x": dcx + 128 + 64, "y": dcy + 32}
+                ]
+            })
+        # SW edge (bordering gy + 1)
         if (gx, gy + 1) not in walkable:
-            borders.append({"x1": dcx, "y1": dcy + 64, "x2": dcx - 128, "y2": dcy})
-        # NW edge
+            boundaries.append({
+                "poly": [
+                    {"x": dcx, "y": dcy + 64},
+                    {"x": dcx - 128, "y": dcy},
+                    {"x": dcx - 128 - 32, "y": dcy + 64},
+                    {"x": dcx - 32, "y": dcy + 128}
+                ]
+            })
+        # NW edge (bordering gx - 1)
         if (gx - 1, gy) not in walkable:
-            borders.append({"x1": dcx - 128, "y1": dcy, "x2": dcx, "y2": dcy - 64})
+            boundaries.append({
+                "poly": [
+                    {"x": dcx - 128, "y": dcy},
+                    {"x": dcx, "y": dcy - 64},
+                    {"x": dcx - 64, "y": dcy - 64 - 32},
+                    {"x": dcx - 128 - 64, "y": dcy - 32}
+                ]
+            })
 
-    # 12. Warm Torchlight Glare on Pathway Walls
+    # 9. Warm Torchlight Glow on Walls
     torch_layer = Image.new("RGBA", (canvas_w, canvas_h), (0, 0, 0, 0))
     t_draw = ImageDraw.Draw(torch_layer)
     torch_points = [
-        (18, 1), (11, 6), (4, 8), (7, 6),
-        (12, 8), (14, 8), (6, 12), (1, 14)
+        (4, 7), (8, 5), (14, 6), (20, 2),
+        (7, 13), (12, 12), (18, 5)
     ]
     for tgx, tgy in torch_points:
-        _, _, tcx, tcy = grid_to_screen(tgx, tgy, elevation.get((tgx, tgy), 0))
+        _, _, tcx, tcy = grid_to_screen(tgx, tgy, 0)
         ty = tcy - 110
         t_draw.ellipse([tcx - 130, ty - 80, tcx + 130, ty + 80], fill=(255, 190, 80, 40))
         t_draw.ellipse([tcx - 65, ty - 40, tcx + 65, ty + 40], fill=(255, 220, 140, 70))
@@ -367,7 +293,7 @@ def main():
     torch_layer = torch_layer.filter(ImageFilter.GaussianBlur(radius=15))
     canvas = Image.alpha_composite(canvas, torch_layer)
 
-    # 13. Save Output Images and Data
+    # 10. Save Output Images and Data
     out_floor = "assets/textures/dungeon_floor.png"
     out_png = "assets/textures/dungeon_arena.png"
     out_jpg = "assets/textures/arena_map.jpg"
@@ -388,14 +314,14 @@ def main():
             "y": sp_sy,
             "radius": 190
         },
-        "obstacles": godot_obstacles,
-        "borders": borders
+        "obstacles": [], # All walls/railings are now baked into the floor & enclosed by thick boundary slabs!
+        "boundary_slabs": boundaries
     }
     with open(out_json, "w") as f:
         json.dump(map_data, f, indent=2)
         
     print(f"Generated 2.5D Dungeon Pathway Map successfully!")
-    print(f"Floor size: {canvas.size}, Obstacles: {len(godot_obstacles)}")
+    print(f"Floor size: {canvas.size}, Boundary slabs: {len(boundaries)}")
     print(f"White light sanctuary at ({sp_sx}, {sp_sy})")
 
 if __name__ == "__main__":

@@ -94,21 +94,26 @@ func _draw() -> void:
 	# High-tech comic outline
 	draw_arc(center, r, 0, TAU, 32, Color(1.0, 1.0, 1.0, 0.95), 2.2, true)
 
+var pickup_scene = preload("res://scenes/ammo_pickup.tscn")
+
 func on_laser_hit(laser_col: String) -> void:
 	var combo = color_id + "_" + laser_col
 	var result_color = GameManager.ORB_CONVERSIONS.get(combo, "")
 	var main = get_tree().current_scene
-	var player = get_tree().get_first_node_in_group("player")
 	
 	if result_color != "":
-		# Successful conversion! (1 ammo crafted)
-		if player and player.ammo.has(result_color):
-			player.ammo[result_color] = min(player.max_ammo_per_color, player.ammo[result_color] + 1)
-			player.emit_signal("ammo_changed", player.ammo, player.get_active_color())
+		# Successful conversion! Spawn crafted ammo pickup at orb place for the player to collect
+		var pickup = pickup_scene.instantiate()
+		pickup.position = global_position
+		pickup.setup(result_color)
+		if main and main.get_node_or_null("Entities"):
+			main.get_node("Entities").call_deferred("add_child", pickup)
+		else:
+			get_parent().call_deferred("add_child", pickup)
 			
 		if main and main.has_method("spawn_comic_floater"):
 			var res_data = GameManager.COLORS.get(result_color, { "color": Color.WHITE })
-			main.spawn_comic_floater(global_position + Vector2(0, -60), "+1 " + result_color + "!", res_data["color"])
+			main.spawn_comic_floater(global_position + Vector2(0, -60), "CRAFTED!", res_data["color"])
 		if main and main.has_method("on_orb_converted"):
 			main.on_orb_converted(color_id, laser_col, result_color)
 		

@@ -14,11 +14,12 @@ var troop_sprites: Dictionary = {}
 @onready var sprite_2d: Sprite2D = $Sprite2D
 var orb_scene = preload("res://scenes/orb.tscn")
 var bullet_scene = preload("res://scenes/enemy_bullet.tscn")
-var shoot_timer: float = 0.0
-var shoot_interval: float = 2.4
+var shoot_timer: float = 0.8
+var shoot_interval: float = 2.0
 
 func _ready() -> void:
 	add_to_group("enemies")
+	shoot_timer = randf_range(0.3, 1.2)
 	load_sprites_for_color()
 	update_sprite(true)
 
@@ -52,10 +53,10 @@ func _physics_process(delta: float) -> void:
 			var to_player = player.global_position - global_position
 			var dist = to_player.length()
 			
-			# Shooting AI: shoot slow chromatic bullets periodically
+			# Shooting AI: shoot slow chromatic bullets periodically within 1100px range
 			shoot_timer += delta
-			if shoot_timer >= shoot_interval and dist < 750.0:
-				shoot_timer = randf_range(-0.4, 0.3)
+			if shoot_timer >= shoot_interval and dist < 1100.0:
+				shoot_timer = randf_range(-0.4, 0.2)
 				shoot_bullet_at(player.global_position)
 			
 			if dist > 35.0:
@@ -112,36 +113,49 @@ func take_laser_hit(laser_col: String, hit_dir: Vector2) -> void:
 	
 	match interaction.get("action"):
 		"KILL":
-			if main and main.has_method("spawn_comic_floater"):
-				var word = GameManager.COMIC_WORDS[randi() % GameManager.COMIC_WORDS.size()]
-				main.spawn_comic_floater(global_position + Vector2(0, -40), word, GameManager.COLORS[color_id]["color"])
-			if main and main.has_method("add_camera_shake"):
-				main.add_camera_shake(0.38)
-				
-			# Drop color orb
-			var drop_color = GameManager.ENEMY_ORB_DROPS.get(color_id, "")
-			if drop_color != "":
-				var orb = orb_scene.instantiate()
-				orb.position = global_position
-				orb.set_orb_color(drop_color)
-				if main and main.get_node_or_null("Entities"):
-					main.get_node("Entities").call_deferred("add_child", orb)
-				else:
-					get_parent().call_deferred("add_child", orb)
-				
-			if main and main.has_method("on_enemy_killed"):
-				main.on_enemy_killed(self)
-				
-			queue_free()
-			
+			# Direct weakness counter-laser: Instant 1-hit kill!
+			die_and_drop(main)
 		"TRANSFORM":
-			var target_color = interaction.get("target")
-			set_enemy_color(target_color)
-			if main and main.has_method("spawn_comic_floater"):
-				main.spawn_comic_floater(global_position + Vector2(0, -40), "TRANSFORM", GameManager.COLORS[target_color]["color"])
-			if main and main.has_method("add_camera_shake"):
-				main.add_camera_shake(0.2)
-				
+			health -= 1
+			if health <= 0:
+				die_and_drop(main)
+			else:
+				var target_color = interaction.get("target")
+				set_enemy_color(target_color)
+				if main and main.has_method("spawn_comic_floater"):
+					main.spawn_comic_floater(global_position + Vector2(0, -40), "TRANSFORM", GameManager.COLORS[target_color]["color"])
+				if main and main.has_method("add_camera_shake"):
+					main.add_camera_shake(0.2)
 		"NONE":
-			if main and main.has_method("spawn_comic_floater"):
-				main.spawn_comic_floater(global_position + Vector2(0, -40), "DEFLECT!", Color(0.8, 0.8, 0.8))
+			health -= 1
+			if health <= 0:
+				die_and_drop(main)
+			else:
+				if main and main.has_method("spawn_comic_floater"):
+					main.spawn_comic_floater(global_position + Vector2(0, -40), "HIT!", Color(0.85, 0.85, 0.85))
+				if main and main.has_method("add_camera_shake"):
+					main.add_camera_shake(0.18)
+
+func die_and_drop(main) -> void:
+	if main and main.has_method("spawn_comic_floater"):
+		var word = GameManager.COMIC_WORDS[randi() % GameManager.COMIC_WORDS.size()]
+		var col = GameManager.COLORS.get(color_id, {}).get("color", Color.WHITE)
+		main.spawn_comic_floater(global_position + Vector2(0, -40), word, col)
+	if main and main.has_method("add_camera_shake"):
+		main.add_camera_shake(0.38)
+		
+	# Guaranteed orb drop for all enemy types
+	var drop_color = GameManager.ENEMY_ORB_DROPS.get(color_id, "RED")
+	if drop_color != "" and orb_scene:
+		var orb = orb_scene.instantiate()
+		orb.position = global_position
+		orb.set_orb_color(drop_color)
+		if main and main.get_node_or_null("Entities"):
+			main.get_node("Entities").call_deferred("add_child", orb)
+		else:
+			get_parent().call_deferred("add_child", orb)
+		
+	if main and main.has_method("on_enemy_killed"):
+		main.on_enemy_killed(self)
+		
+	queue_free()

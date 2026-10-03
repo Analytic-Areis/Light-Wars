@@ -24,7 +24,7 @@ var refill_timer: float = 0.0
 var trauma: float = 0.0
 var max_shake_offset: float = 20.0
 
-var phase_enemy_pools: Dictionary = { 1: [], 2: [], 3: [], 4: [] }
+var phase_enemy_pools: Dictionary = {}
 
 func play_sfx(stream: AudioStream, pitch: float = 1.0) -> void:
 	if not stream: return
@@ -153,9 +153,9 @@ func load_map_obstacles() -> void:
 		obstacle.position = Vector2(obs["x"], obs["y"])
 		obstacle.setup(obs["tex"], obs["type"])
 
-	# Load solid boundaries for all pathway borders and abyss drops
-	var borders_list = data.get("borders", [])
-	if not borders_list.is_empty():
+	# Load solid thick boundary slabs for all pathway borders and abyss drops
+	var slabs_list = data.get("boundary_slabs", [])
+	if not slabs_list.is_empty():
 		var border_body = StaticBody2D.new()
 		border_body.name = "MapBorders"
 		border_body.collision_layer = 4
@@ -164,12 +164,12 @@ func load_map_obstacles() -> void:
 		border_body.add_to_group("obstacles")
 		entities.add_child(border_body)
 		
-		for b in borders_list:
-			var col = CollisionShape2D.new()
-			var seg = SegmentShape2D.new()
-			seg.a = Vector2(b["x1"], b["y1"])
-			seg.b = Vector2(b["x2"], b["y2"])
-			col.shape = seg
+		for s in slabs_list:
+			var col = CollisionPolygon2D.new()
+			var pts = PackedVector2Array()
+			for pt in s["poly"]:
+				pts.append(Vector2(pt["x"], pt["y"]))
+			col.polygon = pts
 			border_body.add_child(col)
 
 func start_level_1() -> void:
@@ -232,7 +232,7 @@ func init_phase_5() -> void:
 	phase = 5
 	hud.set_objective(
 		"PHASE 5: CRIMSON RED CORPS INBOUND",
-		"Press [4] for CYAN Laser to annihilate Red troops! (Orbs drop Cyan ammo)"
+		"Press [4] for CYAN Laser to defeat Red troops! Defeated Red troops drop RED Orbs!"
 	)
 	activate_phase_enemies(5)
 
@@ -240,7 +240,7 @@ func init_phase_6() -> void:
 	phase = 6
 	hud.set_objective(
 		"PHASE 6: EMERALD GREEN TROOP ASSAULT",
-		"Press [5] for MAGENTA Laser to extinguish Green troops! (Orbs drop Magenta ammo)"
+		"Press [5] for MAGENTA Laser to extinguish Green troops! Defeated Green troops drop GREEN Orbs!"
 	)
 	activate_phase_enemies(6)
 
@@ -248,7 +248,7 @@ func init_phase_7() -> void:
 	phase = 7
 	hud.set_objective(
 		"PHASE 7: COBALT BLUE LEGION ADVANCING",
-		"Press [6] for YELLOW Laser to vanquish Blue troops! (Orbs drop Yellow ammo)"
+		"Press [6] for YELLOW Laser to vanquish Blue troops! Defeated Blue troops drop BLUE Orbs!"
 	)
 	activate_phase_enemies(7)
 

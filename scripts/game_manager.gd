@@ -63,14 +63,14 @@ const ENEMY_INTERACTIONS = {
 	}
 }
 
-# Orb Drops from Enemy Death
+# Orb Drops from Enemy Death (All enemies drop craftable orbs)
 const ENEMY_ORB_DROPS = {
 	"CYAN": "RED",
 	"MAGENTA": "GREEN",
 	"YELLOW": "BLUE",
-	"RED": "CYAN",
-	"GREEN": "MAGENTA",
-	"BLUE": "YELLOW"
+	"RED": "RED",
+	"GREEN": "GREEN",
+	"BLUE": "BLUE"
 }
 
 # Orb + Laser -> New Laser Ammo

@@ -12,6 +12,7 @@ func setup(start_pos: Vector2, dir: Vector2, col_name: String) -> void:
 	color_id = col_name
 	var c_data = GameManager.COLORS.get(col_name, { "color": Color("#00F0FF") })
 	bullet_color = c_data["color"]
+	queue_redraw()
 
 func _ready() -> void:
 	add_to_group("enemy_bullets")
@@ -26,10 +27,10 @@ func _physics_process(delta: float) -> void:
 		queue_free()
 
 func _draw() -> void:
-	# Glowing slow chromatic plasma sphere
-	draw_circle(Vector2.ZERO, 18.0, Color(bullet_color.r, bullet_color.g, bullet_color.b, 0.25))
-	draw_circle(Vector2.ZERO, 11.0, bullet_color)
-	draw_circle(Vector2.ZERO, 5.0, Color.WHITE)
+	# Standardized glowing chromatic plasma orb for all 6 enemy colors
+	draw_circle(Vector2.ZERO, 16.0, Color(bullet_color.r, bullet_color.g, bullet_color.b, 0.35))
+	draw_circle(Vector2.ZERO, 10.0, bullet_color)
+	draw_circle(Vector2.ZERO, 4.5, Color.WHITE)
 
 func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):
