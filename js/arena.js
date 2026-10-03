@@ -1,127 +1,248 @@
 /**
- * Light-Wars: 2.5D Arena & Radiant White Light Refill Platform
- * Manages 5520x3388 map rendering, White Light Sanctuary, and exact tile-based
- * corridor boundary collision and wall-sliding.
+ * Light-Wars: Arena & Recharge Station Manager
+ * Supports Level 1 (Sci-Fi Chamber Map from map_collision.json)
+ * and Level 2 (Dungeon Arena).
+ * Implements exact projective homography transformation, continuous
+ * body collision checking, and smooth wall-sliding.
  */
 
 class Arena {
   constructor(width, height) {
-    this.width = width || 5520;
-    this.height = height || 3388;
-
-    this.originX = 2504;
-    this.originY = 350;
-
-    // Load custom arena map image
+    this.currentLevel = 1;
     this.mapImg = new Image();
-    this.mapImg.src = 'assets/textures/arena_map.jpg';
-
-    // White Light Sanctuary (lower-left courtyard)
     this.whiteLight = {
-      x: 1352,
-      y: 1502,
-      radius: 190,
+      x: 3689,
+      y: 1161,
+      radius: 75,
       pulseTime: 0,
       particles: []
     };
 
-    // Load walkable grid tiles from map data
-    this.walkable = new Set();
-    const mapData = window.LightWars.DUNGEON_MAP_DATA;
-    if (mapData && mapData.walkable_tiles) {
-      if (mapData.origin_x !== undefined) this.originX = mapData.origin_x;
-      if (mapData.origin_y !== undefined) this.originY = mapData.origin_y;
-      for (const t of mapData.walkable_tiles) {
-        this.walkable.add(`${t[0]}_${t[1]}`);
+    this.loadLevel(1);
+  }
+
+  loadLevel(levelNum = 1) {
+    this.currentLevel = levelNum;
+
+    if (levelNum === 1 && window.LightWars.LEVEL1_MAP_DATA) {
+      const data = window.LightWars.LEVEL1_MAP_DATA;
+      this.cols = data.cols;
+      this.rows = data.rows;
+      this.scale = data.scale || 3.6;
+      this.width = data.width || Math.round(1536 * this.scale);
+      this.height = data.height || Math.round(1024 * this.scale);
+      this.blocked = data.blocked;
+      this.proj = data.proj;
+      this.spawn = data.spawn;
+
+      this.whiteLight = {
+        x: data.whiteLight.x,
+        y: data.whiteLight.y,
+        radius: data.whiteLight.radius,
+        pulseTime: 0,
+        particles: []
+      };
+
+      this.mapImg.src = 'assets/textures/level1_map.png';
+    } else {
+      // Fallback / Level 2 Dungeon Arena
+      const data = window.LightWars.DUNGEON_MAP_DATA || {};
+      this.cols = 24;
+      this.rows = 18;
+      this.scale = 1.0;
+      this.width = data.width || 5520;
+      this.height = data.height || 3388;
+      this.originX = data.origin_x !== undefined ? data.origin_x : 2504;
+      this.originY = data.origin_y !== undefined ? data.origin_y : 350;
+      this.blocked = null;
+      this.proj = null;
+
+      this.walkable = new Set();
+      if (data.walkable_tiles) {
+        for (const t of data.walkable_tiles) {
+          this.walkable.add(`${t[0]}_${t[1]}`);
+        }
       }
+
+      this.whiteLight = {
+        x: data.whiteLight ? data.whiteLight.x : 1352,
+        y: data.whiteLight ? data.whiteLight.y : 1502,
+        radius: data.whiteLight ? data.whiteLight.radius : 190,
+        pulseTime: 0,
+        particles: []
+      };
+
+      this.mapImg.src = 'assets/textures/arena_map.jpg';
     }
   }
 
-  isWalkableTile(tx, ty) {
-    return this.walkable.has(`${tx}_${ty}`);
-  }
-
+  /**
+   * Convert World / Screen coordinates (px, py) to fractional grid coordinates (c, r)
+   */
   toGrid(px, py) {
-    const sx = px - 128.0 - this.originX;
-    const sy = py - 64.0 - this.originY;
+    if (this.currentLevel === 1 && this.proj) {
+      const x = px / this.scale;
+      const y = py / this.scale;
+      const p = this.proj;
+
+      const A1 = p.a - p.g * x;
+      const B1 = p.b - p.h * x;
+      const C1 = x - p.x0;
+      const A2 = p.d_ - p.g * y;
+      const B2 = p.e - p.h * y;
+      const C2 = y - p.y0;
+
+      const det = A1 * B2 - A2 * B1;
+      if (Math.abs(det) < 1e-12) {
+        return { c: -1, r: -1, gx: -1, gy: -1 };
+      }
+
+      const u = (C1 * B2 - C2 * B1) / det;
+      const v = (A1 * C2 - A2 * C1) / det;
+      const c = u * this.cols;
+      const r = v * this.rows;
+      return { c, r, gx: c, gy: r };
+    }
+
+    // Level 2 / Classic 2:1 isometric formula
+    const sx = px - 128.0 - (this.originX || 2504);
+    const sy = py - 64.0 - (this.originY || 350);
     const gx = (sx / 256.0) + (sy / 128.0);
     const gy = (sy / 128.0) - (sx / 256.0);
-    return { gx, gy };
+    return { c: gx, r: gy, gx, gy };
   }
 
-  toScreen(gx, gy) {
-    const sx = (gx - gy) * 128.0;
-    const sy = (gx + gy) * 64.0;
-    return { x: sx + 128.0 + this.originX, y: sy + 64.0 + this.originY };
+  /**
+   * Convert fractional grid coordinates (c, r) to World / Screen coordinates (x, y)
+   */
+  toScreen(c, r) {
+    if (this.currentLevel === 1 && this.proj) {
+      const p = this.proj;
+      const u = c / this.cols;
+      const v = r / this.rows;
+      const w = p.g * u + p.h * v + 1;
+      const x = ((p.a * u + p.b * v + p.x0) / w) * this.scale;
+      const y = ((p.d_ * u + p.e * v + p.y0) / w) * this.scale;
+      return { x, y };
+    }
+
+    // Level 2 / Classic 2:1 isometric formula
+    const sx = (c - r) * 128.0;
+    const sy = (c + r) * 64.0;
+    return {
+      x: sx + 128.0 + (this.originX || 2504),
+      y: sy + 64.0 + (this.originY || 350)
+    };
   }
 
-  // Exact boundary collision & wall sliding
-  resolveMovement(oldX, oldY, newX, newY) {
-    const oldGrid = this.toGrid(oldX, oldY);
-    const newGrid = this.toGrid(newX, newY);
+  /**
+   * Check if integer tile (c, r) is walkable
+   */
+  isWalkableTile(c, r) {
+    const tc = Math.floor(c);
+    const tr = Math.floor(r);
 
-    const targetTx = Math.round(newGrid.gx);
-    const targetTy = Math.round(newGrid.gy);
+    if (this.currentLevel === 1 && this.blocked) {
+      if (tc < 0 || tr < 0 || tc >= this.cols || tr >= this.rows) return false;
+      return this.blocked[tr][tc] === 0;
+    }
 
-    let candGx = newGrid.gx;
-    let candGy = newGrid.gy;
+    if (this.walkable) {
+      return this.walkable.has(`${Math.round(c)}_${Math.round(r)}`);
+    }
 
-    const PAD = 0.36;
+    return true;
+  }
 
-    if (!this.isWalkableTile(targetTx, targetTy)) {
-      // Try X slide
-      const slideX_Tx = Math.round(newGrid.gx);
-      const slideX_Ty = Math.round(oldGrid.gy);
+  /**
+   * Check if point (px, py) is inside a blocked tile or out of bounds
+   */
+  isPointBlocked(px, py) {
+    if (px < 0 || py < 0 || px >= this.width || py >= this.height) return true;
+    const g = this.toGrid(px, py);
+    return !this.isWalkableTile(g.c, g.r);
+  }
 
-      // Try Y slide
-      const slideY_Tx = Math.round(oldGrid.gx);
-      const slideY_Ty = Math.round(newGrid.gy);
+  /**
+   * Check if character collision body centered at (px, py) intersects any blocked tile
+   */
+  isBodyBlocked(px, py, radius = 18) {
+    if (this.isPointBlocked(px, py)) return true;
 
-      if (this.isWalkableTile(slideX_Tx, slideX_Ty)) {
-        candGy = oldGrid.gy;
-      } else if (this.isWalkableTile(slideY_Tx, slideY_Ty)) {
-        candGx = oldGrid.gx;
-      } else {
-        return { x: oldX, y: oldY };
+    // Test 8 points on ground ellipse (compressed vertically for isometric angle)
+    const angles = [0, 0.785, 1.571, 2.356, 3.142, 3.927, 4.712, 5.498];
+    for (let i = 0; i < 8; i++) {
+      const ang = angles[i];
+      const sx = px + Math.cos(ang) * radius;
+      const sy = py + Math.sin(ang) * (radius * 0.52);
+      if (this.isPointBlocked(sx, sy)) return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Smooth movement collision resolution with wall sliding
+   */
+  resolveMovement(oldX, oldY, newX, newY, radius = 18) {
+    // 1. Direct path check
+    if (!this.isBodyBlocked(newX, newY, radius)) {
+      return { x: newX, y: newY };
+    }
+
+    // 2. Sliding along World X axis
+    if (!this.isBodyBlocked(newX, oldY, radius)) {
+      return { x: newX, y: oldY };
+    }
+
+    // 3. Sliding along World Y axis
+    if (!this.isBodyBlocked(oldX, newY, radius)) {
+      return { x: oldX, y: newY };
+    }
+
+    if (this.currentLevel === 1 && this.proj) {
+      // 4. Sliding along isometric grid tangents
+      const oldG = this.toGrid(oldX, oldY);
+      const newG = this.toGrid(newX, newY);
+
+      // Tangent C-axis
+      const candC = this.toScreen(newG.c, oldG.r);
+      if (!this.isBodyBlocked(candC.x, candC.y, radius)) {
+        return { x: candC.x, y: candC.y };
+      }
+
+      // Tangent R-axis
+      const candR = this.toScreen(oldG.c, newG.r);
+      if (!this.isBodyBlocked(candR.x, candR.y, radius)) {
+        return { x: candR.x, y: candR.y };
+      }
+
+      // Fractional sub-step
+      for (let frac = 0.75; frac >= 0.25; frac -= 0.25) {
+        const mx = oldX + (newX - oldX) * frac;
+        const my = oldY + (newY - oldY) * frac;
+        if (!this.isBodyBlocked(mx, my, radius)) {
+          return { x: mx, y: my };
+        }
       }
     }
 
-    // Clamp inside walkable corridor boundaries
-    const curTx = Math.round(candGx);
-    const curTy = Math.round(candGy);
-
-    if (this.isWalkableTile(curTx, curTy)) {
-      if (!this.isWalkableTile(curTx + 1, curTy)) candGx = Math.min(curTx + PAD, candGx);
-      if (!this.isWalkableTile(curTx - 1, curTy)) candGx = Math.max(curTx - PAD, candGx);
-      if (!this.isWalkableTile(curTx, curTy + 1)) candGy = Math.min(curTy + PAD, candGy);
-      if (!this.isWalkableTile(curTx, curTy - 1)) candGy = Math.max(curTy - PAD, candGy);
-    } else {
-      return { x: oldX, y: oldY };
-    }
-
-    return this.toScreen(candGx, candGy);
-  }
-
-  // Check if laser hit wall/void
-  isPointBlocked(px, py) {
-    const g = this.toGrid(px, py);
-    const tx = Math.round(g.gx);
-    const ty = Math.round(g.gy);
-    return !this.isWalkableTile(tx, ty);
+    // Blocked: remain at old position
+    return { x: oldX, y: oldY };
   }
 
   update(dt) {
     this.whiteLight.pulseTime += dt * 3.0;
 
-    // Upward particles inside sanctuary
-    if (Math.random() < 0.6) {
+    // Upward glowing energy particles inside sanctuary
+    if (Math.random() < 0.55) {
       const angle = Math.random() * Math.PI * 2;
       const r = Math.random() * (this.whiteLight.radius * 0.85);
       this.whiteLight.particles.push({
         x: this.whiteLight.x + Math.cos(angle) * r,
-        y: this.whiteLight.y + Math.sin(angle) * (r * 0.55),
-        vy: -(60 + Math.random() * 80),
-        vx: (Math.random() - 0.5) * 15,
+        y: this.whiteLight.y + Math.sin(angle) * (r * 0.52),
+        vy: -(50 + Math.random() * 70),
+        vx: (Math.random() - 0.5) * 12,
         alpha: 1.0,
         size: 2.5 + Math.random() * 3
       });
@@ -139,7 +260,7 @@ class Arena {
   }
 
   draw(ctx) {
-    // 1. Draw High-Res 5520x3388 2.5D Dungeon Map
+    // 1. Draw Map Image
     if (this.mapImg.complete && this.mapImg.naturalWidth > 0) {
       ctx.drawImage(this.mapImg, 0, 0, this.width, this.height);
     } else {
@@ -147,25 +268,28 @@ class Arena {
       ctx.fillRect(0, 0, this.width, this.height);
     }
 
-    // 2. Draw Radiant White Light Sanctuary at (1352, 1502)
+    // 2. Draw Radiant Recharge Station
     const wl = this.whiteLight;
     const pulse = 1.0 + Math.sin(wl.pulseTime) * 0.12;
 
     ctx.save();
     // Halo glow
-    const haloGrad = ctx.createRadialGradient(wl.x, wl.y, wl.radius * 0.2, wl.x, wl.y, wl.radius * 1.4 * pulse);
+    const haloGrad = ctx.createRadialGradient(
+      wl.x, wl.y, wl.radius * 0.2,
+      wl.x, wl.y, wl.radius * 1.35 * pulse
+    );
     haloGrad.addColorStop(0, 'rgba(230, 248, 255, 0.40)');
     haloGrad.addColorStop(0.5, 'rgba(0, 240, 255, 0.18)');
     haloGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
     ctx.fillStyle = haloGrad;
     ctx.beginPath();
-    ctx.ellipse(wl.x, wl.y, wl.radius * 1.4 * pulse, wl.radius * 0.75 * pulse, 0, 0, Math.PI * 2);
+    ctx.ellipse(wl.x, wl.y, wl.radius * 1.35 * pulse, wl.radius * 0.70 * pulse, 0, 0, Math.PI * 2);
     ctx.fill();
 
     // Runic energy disc
     ctx.fillStyle = 'rgba(180, 230, 255, 0.25)';
-    ctx.strokeStyle = 'rgba(0, 240, 255, 0.8)';
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.85)';
     ctx.lineWidth = 3.0;
     ctx.beginPath();
     ctx.ellipse(wl.x, wl.y, wl.radius, wl.radius * 0.52, 0, 0, Math.PI * 2);
@@ -173,21 +297,21 @@ class Arena {
     ctx.stroke();
 
     // Inner ring
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
     ctx.lineWidth = 2.0;
     ctx.beginPath();
     ctx.ellipse(wl.x, wl.y, wl.radius * 0.75, wl.radius * 0.39, 0, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Runes
+    // Rotating runic runes
     ctx.save();
     ctx.translate(wl.x, wl.y);
     ctx.rotate(wl.pulseTime * 0.4);
-    ctx.strokeStyle = 'rgba(0, 240, 255, 0.6)';
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.65)';
     ctx.lineWidth = 2.0;
-    ctx.setLineDash([16, 12]);
+    ctx.setLineDash([14, 10]);
     ctx.beginPath();
-    ctx.ellipse(0, 0, wl.radius * 0.6, wl.radius * 0.31, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, wl.radius * 0.58, wl.radius * 0.30, 0, 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
 
@@ -195,7 +319,7 @@ class Arena {
     ctx.shadowColor = '#000000';
     ctx.shadowBlur = 10;
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = '900 18px "Impact", "Arial Black", sans-serif';
+    ctx.font = '900 17px "Impact", "Arial Black", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('RECHARGE STATION', wl.x, wl.y + 4);
 

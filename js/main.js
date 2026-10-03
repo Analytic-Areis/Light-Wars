@@ -184,10 +184,27 @@ class LightWarsGame {
       });
     }
 
+    const play2Btn = document.getElementById('startLevel2Btn');
+    if (play2Btn) {
+      play2Btn.addEventListener('click', () => {
+        window.LightWars.sound.resume();
+        this.startLevel2();
+      });
+    }
+
     const restartBtn = document.getElementById('restartBtn');
     if (restartBtn) {
       restartBtn.addEventListener('click', () => {
-        this.startLevel1();
+        if (this._lastLevel === 2) this.startLevel2();
+        else this.startLevel1();
+      });
+    }
+
+    const playAgainBtn = document.getElementById('playAgainBtn');
+    if (playAgainBtn) {
+      playAgainBtn.addEventListener('click', () => {
+        if (this._lastLevel === 2) this.startLevel2();
+        else this.startLevel1();
       });
     }
 
@@ -201,12 +218,63 @@ class LightWarsGame {
     const page2Btn = document.getElementById('goToPage2Btn');
     if (page2Btn) {
       page2Btn.addEventListener('click', () => {
-        alert("ISSUE #2 &bull; THE WHITE BOSS AWAKENING\\nComing in the next chapter of the chromatic war!");
+        alert('ISSUE #2 • THE WHITE BOSS AWAKENING\nComing in the next chapter of the chromatic war!');
       });
     }
 
+    this.updateComicMenuLockState();
     this.updateComicMenuBossState();
   }
+
+  /** Show/hide row lock overlays based on progress flags */
+  updateComicMenuLockState() {
+    const level1Cleared = localStorage.getItem('lightwars_level1_cleared') === 'true';
+    const level2Cleared = localStorage.getItem('lightwars_level2_cleared') === 'true';
+
+    // Row 2 lock
+    const row2Overlay = document.getElementById('row2LockOverlay');
+    if (row2Overlay) row2Overlay.style.display = level1Cleared ? 'none' : 'flex';
+
+    // Mission 2 — unlock content
+    const mission2LockedContent = document.getElementById('mission2LockedContent');
+    const mission2Briefing = document.getElementById('mission2Briefing');
+    const mission2StatusPill = document.getElementById('mission2StatusPill');
+    const startLevel2Btn = document.getElementById('startLevel2Btn');
+    if (level1Cleared) {
+      if (mission2LockedContent) mission2LockedContent.style.display = 'none';
+      if (mission2Briefing) mission2Briefing.style.display = 'block';
+      if (mission2StatusPill) {
+        mission2StatusPill.textContent = 'READY';
+        mission2StatusPill.className = 'comic-status-pill ready';
+      }
+      if (startLevel2Btn) startLevel2Btn.style.display = '';
+    } else {
+      if (mission2LockedContent) mission2LockedContent.style.display = '';
+      if (mission2Briefing) mission2Briefing.style.display = 'none';
+      if (mission2StatusPill) {
+        mission2StatusPill.textContent = 'LOCKED';
+        mission2StatusPill.className = 'comic-status-pill locked';
+      }
+      if (startLevel2Btn) startLevel2Btn.style.display = 'none';
+    }
+
+    // Mission 1 — mark cleared after level 1 done
+    const mission1StatusPill = document.getElementById('mission1StatusPill');
+    if (mission1StatusPill) {
+      if (level1Cleared) {
+        mission1StatusPill.textContent = 'CLEARED ★';
+        mission1StatusPill.className = 'comic-status-pill cleared';
+      } else {
+        mission1StatusPill.textContent = 'READY';
+        mission1StatusPill.className = 'comic-status-pill ready';
+      }
+    }
+
+    // Row 3 lock
+    const row3Overlay = document.getElementById('row3LockOverlay');
+    if (row3Overlay) row3Overlay.style.display = level2Cleared ? 'none' : 'flex';
+  }
+
 
   updateComicMenuBossState() {
     const isBlackBossDefeated = localStorage.getItem('lightwars_black_boss_defeated') === 'true';
@@ -266,25 +334,23 @@ class LightWarsGame {
 
   showMenu() {
     this.state = 'MENU';
+    this.updateComicMenuLockState();
     this.updateComicMenuBossState();
     document.getElementById('comicMenu').style.display = 'flex';
     document.getElementById('levelClearModal').style.display = 'none';
     document.getElementById('gameOverModal').style.display = 'none';
   }
 
-  startLevel1() {
+  _resetGameEntities() {
     document.getElementById('comicMenu').style.display = 'none';
     document.getElementById('levelClearModal').style.display = 'none';
     document.getElementById('gameOverModal').style.display = 'none';
 
-    // Spawn player at White Light Sanctuary (1352, 1502)
     this.player = new window.LightWars.Player(this.arena.whiteLight.x, this.arena.whiteLight.y);
     this.camera.x = this.player.x;
     this.camera.y = this.player.y;
 
-    // Open arena floor without obstacles
     this.barrels = [];
-
     this.enemies = [];
     this.lasers = [];
     this.orbs = [];
@@ -292,10 +358,25 @@ class LightWarsGame {
     this.particles = new window.LightWars.ParticleSystem();
 
     this.waves = new window.LightWars.WaveDirector(this);
-    this.waves.startLevel1();
+    this.colorChangingEnabled = false; // default off; waves.startLevelX sets it
+  }
 
+  startLevel1() {
+    this._lastLevel = 1;
+    this.arena.loadLevel(1);
+    this._resetGameEntities();
+    this.waves.startLevel1();
     this.state = 'PLAYING';
   }
+
+  startLevel2() {
+    this._lastLevel = 2;
+    this.arena.loadLevel(2);
+    this._resetGameEntities();
+    this.waves.startLevel2();
+    this.state = 'PLAYING';
+  }
+
 
   getSafeEnemySpawnPos(targetX, targetY) {
     if (!this.player || !this.arena) return { x: targetX, y: targetY };
@@ -334,7 +415,7 @@ class LightWarsGame {
       const cdx = Math.abs(candGx - pGrid.gx);
       const cdy = Math.abs(candGy - pGrid.gy);
       if ((cdx >= minTileDist || cdy >= minTileDist) && this.arena.isWalkableTile(candGx, candGy)) {
-        return this.arena.toScreen(candGx, candGy);
+        return this.arena.toScreen(candGx + 0.5, candGy + 0.5);
       }
     }
 
@@ -342,14 +423,17 @@ class LightWarsGame {
     let bestDist = Infinity;
     let bestPos = { x: targetX, y: targetY };
 
-    for (let gx = 2; gx <= 19; gx++) {
-      for (let gy = 2; gy <= 15; gy++) {
+    const maxCols = this.arena.cols || 32;
+    const maxRows = this.arena.rows || 21;
+
+    for (let gx = 0; gx < maxCols; gx++) {
+      for (let gy = 0; gy < maxRows; gy++) {
         if (!this.arena.isWalkableTile(gx, gy)) continue;
         const dTileX = Math.abs(gx - pGrid.gx);
         const dTileY = Math.abs(gy - pGrid.gy);
         if (dTileX < minTileDist && dTileY < minTileDist) continue; // Inside 3-tile exclusion square
 
-        const screenPos = this.arena.toScreen(gx, gy);
+        const screenPos = this.arena.toScreen(gx + 0.5, gy + 0.5);
         const distToTarget = Math.hypot(screenPos.x - targetX, screenPos.y - targetY);
         if (distToTarget < bestDist) {
           bestDist = distToTarget;
@@ -391,9 +475,30 @@ class LightWarsGame {
     }
   }
 
-  onLevelComplete() {
+  onLevelComplete(levelNum) {
     this.state = 'LEVEL_CLEAR';
     window.LightWars.sound.playVictory();
+
+    const lvl = levelNum || this._lastLevel || 1;
+
+    // Save progress to localStorage
+    if (lvl === 1) {
+      localStorage.setItem('lightwars_level1_cleared', 'true');
+    } else if (lvl === 2) {
+      localStorage.setItem('lightwars_level2_cleared', 'true');
+    }
+
+    // Update modal text
+    const titleEl = document.getElementById('levelClearTitle');
+    const msgEl = document.getElementById('levelClearMsg');
+    if (titleEl) titleEl.textContent = `LEVEL ${lvl} CLEARED!`;
+    if (msgEl) {
+      if (lvl === 1) {
+        msgEl.textContent = 'You eliminated the CMY invasion force! The Spectrum War continues...';
+      } else {
+        msgEl.textContent = 'You mastered the full chromatic arsenal! The Void Overlord awaits...';
+      }
+    }
 
     document.getElementById('clearKills').innerText = this.waves.stats.enemiesKilled;
     document.getElementById('clearOrbs').innerText = this.waves.stats.orbsCrafted;
@@ -561,13 +666,14 @@ class LightWarsGame {
               }
 
               this.waves.onEnemyDefeated(enemy);
-            } else if (outcome.action === 'TRANSFORM') {
+            } else if (outcome.action === 'TRANSFORM' && this.colorChangingEnabled) {
+              // TRANSFORM only active in Level 2+
               window.LightWars.sound.playTransform();
               this.particles.spawnBurst(enemy.x, enemy.y - 50, window.LightWars.COLORS[outcome.target].hex, 20);
               this.particles.spawnComicText(enemy.x, enemy.y - 70, `➔ ${outcome.target}!`, window.LightWars.COLORS[outcome.target].hex);
               enemy.setColor(outcome.target);
             } else {
-              // 'NONE' -> No change when hit by this color!
+              // 'NONE' OR transform disabled in Level 1 — no effect
               this.particles.spawnBurst(laser.x, laser.y, '#AAAAAA', 8);
               this.particles.spawnComicText(enemy.x, enemy.y - 70, 'NO EFFECT!', '#888888');
             }
