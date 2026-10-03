@@ -67,10 +67,13 @@ func load_map_obstacles() -> void:
 		obstacle.position = Vector2(obs["x"], obs["y"])
 		obstacle.setup(obs["tex"], obs["type"])
 
+var is_transitioning: bool = false
+
 func start_level_1() -> void:
 	phase = 1
 	kills_count = 0
 	orbs_crafted = 0
+	is_transitioning = false
 	
 	hud.set_objective(
 		"PHASE 1: CYAN TROOPS INBOUND",
@@ -83,22 +86,39 @@ func start_level_1() -> void:
 
 func spawn_enemy(pos: Vector2, col_id: String) -> void:
 	var enemy = enemy_scene.instantiate()
+	enemy.color_id = col_id
 	entities.add_child(enemy)
 	enemy.position = pos
 	enemy.set_enemy_color(col_id)
+	
+	# Seamless chromatic warp-in materialize effect (zero cuts / zero pop-in)
+	enemy.modulate.a = 0.0
+	var tw = create_tween()
+	tw.tween_property(enemy, "modulate:a", 1.0, 0.3)
 
 func on_enemy_killed(enemy: Node2D) -> void:
 	kills_count += 1
 	enemies_left = max(0, enemies_left - 1)
 	
-	if phase == 1 and enemies_left == 0:
-		get_tree().create_timer(1.2).timeout.connect(init_phase_2)
-	elif phase == 2 and enemies_left == 0:
-		get_tree().create_timer(1.2).timeout.connect(init_phase_3)
-	elif phase == 3 and enemies_left == 0:
-		get_tree().create_timer(1.2).timeout.connect(init_phase_4)
-	elif phase == 4 and enemies_left == 0:
-		hud.show_level_clear(kills_count, orbs_crafted)
+	if enemies_left == 0 and not is_transitioning:
+		if phase == 4:
+			hud.show_level_clear(kills_count, orbs_crafted)
+		else:
+			is_transitioning = true
+			hud.set_objective(
+				"WAVE " + str(phase) + " SECURED!",
+				"Next wave incoming..."
+			)
+			get_tree().create_timer(0.8).timeout.connect(advance_to_next_phase)
+
+func advance_to_next_phase() -> void:
+	is_transitioning = false
+	if phase == 1:
+		init_phase_2()
+	elif phase == 2:
+		init_phase_3()
+	elif phase == 3:
+		init_phase_4()
 
 func init_phase_2() -> void:
 	phase = 2

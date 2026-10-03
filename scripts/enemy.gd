@@ -12,10 +12,12 @@ var knockback_vel: Vector2 = Vector2.ZERO
 
 var troop_sprites: Dictionary = {}
 @onready var sprite_2d: Sprite2D = $Sprite2D
+var is_dead: bool = false
 var orb_scene = preload("res://scenes/orb.tscn")
 
 func _ready() -> void:
 	add_to_group("enemies")
+	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	load_sprites_for_color()
 	update_sprite(true)
 
@@ -100,6 +102,8 @@ func update_sprite(is_idle: bool) -> void:
 		sprite_2d.texture = frames[f_idx]
 
 func take_laser_hit(laser_col: String, hit_dir: Vector2) -> void:
+	if is_dead:
+		return
 	hurt_flash_timer = 0.22
 	knockback_vel = hit_dir.normalized() * 320.0
 	
@@ -109,6 +113,7 @@ func take_laser_hit(laser_col: String, hit_dir: Vector2) -> void:
 	
 	match interaction.get("action"):
 		"KILL":
+			is_dead = true
 			if main and main.has_method("spawn_comic_floater"):
 				var word = GameManager.COMIC_WORDS[randi() % GameManager.COMIC_WORDS.size()]
 				main.spawn_comic_floater(global_position + Vector2(0, -40), word, GameManager.COLORS[color_id]["color"])

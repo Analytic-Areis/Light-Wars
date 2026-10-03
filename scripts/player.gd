@@ -39,6 +39,7 @@ var laser_scene = preload("res://scenes/laser.tscn")
 
 func _ready() -> void:
 	add_to_group("player")
+	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	load_hero_sprites()
 	update_sprite(true)
 	emit_signal("health_changed", health, max_health)
@@ -50,8 +51,8 @@ func load_hero_sprites() -> void:
 	for d in dirs:
 		character_sprites[d] = { "idle": [], "run": [] }
 		
-		# Load 4 idle frames from Chibi Soldier Idle Sprite Atlas
-		for i in range(4):
+		# Load idle frames from new_girl (up to 20)
+		for i in range(20):
 			var idle_path = "res://assets/sprites/hero/" + d + "_idle_" + str(i) + ".png"
 			if ResourceLoader.exists(idle_path):
 				character_sprites[d]["idle"].append(load(idle_path))
@@ -60,8 +61,8 @@ func load_hero_sprites() -> void:
 			if ResourceLoader.exists(fallback_idle):
 				character_sprites[d]["idle"].append(load(fallback_idle))
 			
-		# Load 8 run frames from Eight-Direction Pixel RPG Running Sprite Sheet
-		for r in range(8):
+		# Load run frames from new_girl (up to 20)
+		for r in range(20):
 			var r_path = "res://assets/sprites/hero/" + d + "_run_" + str(r) + ".png"
 			if ResourceLoader.exists(r_path):
 				character_sprites[d]["run"].append(load(r_path))
@@ -103,7 +104,11 @@ func select_prev_color() -> void:
 func request_dash() -> void:
 	if dash_cooldown <= 0.0 and not is_dashing:
 		var input_vec = Input.get_vector("move_left", "move_right", "move_up", "move_down")
-		dash_dir = input_vec.normalized() if input_vec.length_squared() > 0.01 else (get_global_mouse_position() - global_position).normalized()
+		if input_vec.length_squared() > 0.01:
+			var iso_dir = Vector2(input_vec.x - input_vec.y, input_vec.x + input_vec.y).normalized()
+			dash_dir = iso_dir
+		else:
+			dash_dir = (get_global_mouse_position() - global_position).normalized()
 		is_dashing = true
 		dash_timer = 0.22
 		dash_cooldown = 1.2
@@ -130,17 +135,21 @@ func _physics_process(delta: float) -> void:
 	else:
 		var input_vec = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 		if input_vec.length_squared() > 0.01:
-			var move_dir = input_vec.normalized()
-			# 3) & 6) Character moves directly with WASD and faces movement direction (like enemy)
-			current_dir = GameManager.get_direction_8(move_dir)
-			velocity = move_dir * speed
-			walk_anim_time += delta * 12.0
+			# Isometric 45-degree conversion:
+			# When pressing W, character moves Up-Right (isometric North, exactly what W+D did)
+			# When pressing S, character moves Down-Left (isometric South)
+			# When pressing D, character moves Down-Right (isometric East)
+			# When pressing A, character moves Up-Left (isometric West)
+			var iso_dir = Vector2(input_vec.x - input_vec.y, input_vec.x + input_vec.y).normalized()
+			current_dir = GameManager.get_direction_8(iso_dir)
+			velocity = iso_dir * speed
+			walk_anim_time += delta * 11.0
 			idle_anim_time = 0.0
 			update_sprite(false)
 		else:
 			velocity = Vector2.ZERO
 			walk_anim_time = 0.0
-			idle_anim_time += delta * 4.0
+			idle_anim_time += delta * 8.0
 			update_sprite(true)
 
 	move_and_slide()
