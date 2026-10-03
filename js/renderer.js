@@ -37,9 +37,9 @@ class SpriteManager {
       for (const d of dirs) {
         // Base / Idle frames
         this.loadSprite(`${charId}_${d}_idle`, `assets/sprites/${charId}/${d}_idle.png`);
-        // Directional idle frames (18 frames for hero idle)
+        // Directional idle frames (25 frames for hero idle bob animation)
         if (charId === 'hero') {
-          for (let r = 0; r < 18; r++) {
+          for (let r = 0; r < 25; r++) {
             const idleId = `hero_${d}_idle_${r}`;
             const idlePath = `assets/sprites/hero/${d}_idle_${r}.png`;
             this.loadSprite(idleId, idlePath);
@@ -103,7 +103,7 @@ class SpriteManager {
             this.getSprite(`hero_${dir}`) ||
             this.getSprite('hero_S');
     } else {
-      const idleIdx = Math.floor(player.idleAnimTime) % 18;
+      const idleIdx = Math.floor(player.idleAnimTime) % 25;
       img = this.getSprite(`hero_${dir}_idle_${idleIdx}`) ||
             this.getSprite(`hero_${dir}_idle`) ||
             this.getSprite(`hero_${dir}`) ||

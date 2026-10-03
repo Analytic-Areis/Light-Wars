@@ -151,8 +151,8 @@ const COMIC_DEATH_WORDS = ['KAABOOM!', 'BOOM!', '1CO!', 'POW!', 'ZAP!', 'CRASH!'
 
 // Game Tunings
 const GAME_CONFIG = {
-  arenaWidth: 5530,
-  arenaHeight: 3686,
+  arenaWidth: 6144,
+  arenaHeight: 4096,
   maxAmmoPerType: 6,
   playerSpeed: 340,
   playerDashSpeed: 780,
