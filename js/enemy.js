@@ -71,8 +71,18 @@ class Enemy {
       if (dist > 35 && dist < this.aggroRange) {
         const nx = dx / dist;
         const ny = dy / dist;
-        this.x += nx * this.speed * dt;
-        this.y += ny * this.speed * dt;
+        const nextX = this.x + nx * this.speed * dt;
+        const nextY = this.y + ny * this.speed * dt;
+
+        if (arena && arena.resolveMovement) {
+          const res = arena.resolveMovement(this.x, this.y, nextX, nextY);
+          this.x = res.x;
+          this.y = res.y;
+        } else {
+          this.x = nextX;
+          this.y = nextY;
+        }
+
         this.isMoving = true;
         this.walkAnimTime += dt * 12.0;
         this.facingDir = SpriteManager.getDirection8(this.facingAngle);
@@ -88,13 +98,6 @@ class Enemy {
       }
     } else {
       this.isMoving = false;
-    }
-
-    // 1. Boundary Slab Collision
-    if (arena && arena.resolveCircleCollision) {
-      const res = arena.resolveCircleCollision(this.x, this.y, this.radius);
-      this.x = res.x;
-      this.y = res.y;
     }
 
     // 2. Barrels Collision

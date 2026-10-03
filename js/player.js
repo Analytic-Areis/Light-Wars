@@ -188,8 +188,16 @@ class Player {
     if (this.isDashing) {
       this.dashTimer -= dt;
       const dashSpeed = window.LightWars.GAME_CONFIG.playerDashSpeed;
-      this.x += this.dashDirX * dashSpeed * dt;
-      this.y += this.dashDirY * dashSpeed * dt;
+      const nextX = this.x + this.dashDirX * dashSpeed * dt;
+      const nextY = this.y + this.dashDirY * dashSpeed * dt;
+      if (arena && arena.resolveMovement) {
+        const res = arena.resolveMovement(this.x, this.y, nextX, nextY);
+        this.x = res.x;
+        this.y = res.y;
+      } else {
+        this.x = nextX;
+        this.y = nextY;
+      }
 
       // Dash ghost particle
       if (Math.random() < 0.45) {
@@ -211,8 +219,18 @@ class Player {
         const len = Math.hypot(mx, my);
         const normX = mx / len;
         const normY = my / len;
-        this.x += normX * this.speed * dt;
-        this.y += normY * this.speed * dt;
+        const nextX = this.x + normX * this.speed * dt;
+        const nextY = this.y + normY * this.speed * dt;
+
+        if (arena && arena.resolveMovement) {
+          const res = arena.resolveMovement(this.x, this.y, nextX, nextY);
+          this.x = res.x;
+          this.y = res.y;
+        } else {
+          this.x = nextX;
+          this.y = nextY;
+        }
+
         this.isMoving = true;
         this.walkAnimTime += dt * 12.0;
 
@@ -235,14 +253,7 @@ class Player {
       }
     }
 
-    // 1. Boundary Slab Collision Resolution
-    if (arena && arena.resolveCircleCollision) {
-      const res = arena.resolveCircleCollision(this.x, this.y, this.radius);
-      this.x = res.x;
-      this.y = res.y;
-    }
-
-    // 2. Barrel Barricade Collision Resolution
+    // 1. Barrel Barricade Collision Resolution
     for (const b of barrels) {
       if (!b.alive) continue;
       const res = b.resolveCircleCollision(this.x, this.y, this.radius);

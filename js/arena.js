@@ -1,7 +1,7 @@
 /**
  * Light-Wars: 2.5D Arena & Radiant White Light Refill Platform
- * Renders the 5520x3388 dungeon map, White Light Sanctuary, and manages
- * 92 solid boundary polygon slabs preventing players and enemies from walking into the void.
+ * Manages 5520x3388 map rendering, White Light Sanctuary, and exact tile-based
+ * corridor boundary collision and wall-sliding.
  */
 
 class Arena {
@@ -9,16 +9,14 @@ class Arena {
     this.width = width || 5520;
     this.height = height || 3388;
 
-    this.minX = 150;
-    this.maxX = this.width - 150;
-    this.minY = 150;
-    this.maxY = this.height - 150;
+    this.originX = 2504;
+    this.originY = 350;
 
-    // Load custom arena map image (5520x3388)
+    // Load custom arena map image
     this.mapImg = new Image();
     this.mapImg.src = 'assets/textures/arena_map.jpg';
 
-    // White Light Sanctuary (Spawn sanctuary in the western courtyard)
+    // White Light Sanctuary (lower-left courtyard)
     this.whiteLight = {
       x: 1352,
       y: 1502,
@@ -27,127 +25,95 @@ class Arena {
       particles: []
     };
 
-    // Load boundary slabs from map data
-    this.slabs = [];
+    // Load walkable grid tiles from map data
+    this.walkable = new Set();
     const mapData = window.LightWars.DUNGEON_MAP_DATA;
-    if (mapData && mapData.boundary_slabs) {
-      for (const s of mapData.boundary_slabs) {
-        const pts = s.poly;
-        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-        for (const p of pts) {
-          if (p.x < minX) minX = p.x;
-          if (p.x > maxX) maxX = p.x;
-          if (p.y < minY) minY = p.y;
-          if (p.y > maxY) maxY = p.y;
-        }
-        this.slabs.push({
-          poly: pts,
-          minX, maxX, minY, maxY
-        });
+    if (mapData && mapData.walkable_tiles) {
+      if (mapData.origin_x !== undefined) this.originX = mapData.origin_x;
+      if (mapData.origin_y !== undefined) this.originY = mapData.origin_y;
+      for (const t of mapData.walkable_tiles) {
+        this.walkable.add(`${t[0]}_${t[1]}`);
       }
     }
   }
 
-  pointSegDistSq(px, py, x1, y1, x2, y2) {
-    const dx = x2 - x1;
-    const dy = y2 - y1;
-    if (dx === 0 && dy === 0) {
-      return { distSq: (px - x1) * (px - x1) + (py - y1) * (py - y1), qx: x1, qy: y1 };
-    }
-    const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy)));
-    const qx = x1 + t * dx;
-    const qy = y1 + t * dy;
-    return { distSq: (px - qx) * (px - qx) + (py - qy) * (py - qy), qx, qy };
+  isWalkableTile(tx, ty) {
+    return this.walkable.has(`${tx}_${ty}`);
   }
 
-  pointInPoly(px, py, poly) {
-    let inside = false;
-    const n = poly.length;
-    for (let i = 0; i < n; i++) {
-      const j = (i - 1 + n) % n;
-      const xi = poly[i].x, yi = poly[i].y;
-      const xj = poly[j].x, yj = poly[j].y;
-      if (((yi > py) !== (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi)) {
-        inside = !inside;
-      }
-    }
-    return inside;
+  toGrid(px, py) {
+    const sx = px - 128.0 - this.originX;
+    const sy = py - 64.0 - this.originY;
+    const gx = (sx / 256.0) + (sy / 128.0);
+    const gy = (sy / 128.0) - (sx / 256.0);
+    return { gx, gy };
   }
 
-  // Resolve entity collision against all boundary slabs
-  resolveCircleCollision(x, y, radius) {
-    let currX = x;
-    let currY = y;
-
-    for (const slab of this.slabs) {
-      if (currX + radius < slab.minX || currX - radius > slab.maxX ||
-          currY + radius < slab.minY || currY - radius > slab.maxY) {
-        continue;
-      }
-
-      const inside = this.pointInPoly(currX, currY, slab.poly);
-      let minDistSq = Infinity;
-      let closestQ = null;
-
-      const pts = slab.poly;
-      for (let i = 0; i < pts.length; i++) {
-        const j = (i + 1) % pts.length;
-        const res = this.pointSegDistSq(currX, currY, pts[i].x, pts[i].y, pts[j].x, pts[j].y);
-        if (res.distSq < minDistSq) {
-          minDistSq = res.distSq;
-          closestQ = res;
-        }
-      }
-
-      if (inside) {
-        const d = Math.sqrt(minDistSq);
-        const nx = currX - closestQ.qx;
-        const ny = currY - closestQ.qy;
-        const len = Math.hypot(nx, ny);
-        if (len > 0.001) {
-          currX = closestQ.qx + (nx / len) * (radius + 2);
-          currY = closestQ.qy + (ny / len) * (radius + 2);
-        } else {
-          currX = closestQ.qx + radius + 2;
-        }
-      } else if (minDistSq < radius * radius) {
-        const d = Math.sqrt(minDistSq);
-        if (d > 0.001) {
-          const push = radius - d;
-          currX += ((currX - closestQ.qx) / d) * push;
-          currY += ((currY - closestQ.qy) / d) * push;
-        }
-      }
-    }
-
-    // Clamp inside world borders
-    currX = Math.max(this.minX, Math.min(this.maxX, currX));
-    currY = Math.max(this.minY, Math.min(this.maxY, currY));
-
-    return { x: currX, y: currY };
+  toScreen(gx, gy) {
+    const sx = (gx - gy) * 128.0;
+    const sy = (gx + gy) * 64.0;
+    return { x: sx + 128.0 + this.originX, y: sy + 64.0 + this.originY };
   }
 
-  // Check if laser ray hit a boundary wall
-  isRayBlocked(x1, y1, x2, y2) {
-    const midX = (x1 + x2) / 2;
-    const midY = (y1 + y2) / 2;
+  // Exact boundary collision & wall sliding
+  resolveMovement(oldX, oldY, newX, newY) {
+    const oldGrid = this.toGrid(oldX, oldY);
+    const newGrid = this.toGrid(newX, newY);
 
-    for (const slab of this.slabs) {
-      if (Math.max(x1, x2) < slab.minX || Math.min(x1, x2) > slab.maxX ||
-          Math.max(y1, y2) < slab.minY || Math.min(y1, y2) > slab.maxY) {
-        continue;
-      }
-      if (this.pointInPoly(x2, y2, slab.poly) || this.pointInPoly(midX, midY, slab.poly)) {
-        return true;
+    const targetTx = Math.round(newGrid.gx);
+    const targetTy = Math.round(newGrid.gy);
+
+    let candGx = newGrid.gx;
+    let candGy = newGrid.gy;
+
+    const PAD = 0.36;
+
+    if (!this.isWalkableTile(targetTx, targetTy)) {
+      // Try X slide
+      const slideX_Tx = Math.round(newGrid.gx);
+      const slideX_Ty = Math.round(oldGrid.gy);
+
+      // Try Y slide
+      const slideY_Tx = Math.round(oldGrid.gx);
+      const slideY_Ty = Math.round(newGrid.gy);
+
+      if (this.isWalkableTile(slideX_Tx, slideX_Ty)) {
+        candGy = oldGrid.gy;
+      } else if (this.isWalkableTile(slideY_Tx, slideY_Ty)) {
+        candGx = oldGrid.gx;
+      } else {
+        return { x: oldX, y: oldY };
       }
     }
-    return false;
+
+    // Clamp inside walkable corridor boundaries
+    const curTx = Math.round(candGx);
+    const curTy = Math.round(candGy);
+
+    if (this.isWalkableTile(curTx, curTy)) {
+      if (!this.isWalkableTile(curTx + 1, curTy)) candGx = Math.min(curTx + PAD, candGx);
+      if (!this.isWalkableTile(curTx - 1, curTy)) candGx = Math.max(curTx - PAD, candGx);
+      if (!this.isWalkableTile(curTx, curTy + 1)) candGy = Math.min(curTy + PAD, candGy);
+      if (!this.isWalkableTile(curTx, curTy - 1)) candGy = Math.max(curTy - PAD, candGy);
+    } else {
+      return { x: oldX, y: oldY };
+    }
+
+    return this.toScreen(candGx, candGy);
+  }
+
+  // Check if laser hit wall/void
+  isPointBlocked(px, py) {
+    const g = this.toGrid(px, py);
+    const tx = Math.round(g.gx);
+    const ty = Math.round(g.gy);
+    return !this.isWalkableTile(tx, ty);
   }
 
   update(dt) {
     this.whiteLight.pulseTime += dt * 3.0;
 
-    // Spawn upward beacon particles inside the sanctuary circle
+    // Upward particles inside sanctuary
     if (Math.random() < 0.6) {
       const angle = Math.random() * Math.PI * 2;
       const r = Math.random() * (this.whiteLight.radius * 0.85);
@@ -181,12 +147,12 @@ class Arena {
       ctx.fillRect(0, 0, this.width, this.height);
     }
 
-    // 2. Draw Radiant White Light Refill Platform at (1352, 1502)
+    // 2. Draw Radiant White Light Sanctuary at (1352, 1502)
     const wl = this.whiteLight;
     const pulse = 1.0 + Math.sin(wl.pulseTime) * 0.12;
 
     ctx.save();
-    // Translucent cyan-white outer bloom
+    // Halo glow
     const haloGrad = ctx.createRadialGradient(wl.x, wl.y, wl.radius * 0.2, wl.x, wl.y, wl.radius * 1.4 * pulse);
     haloGrad.addColorStop(0, 'rgba(230, 248, 255, 0.40)');
     haloGrad.addColorStop(0.5, 'rgba(0, 240, 255, 0.18)');
@@ -206,14 +172,14 @@ class Arena {
     ctx.fill();
     ctx.stroke();
 
-    // Inner delicate cyan energy ring
+    // Inner ring
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
     ctx.lineWidth = 2.0;
     ctx.beginPath();
     ctx.ellipse(wl.x, wl.y, wl.radius * 0.75, wl.radius * 0.39, 0, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Rotating holographic tech runes
+    // Runes
     ctx.save();
     ctx.translate(wl.x, wl.y);
     ctx.rotate(wl.pulseTime * 0.4);
@@ -225,7 +191,7 @@ class Arena {
     ctx.stroke();
     ctx.restore();
 
-    // White Light 3D Label
+    // 3D Label
     ctx.shadowColor = '#000000';
     ctx.shadowBlur = 10;
     ctx.fillStyle = '#FFFFFF';
@@ -236,7 +202,7 @@ class Arena {
     ctx.fillStyle = '#00F0FF';
     ctx.fillText('STAND HERE TO RECHARGE HP & AMMO', wl.x, wl.y + 25);
 
-    // Floating upward beacon particles
+    // Floating upward particles
     for (const p of wl.particles) {
       ctx.fillStyle = '#FFFFFF';
       ctx.globalAlpha = p.alpha;

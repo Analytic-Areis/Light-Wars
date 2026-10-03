@@ -233,6 +233,9 @@ class LightWarsGame {
     this.waves = new window.LightWars.WaveDirector(this);
     this.waves.startLevel1();
 
+    // Spawn a Green orb in the corridor so player can immediately test Red laser + Green orb = 2 Yellow crystals
+    this.spawnOrb(1700, 1502, 'GREEN');
+
     this.state = 'PLAYING';
   }
 
@@ -329,7 +332,7 @@ class LightWarsGame {
       }
 
       // 1. Boundary Wall Collision Check
-      if (this.arena.isRayBlocked(prevX, prevY, laser.x, laser.y)) {
+      if (this.arena.isPointBlocked(laser.x, laser.y)) {
         laser.alive = false;
         this.particles.spawnBurst(laser.x, laser.y, '#AAAAAA', 8);
         this.lasers.splice(i, 1);
@@ -369,7 +372,7 @@ class LightWarsGame {
         const orb = this.orbs[j];
         if (!orb.alive) continue;
         const d = Math.hypot(laser.x - orb.x, laser.y - orb.y);
-        if (d < orb.radius + laser.radius + 6) {
+        if (d < (orb.hitRadius || 32)) {
           const res = orb.hitByLaser(laser.colorId);
           if (res.success) {
             laser.alive = false;
@@ -381,8 +384,8 @@ class LightWarsGame {
             this.particles.spawnComicText(orb.x, orb.y, 'CRAFTED!', window.LightWars.COLORS[res.resultColor].hex);
 
             // Exact User Requirement: Place 2 crystals in the place of the orb for player to collect!
-            this.crystals.push(new window.LightWars.AmmoCrystal(orb.x, orb.y, res.resultColor, -Math.PI / 2));
-            this.crystals.push(new window.LightWars.AmmoCrystal(orb.x, orb.y, res.resultColor, Math.PI / 2));
+            this.crystals.push(new window.LightWars.AmmoCrystal(orb.x, orb.y, res.resultColor, Math.PI));
+            this.crystals.push(new window.LightWars.AmmoCrystal(orb.x, orb.y, res.resultColor, 0));
 
             this.waves.onOrbCrafted(orb.colorId, laser.colorId, res.resultColor);
             break;
