@@ -28,26 +28,7 @@ func set_enemy_color(new_col: String) -> void:
 	update_sprite(true)
 
 func load_sprites_for_color() -> void:
-	troop_sprites.clear()
-	var cached = GameManager.get_troop_sprites(color_id)
-	if not cached.is_empty():
-		troop_sprites = cached
-		return
-		
-	var folder = "troop_" + color_id.to_lower()
-	var dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
-	for d in dirs:
-		troop_sprites[d] = { "idle": null, "run": [] }
-		var idle_path = "res://assets/sprites/" + folder + "/" + d + "_idle.png"
-		if ResourceLoader.exists(idle_path):
-			troop_sprites[d]["idle"] = load(idle_path)
-		elif ResourceLoader.exists("res://assets/sprites/" + folder + "/" + d + ".png"):
-			troop_sprites[d]["idle"] = load("res://assets/sprites/" + folder + "/" + d + ".png")
-			
-		for r in range(8):
-			var r_path = "res://assets/sprites/" + folder + "/" + d + "_run_" + str(r) + ".png"
-			if ResourceLoader.exists(r_path):
-				troop_sprites[d]["run"].append(load(r_path))
+	troop_sprites = GameManager.get_troop_sprites(color_id)
 
 func _physics_process(delta: float) -> void:
 	if attack_cooldown > 0.0:

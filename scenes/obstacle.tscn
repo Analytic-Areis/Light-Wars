@@ -14,5 +14,5 @@ polygon = PackedVector2Array(0, -25, 45, 0, 0, 25, -45, 0)
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = ExtResource("2_coltex")
-offset = Vector2(0, -116)
+offset = Vector2(0, -192)
 

@@ -13,11 +13,12 @@ func _ready() -> void:
 
 func _draw() -> void:
 	# 2.5D contact ground shadow for physical presence
-	draw_circle(Vector2(0, 0), 32.0, Color(0, 0, 0, 0.55))
-	draw_circle(Vector2(4, 2), 24.0, Color(0, 0, 0, 0.35))
+	draw_circle(Vector2(0, -6), 36.0, Color(0, 0, 0, 0.6))
+	draw_circle(Vector2(6, -3), 28.0, Color(0, 0, 0, 0.4))
 
 func on_hit(projectile_col: String = "") -> void:
 	# Subtle contact jiggle
 	var tw = create_tween()
-	tw.tween_property(sprite_2d, "scale", Vector2(1.08, 0.92), 0.06)
-	tw.tween_property(sprite_2d, "scale", Vector2(1.0, 1.0), 0.08)
+	tw.tween_property(sprite_2d, "scale", Vector2(1.1, 0.9), 0.05)
+	tw.tween_property(sprite_2d, "scale", Vector2(0.96, 1.04), 0.06)
+	tw.tween_property(sprite_2d, "scale", Vector2(1.0, 1.0), 0.06)

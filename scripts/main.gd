@@ -52,16 +52,14 @@ func _ready() -> void:
 	start_level_1()
 
 func spawn_tactical_barrels() -> void:
+	# Tactical barricades along corridors and choke points (Zero barrels crowding white sanctuary spawn)
 	var barrel_positions = [
-		Vector2(1480, 1420),
-		Vector2(1480, 1580),
-		Vector2(1720, 1420),
-		Vector2(1720, 1580),
-		Vector2(1950, 1500),
-		Vector2(2150, 1360),
-		Vector2(2150, 1640),
-		Vector2(2450, 1420),
-		Vector2(2450, 1580)
+		Vector2(2120, 1310), # North corridor choke point
+		Vector2(1900, 1800), # South corridor choke point
+		Vector2(2650, 1500), # Crossroads western approach (north)
+		Vector2(2650, 1720), # Crossroads western approach (south)
+		Vector2(3200, 1580), # Crossroads central cover
+		Vector2(3600, 1750)  # East passage entrance
 	]
 	for b_pos in barrel_positions:
 		var barrel = barrel_scene.instantiate()
@@ -71,21 +69,21 @@ func spawn_tactical_barrels() -> void:
 func pre_spawn_all_phase_enemies() -> void:
 	var phase_configs = {
 		1: [
-			{ "pos": Vector2(2000, 1400), "col": "CYAN" },
-			{ "pos": Vector2(2100, 1600), "col": "CYAN" }
+			{ "pos": Vector2(2180, 1310), "col": "CYAN" },
+			{ "pos": Vector2(2100, 1750), "col": "CYAN" }
 		],
 		2: [
-			{ "pos": Vector2(2300, 1380), "col": "MAGENTA" },
-			{ "pos": Vector2(2400, 1620), "col": "MAGENTA" }
+			{ "pos": Vector2(2400, 1260), "col": "MAGENTA" },
+			{ "pos": Vector2(2350, 1720), "col": "MAGENTA" }
 		],
 		3: [
-			{ "pos": Vector2(2500, 1400), "col": "YELLOW" },
-			{ "pos": Vector2(2650, 1600), "col": "YELLOW" }
+			{ "pos": Vector2(2850, 1450), "col": "YELLOW" },
+			{ "pos": Vector2(2950, 1680), "col": "YELLOW" }
 		],
 		4: [
-			{ "pos": Vector2(2200, 1380), "col": "CYAN" },
-			{ "pos": Vector2(2500, 1500), "col": "MAGENTA" },
-			{ "pos": Vector2(2350, 1620), "col": "YELLOW" }
+			{ "pos": Vector2(2250, 1300), "col": "CYAN" },
+			{ "pos": Vector2(2700, 1550), "col": "MAGENTA" },
+			{ "pos": Vector2(2350, 1700), "col": "YELLOW" }
 		]
 	}
 	for p_num in phase_configs:

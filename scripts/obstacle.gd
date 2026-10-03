@@ -7,12 +7,8 @@ static var tex_cache: Dictionary = {}
 
 func setup(tex_name: String, obs_type: String) -> void:
 	add_to_group("obstacles")
-	var path = "res://assets/isometric_dungeon/Isometric/" + tex_name + ".png"
-	if not tex_cache.has(path):
-		if ResourceLoader.exists(path):
-			tex_cache[path] = load(path)
-	if tex_cache.has(path) and sprite_2d:
-		sprite_2d.texture = tex_cache[path]
+	if sprite_2d:
+		sprite_2d.visible = false
 		
 	# Adjust diamond collision footprint based on type
 	if col_poly:
