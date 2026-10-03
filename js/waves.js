@@ -59,7 +59,7 @@ class WaveDirector {
     this.phase = 4;
     this.game.ui.setObjective(
       "PHASE 4: CMY TRIAD BATTLE",
-      "Cyan, Magenta, and Yellow troops attack together! Use the WHITE LIGHT sanctuary to recharge!"
+      "Cyan, Magenta, and Yellow troops attack together! Use the RECHARGE STATION to recharge!"
     );
     this.game.spawnEnemy(2300, 1350, 'CYAN');
     this.game.spawnEnemy(2700, 1600, 'MAGENTA');

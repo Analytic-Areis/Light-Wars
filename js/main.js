@@ -233,9 +233,6 @@ class LightWarsGame {
     this.waves = new window.LightWars.WaveDirector(this);
     this.waves.startLevel1();
 
-    // Spawn a Green orb in the corridor so player can immediately test Red laser + Green orb = 2 Yellow crystals
-    this.spawnOrb(1700, 1502, 'GREEN');
-
     this.state = 'PLAYING';
   }
 

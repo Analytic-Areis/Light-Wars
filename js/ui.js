@@ -146,7 +146,7 @@ class UIManager {
       ctx.fillStyle = '#FF3355';
       ctx.font = '900 16px "Impact", sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText("⚠️ NO AMMO IN THIS COLOR! RETURN TO WHITE LIGHT TO RECHARGE!", width / 2, height - 110);
+      ctx.fillText("⚠️ NO AMMO IN THIS COLOR! RETURN TO RECHARGE STATION!", width / 2, height - 110);
       ctx.restore();
     }
 

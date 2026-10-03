@@ -3,6 +3,17 @@
  * Smooth 8-directional 12 FPS run animations, precise ground-anchoring for Hero & Troops.
  */
 
+const HERO_FRAME_COUNTS = {
+  S: 20,
+  N: 14,
+  W: 22,
+  E: 22,
+  NE: 14,
+  NW: 14,
+  SE: 12,
+  SW: 12
+};
+
 class SpriteManager {
   constructor() {
     this.sprites = {};
@@ -28,8 +39,9 @@ class SpriteManager {
         this.loadSprite(`${charId}_${d}_idle`, `assets/sprites/${charId}/${d}_idle.png`);
         this.loadSprite(`${charId}_${d}`, `assets/sprites/${charId}/${d}.png`);
 
-        // 8 Directional run frames
-        for (let r = 0; r < 8; r++) {
+        // Directional run frames (Full Luke sprite sheet frames for hero, 8 for troops)
+        const frameCount = (charId === 'hero') ? (HERO_FRAME_COUNTS[d] || 8) : 8;
+        for (let r = 0; r < frameCount; r++) {
           const runId = `${charId}_${d}_run_${r}`;
           const runPath = `assets/sprites/${charId}/${d}_run_${r}.png`;
           this.loadSprite(runId, runPath);
@@ -77,7 +89,8 @@ class SpriteManager {
     let img = null;
 
     if (player.isMoving) {
-      const frameIdx = Math.floor(player.walkAnimTime) % 8;
+      const maxFrames = HERO_FRAME_COUNTS[dir] || 8;
+      const frameIdx = Math.floor(player.walkAnimTime) % maxFrames;
       img = this.getSprite(`hero_${dir}_run_${frameIdx}`) ||
             this.getSprite(`hero_${dir}_idle`) ||
             this.getSprite(`hero_${dir}`) ||

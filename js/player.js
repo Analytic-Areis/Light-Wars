@@ -280,8 +280,9 @@ class Player {
             changed = true;
           }
 
-          // Refill all 6 laser ammunition types
-          for (const c of this.colorOrder) {
+          // Refill only RGB primary laser ammunition types (Capacity: 6 per color)
+          // Crafted secondary ammo (Cyan, Magenta, Yellow) is strictly gained from crystals (+1 per crystal)
+          for (const c of ['RED', 'GREEN', 'BLUE']) {
             if (this.ammo[c] < this.maxAmmo) {
               this.ammo[c] = Math.min(this.maxAmmo, this.ammo[c] + 1);
               changed = true;

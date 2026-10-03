@@ -191,16 +191,13 @@ class Arena {
     ctx.stroke();
     ctx.restore();
 
-    // 3D Label
+    // 3D Label: Only display RECHARGE STATION with zero extra text
     ctx.shadowColor = '#000000';
     ctx.shadowBlur = 10;
     ctx.fillStyle = '#FFFFFF';
     ctx.font = '900 18px "Impact", "Arial Black", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('⚡ WHITE LIGHT REFILL ⚡', wl.x, wl.y - 25);
-    ctx.font = 'bold 13px sans-serif';
-    ctx.fillStyle = '#00F0FF';
-    ctx.fillText('STAND HERE TO RECHARGE HP & AMMO', wl.x, wl.y + 25);
+    ctx.fillText('RECHARGE STATION', wl.x, wl.y + 4);
 
     // Floating upward particles
     for (const p of wl.particles) {
