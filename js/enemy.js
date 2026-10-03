@@ -43,31 +43,59 @@ class Enemy {
     return dist < (this.bodyRadius || 26) + laser.radius;
   }
 
+  // Exact ground-contact-relative sniper rifle muzzle offsets for troops in all 8 directions
+  static MUZZLE_OFFSETS = {
+    N:  { x: 11.8,  y: -112.2 },
+    NE: { x: 45.9,  y: -102.4 },
+    E:  { x: 51.2,  y: -83.3 },
+    SE: { x: 27.6,  y: -66.9 },
+    S:  { x: -17.1, y: -69.6 },
+    SW: { x: -47.2, y: -76.1 },
+    W:  { x: -52.5, y: -95.8 },
+    NW: { x: -28.9, y: -112.2 }
+  };
+
+  getMuzzlePos(dir) {
+    const d = dir || this.facingDir || SpriteManager.getDirection8(this.facingAngle);
+    const offset = Enemy.MUZZLE_OFFSETS[d] || { x: 0, y: -80 };
+    return {
+      x: this.x + offset.x,
+      y: this.y + offset.y,
+      dir: d
+    };
+  }
+
   shoot(targetX, targetY) {
     if (!this.alive || this.shootCooldown > 0) return null;
 
     // Reset slow shooting cooldown: 3.2 to 4.4 seconds (relative to player's 0.28s cooldown)
     this.shootCooldown = 3.2 + Math.random() * 1.2;
 
-    // Fire from blaster at chest level towards target chest level
-    const gunY = this.y - 45;
-    const targetChestY = targetY - 45;
-    const angle = Math.atan2(targetChestY - gunY, targetX - this.x);
+    this.facingDir = SpriteManager.getDirection8(this.facingAngle);
+    const muzzle = this.getMuzzlePos(this.facingDir);
+
+    // Aim towards target player chest height (targetY - 55)
+    const targetAimY = targetY - 55;
+    const angle = Math.atan2(targetAimY - muzzle.y, targetX - muzzle.x);
     // Slower dodgeable speed (420 px/s vs player's 820 px/s)
     const speed = 420;
     const vx = Math.cos(angle) * speed;
     const vy = Math.sin(angle) * speed;
 
-    const spawnDist = 28;
-    const spawnX = this.x + Math.cos(angle) * spawnDist;
-    const spawnY = gunY + Math.sin(angle) * spawnDist;
+    // Spawn starting right at the tip of the sniper rifle
+    const spawnDist = 12;
+    const spawnX = muzzle.x + Math.cos(angle) * spawnDist;
+    const spawnY = muzzle.y + Math.sin(angle) * spawnDist;
 
     if (window.LightWars.sound) {
       window.LightWars.sound.playLaserFire(this.colorId);
     }
 
     // Enemy shoots its own color! isPlayer = false
-    return new window.LightWars.Laser(spawnX, spawnY, vx, vy, this.colorId, false);
+    const laser = new window.LightWars.Laser(spawnX, spawnY, vx, vy, this.colorId, false);
+    laser.originX = muzzle.x;
+    laser.originY = muzzle.y;
+    return laser;
   }
 
   setColor(newColorId) {

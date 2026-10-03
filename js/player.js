@@ -37,6 +37,7 @@ class Player {
 
     // Shooting
     this.shootCooldown = 0;
+    this.shootFaceTimer = 0;
     this.aimAngle = 0;
 
     // Dash
@@ -111,6 +112,28 @@ class Player {
     return dist < (this.bodyRadius || 26) + laser.radius;
   }
 
+  // Exact ground-contact-relative blaster muzzle offsets for all 8 directions
+  static MUZZLE_OFFSETS = {
+    N:  { x: 6.6,   y: -117.5 },
+    NE: { x: 68.2,  y: -114.2 },
+    E:  { x: 74.8,  y: -87.9 },
+    SE: { x: 57.8,  y: -52.5 },
+    S:  { x: 10.5,  y: -26.9 },
+    SW: { x: -55.1, y: -47.9 },
+    W:  { x: -75.5, y: -86.6 },
+    NW: { x: -67.6, y: -115.5 }
+  };
+
+  getMuzzlePos(dir) {
+    const d = dir || this.facingDir || SpriteManager.getDirection8(this.aimAngle);
+    const offset = Player.MUZZLE_OFFSETS[d] || { x: 0, y: -70 };
+    return {
+      x: this.x + offset.x,
+      y: this.y + offset.y,
+      dir: d
+    };
+  }
+
   shoot(targetX, targetY) {
     if (!this.alive || this.shootCooldown > 0) return null;
 
@@ -122,21 +145,30 @@ class Player {
 
     this.shootCooldown = window.LightWars.GAME_CONFIG.laserCooldown;
 
-    const gunY = this.y - 45;
-    const angle = Math.atan2(targetY - gunY, targetX - this.x);
+    // Face towards the target when shooting
+    const aimAngle = Math.atan2(targetY - (this.y - 70), targetX - this.x);
+    this.facingDir = SpriteManager.getDirection8(aimAngle);
+    this.shootFaceTimer = 0.22;
+
+    const muzzle = this.getMuzzlePos(this.facingDir);
+    const angle = Math.atan2(targetY - muzzle.y, targetX - muzzle.x);
     const speed = window.LightWars.GAME_CONFIG.laserSpeed;
     const vx = Math.cos(angle) * speed;
     const vy = Math.sin(angle) * speed;
 
-    const spawnDist = 28;
-    const spawnX = this.x + Math.cos(angle) * spawnDist;
-    const spawnY = gunY + Math.sin(angle) * spawnDist;
+    // Spawn starting right at the tip of the blaster barrel
+    const spawnDist = 12;
+    const spawnX = muzzle.x + Math.cos(angle) * spawnDist;
+    const spawnY = muzzle.y + Math.sin(angle) * spawnDist;
 
     if (window.LightWars.sound) {
       window.LightWars.sound.playLaserFire(activeColor);
     }
 
-    return new window.LightWars.Laser(spawnX, spawnY, vx, vy, activeColor, true);
+    const laser = new window.LightWars.Laser(spawnX, spawnY, vx, vy, activeColor, true);
+    laser.originX = muzzle.x;
+    laser.originY = muzzle.y;
+    return laser;
   }
 
   takeDamage(amount = 1, fromX = 0, fromY = 0) {
@@ -165,6 +197,7 @@ class Player {
 
     if (this.invulnerableTimer > 0) this.invulnerableTimer -= dt;
     if (this.shootCooldown > 0) this.shootCooldown -= dt;
+    if (this.shootFaceTimer > 0) this.shootFaceTimer -= dt;
     if (this.dashCooldown > 0) this.dashCooldown -= dt;
 
     // Decay knockback
@@ -250,9 +283,13 @@ class Player {
         this.walkAnimTime += dt * 12.0;
         this.idleAnimTime = 0;
 
-        // Face movement direction
+        // Face movement direction, unless actively aiming/firing
         const moveAngle = Math.atan2(normY, normX);
-        this.facingDir = SpriteManager.getDirection8(moveAngle);
+        if ((input && input.isMouseDown) || this.shootFaceTimer > 0) {
+          this.facingDir = SpriteManager.getDirection8(this.aimAngle);
+        } else {
+          this.facingDir = SpriteManager.getDirection8(moveAngle);
+        }
       } else {
         this.isMoving = false;
         this.walkAnimTime = 0;

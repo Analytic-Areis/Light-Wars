@@ -319,6 +319,9 @@ class LightWarsGame {
     if (result && result.alive) {
       this.lasers.push(result);
       this.waves.stats.shotsFired++;
+      if (this.particles && this.particles.spawnMuzzleFlash) {
+        this.particles.spawnMuzzleFlash(result.originX, result.originY, result.angle, result.colorData.hex);
+      }
     }
   }
 
@@ -433,8 +436,9 @@ class LightWarsGame {
         for (let j = this.orbs.length - 1; j >= 0; j--) {
           const orb = this.orbs[j];
           if (!orb.alive) continue;
-          const d = Math.hypot(laser.x - orb.x, laser.y - orb.y);
-          if (d < (orb.hitRadius || 32)) {
+          const clampedOrbY = Math.max(orb.y - 45, Math.min(orb.y + 10, laser.y));
+          const d = Math.hypot(laser.x - orb.x, laser.y - clampedOrbY);
+          if (d < (orb.hitRadius || 36)) {
             const res = orb.hitByLaser(laser.colorId);
             if (res.success) {
               laser.alive = false;
@@ -525,6 +529,9 @@ class LightWarsGame {
       const enemyLaser = enemy.update(dt, this.player, this.arena, this.barrels);
       if (enemyLaser) {
         this.lasers.push(enemyLaser);
+        if (this.particles && this.particles.spawnMuzzleFlash) {
+          this.particles.spawnMuzzleFlash(enemyLaser.originX, enemyLaser.originY, enemyLaser.angle, enemyLaser.colorData.hex);
+        }
       }
     }
     this.enemies = this.enemies.filter(e => e.alive);

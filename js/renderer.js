@@ -181,6 +181,46 @@ class ParticleSystem {
     }
   }
 
+  spawnMuzzleFlash(x, y, angle, colorHex) {
+    // 1. Hot white core burst at muzzle tip
+    this.particles.push({
+      x,
+      y,
+      vx: 0,
+      vy: 0,
+      radius: 6,
+      colorHex: '#FFFFFF',
+      life: 0.08,
+      maxLife: 0.08
+    });
+    // 2. Chromatic energy ring
+    this.particles.push({
+      x,
+      y,
+      vx: 0,
+      vy: 0,
+      radius: 11,
+      colorHex,
+      life: 0.12,
+      maxLife: 0.12
+    });
+    // 3. Directional sparks leaping from the gun barrel
+    for (let i = 0; i < 4; i++) {
+      const spread = (Math.random() - 0.5) * 0.45;
+      const spd = 140 + Math.random() * 180;
+      this.particles.push({
+        x: x + Math.cos(angle) * 3,
+        y: y + Math.sin(angle) * 3,
+        vx: Math.cos(angle + spread) * spd,
+        vy: Math.sin(angle + spread) * spd,
+        radius: 2 + Math.random() * 1.5,
+        colorHex,
+        life: 0.1 + Math.random() * 0.08,
+        maxLife: 0.18
+      });
+    }
+  }
+
   spawnComicText(x, y, text, colorHex = '#FF2A4D') {
     this.comicTexts.push({
       x,
