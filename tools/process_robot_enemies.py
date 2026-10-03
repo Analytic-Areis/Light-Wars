@@ -42,6 +42,14 @@ ROBOT_CONFIGS = {
     "troop_red": {
         "armor_hue": 0.00, # Red (0 deg)
         "visor_hue": 0.50  # Cyan
+    },
+    "troop_green": {
+        "armor_hue": 0.33, # Green (120 deg)
+        "visor_hue": 0.83  # Magenta
+    },
+    "troop_blue": {
+        "armor_hue": 0.60, # Blue (216 deg)
+        "visor_hue": 0.14  # Yellow
     }
 }
 

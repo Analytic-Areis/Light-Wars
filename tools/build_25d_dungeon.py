@@ -333,7 +333,24 @@ def main():
                 "z": z
             })
 
-    # 11. Warm Torchlight Glare on Pathway Walls
+    # 11. Generate Path Boundary Collisions along all borders and central chasm
+    borders = []
+    for gx, gy in all_coords:
+        _, _, dcx, dcy = grid_to_screen(gx, gy, 0)
+        # NE edge
+        if (gx, gy - 1) not in walkable:
+            borders.append({"x1": dcx, "y1": dcy - 64, "x2": dcx + 128, "y2": dcy})
+        # SE edge
+        if (gx + 1, gy) not in walkable:
+            borders.append({"x1": dcx + 128, "y1": dcy, "x2": dcx, "y2": dcy + 64})
+        # SW edge
+        if (gx, gy + 1) not in walkable:
+            borders.append({"x1": dcx, "y1": dcy + 64, "x2": dcx - 128, "y2": dcy})
+        # NW edge
+        if (gx - 1, gy) not in walkable:
+            borders.append({"x1": dcx - 128, "y1": dcy, "x2": dcx, "y2": dcy - 64})
+
+    # 12. Warm Torchlight Glare on Pathway Walls
     torch_layer = Image.new("RGBA", (canvas_w, canvas_h), (0, 0, 0, 0))
     t_draw = ImageDraw.Draw(torch_layer)
     torch_points = [
@@ -350,7 +367,7 @@ def main():
     torch_layer = torch_layer.filter(ImageFilter.GaussianBlur(radius=15))
     canvas = Image.alpha_composite(canvas, torch_layer)
 
-    # 12. Save Output Images and Data
+    # 13. Save Output Images and Data
     out_floor = "assets/textures/dungeon_floor.png"
     out_png = "assets/textures/dungeon_arena.png"
     out_jpg = "assets/textures/arena_map.jpg"
@@ -371,7 +388,8 @@ def main():
             "y": sp_sy,
             "radius": 190
         },
-        "obstacles": godot_obstacles
+        "obstacles": godot_obstacles,
+        "borders": borders
     }
     with open(out_json, "w") as f:
         json.dump(map_data, f, indent=2)

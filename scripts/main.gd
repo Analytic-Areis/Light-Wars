@@ -84,6 +84,26 @@ func pre_spawn_all_phase_enemies() -> void:
 			{ "pos": Vector2(2250, 1300), "col": "CYAN" },
 			{ "pos": Vector2(2700, 1550), "col": "MAGENTA" },
 			{ "pos": Vector2(2350, 1700), "col": "YELLOW" }
+		],
+		5: [
+			{ "pos": Vector2(2300, 1300), "col": "RED" },
+			{ "pos": Vector2(2400, 1720), "col": "RED" }
+		],
+		6: [
+			{ "pos": Vector2(2850, 1450), "col": "GREEN" },
+			{ "pos": Vector2(2950, 1680), "col": "GREEN" }
+		],
+		7: [
+			{ "pos": Vector2(2700, 1400), "col": "BLUE" },
+			{ "pos": Vector2(3100, 1600), "col": "BLUE" }
+		],
+		8: [
+			{ "pos": Vector2(2200, 1310), "col": "RED" },
+			{ "pos": Vector2(2150, 1750), "col": "GREEN" },
+			{ "pos": Vector2(2650, 1450), "col": "BLUE" },
+			{ "pos": Vector2(2700, 1700), "col": "CYAN" },
+			{ "pos": Vector2(3150, 1550), "col": "MAGENTA" },
+			{ "pos": Vector2(3300, 1650), "col": "YELLOW" }
 		]
 	}
 	for p_num in phase_configs:
@@ -133,6 +153,25 @@ func load_map_obstacles() -> void:
 		obstacle.position = Vector2(obs["x"], obs["y"])
 		obstacle.setup(obs["tex"], obs["type"])
 
+	# Load solid boundaries for all pathway borders and abyss drops
+	var borders_list = data.get("borders", [])
+	if not borders_list.is_empty():
+		var border_body = StaticBody2D.new()
+		border_body.name = "MapBorders"
+		border_body.collision_layer = 4
+		border_body.collision_mask = 7
+		border_body.add_to_group("walls")
+		border_body.add_to_group("obstacles")
+		entities.add_child(border_body)
+		
+		for b in borders_list:
+			var col = CollisionShape2D.new()
+			var seg = SegmentShape2D.new()
+			seg.a = Vector2(b["x1"], b["y1"])
+			seg.b = Vector2(b["x2"], b["y2"])
+			col.shape = seg
+			border_body.add_child(col)
+
 func start_level_1() -> void:
 	phase = 1
 	kills_count = 0
@@ -155,13 +194,21 @@ func on_enemy_killed(enemy: Node2D) -> void:
 	elif phase == 3 and enemies_left == 0:
 		get_tree().create_timer(1.0).timeout.connect(init_phase_4)
 	elif phase == 4 and enemies_left == 0:
+		get_tree().create_timer(1.0).timeout.connect(init_phase_5)
+	elif phase == 5 and enemies_left == 0:
+		get_tree().create_timer(1.0).timeout.connect(init_phase_6)
+	elif phase == 6 and enemies_left == 0:
+		get_tree().create_timer(1.0).timeout.connect(init_phase_7)
+	elif phase == 7 and enemies_left == 0:
+		get_tree().create_timer(1.0).timeout.connect(init_phase_8)
+	elif phase == 8 and enemies_left == 0:
 		hud.show_level_clear(kills_count, orbs_crafted)
 
 func init_phase_2() -> void:
 	phase = 2
 	hud.set_objective(
 		"PHASE 2: MAGENTA TROOPS ARRIVING",
-		"Press [2] for GREEN Laser (or craft with Red Orb + Blue Laser) to defeat Magenta!"
+		"Press [2] for GREEN Laser to defeat Magenta!"
 	)
 	activate_phase_enemies(2)
 
@@ -176,10 +223,42 @@ func init_phase_3() -> void:
 func init_phase_4() -> void:
 	phase = 4
 	hud.set_objective(
-		"CLIMAX SHOWDOWN: ALL 3 TROOPS!",
+		"PHASE 4: CMY TRIAD BATTLE",
 		"Cyan, Magenta, and Yellow troops attack together! Use the WHITE LIGHT sanctuary to recharge!"
 	)
 	activate_phase_enemies(4)
+
+func init_phase_5() -> void:
+	phase = 5
+	hud.set_objective(
+		"PHASE 5: CRIMSON RED CORPS INBOUND",
+		"Press [4] for CYAN Laser to annihilate Red troops! (Orbs drop Cyan ammo)"
+	)
+	activate_phase_enemies(5)
+
+func init_phase_6() -> void:
+	phase = 6
+	hud.set_objective(
+		"PHASE 6: EMERALD GREEN TROOP ASSAULT",
+		"Press [5] for MAGENTA Laser to extinguish Green troops! (Orbs drop Magenta ammo)"
+	)
+	activate_phase_enemies(6)
+
+func init_phase_7() -> void:
+	phase = 7
+	hud.set_objective(
+		"PHASE 7: COBALT BLUE LEGION ADVANCING",
+		"Press [6] for YELLOW Laser to vanquish Blue troops! (Orbs drop Yellow ammo)"
+	)
+	activate_phase_enemies(7)
+
+func init_phase_8() -> void:
+	phase = 8
+	hud.set_objective(
+		"FINAL SHOWDOWN: FULL CHROMATIC WARFARE!",
+		"All 6 troop colors converge! Use your full laser arsenal [1-6] & Sanctuary!"
+	)
+	activate_phase_enemies(8)
 
 func on_orb_converted(orb_col: String, laser_col: String, res_col: String) -> void:
 	orbs_crafted += 1
@@ -216,7 +295,7 @@ func _process(delta: float) -> void:
 					player.health = min(player.max_health, player.health + 1)
 					player.emit_signal("health_changed", player.health, player.max_health)
 					refilled = true
-				for c in ["RED", "GREEN", "BLUE"]:
+				for c in ["RED", "GREEN", "BLUE", "CYAN", "MAGENTA", "YELLOW"]:
 					if player.ammo[c] < player.max_ammo_per_color:
 						player.ammo[c] += 1
 						refilled = true

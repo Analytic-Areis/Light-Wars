@@ -14,9 +14,9 @@ var ammo: Dictionary = {
 	"RED": 6,
 	"GREEN": 6,
 	"BLUE": 6,
-	"CYAN": 0,
-	"MAGENTA": 0,
-	"YELLOW": 0
+	"CYAN": 6,
+	"MAGENTA": 6,
+	"YELLOW": 6
 }
 var color_order: Array = ["RED", "GREEN", "BLUE", "CYAN", "MAGENTA", "YELLOW"]
 var active_color_idx: int = 0

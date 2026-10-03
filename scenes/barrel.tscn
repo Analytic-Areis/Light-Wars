@@ -12,9 +12,8 @@ collision_layer = 4
 collision_mask = 7
 script = ExtResource("1_barrel")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, -12)
-shape = SubResource("CircleShape2D_1")
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="."]
+polygon = PackedVector2Array(-64, -14, 0, 10, 64, -14, 0, -36)
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = ExtResource("2_barreletex")

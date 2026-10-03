@@ -44,6 +44,22 @@ const ENEMY_INTERACTIONS = {
 		"CYAN": { "action": "KILL" },
 		"MAGENTA": { "action": "NONE" },
 		"YELLOW": { "action": "NONE" }
+	},
+	"GREEN": {
+		"RED": { "action": "TRANSFORM", "target": "YELLOW" },
+		"GREEN": { "action": "NONE" },
+		"BLUE": { "action": "TRANSFORM", "target": "CYAN" },
+		"CYAN": { "action": "NONE" },
+		"MAGENTA": { "action": "KILL" },
+		"YELLOW": { "action": "NONE" }
+	},
+	"BLUE": {
+		"RED": { "action": "TRANSFORM", "target": "MAGENTA" },
+		"GREEN": { "action": "TRANSFORM", "target": "CYAN" },
+		"BLUE": { "action": "NONE" },
+		"CYAN": { "action": "NONE" },
+		"MAGENTA": { "action": "NONE" },
+		"YELLOW": { "action": "KILL" }
 	}
 }
 
@@ -52,7 +68,9 @@ const ENEMY_ORB_DROPS = {
 	"CYAN": "RED",
 	"MAGENTA": "GREEN",
 	"YELLOW": "BLUE",
-	"RED": "CYAN"
+	"RED": "CYAN",
+	"GREEN": "MAGENTA",
+	"BLUE": "YELLOW"
 }
 
 # Orb + Laser -> New Laser Ammo
@@ -76,15 +94,6 @@ static func get_direction_8(dir: Vector2) -> String:
 	if deg < 0:
 		deg += 360.0
 	
-	# deg in [0, 360):
-	# E: 0 (337.5 to 22.5)
-	# SE: 45 (22.5 to 67.5)
-	# S: 90 (67.5 to 112.5)
-	# SW: 135 (112.5 to 157.5)
-	# W: 180 (157.5 to 202.5)
-	# NW: 225 (202.5 to 247.5)
-	# N: 270 (247.5 to 292.5)
-	# NE: 315 (292.5 to 337.5)
 	if deg >= 337.5 or deg < 22.5:
 		return "E"
 	elif deg >= 22.5 and deg < 67.5:
@@ -109,7 +118,7 @@ func _ready() -> void:
 
 func preload_all_troop_sprites() -> void:
 	var dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
-	for col in ["cyan", "magenta", "yellow", "red"]:
+	for col in ["cyan", "magenta", "yellow", "red", "green", "blue"]:
 		var key = col.to_upper()
 		troop_cache[key] = {}
 		var folder = "troop_" + col
