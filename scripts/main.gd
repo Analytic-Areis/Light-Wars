@@ -77,8 +77,8 @@ func start_level_1() -> void:
 		"Press [1] for RED Laser. Red Laser annihilates Cyan troops!"
 	)
 	
-	spawn_enemy(Vector2(2900, 1300), "CYAN")
-	spawn_enemy(Vector2(3200, 1800), "CYAN")
+	spawn_enemy(Vector2(2000, 1400), "CYAN")
+	spawn_enemy(Vector2(2100, 1600), "CYAN")
 	enemies_left = 2
 
 func spawn_enemy(pos: Vector2, col_id: String) -> void:
@@ -106,8 +106,8 @@ func init_phase_2() -> void:
 		"PHASE 2: MAGENTA TROOPS ARRIVING",
 		"Press [2] for GREEN Laser (or craft with Red Orb + Blue Laser) to defeat Magenta!"
 	)
-	spawn_enemy(Vector2(3300, 1200), "MAGENTA")
-	spawn_enemy(Vector2(3000, 2100), "MAGENTA")
+	spawn_enemy(Vector2(2300, 1380), "MAGENTA")
+	spawn_enemy(Vector2(2400, 1620), "MAGENTA")
 	enemies_left = 2
 
 func init_phase_3() -> void:
@@ -116,8 +116,8 @@ func init_phase_3() -> void:
 		"PHASE 3: YELLOW TROOP INVASION",
 		"Yellow troops incoming! Press [3] for BLUE Laser to eliminate them!"
 	)
-	spawn_enemy(Vector2(3400, 1500), "YELLOW")
-	spawn_enemy(Vector2(3800, 1300), "YELLOW")
+	spawn_enemy(Vector2(2500, 1400), "YELLOW")
+	spawn_enemy(Vector2(2650, 1600), "YELLOW")
 	enemies_left = 2
 
 func init_phase_4() -> void:
@@ -126,9 +126,9 @@ func init_phase_4() -> void:
 		"CLIMAX SHOWDOWN: ALL 3 TROOPS!",
 		"Cyan, Magenta, and Yellow troops attack together! Use the WHITE LIGHT sanctuary to recharge!"
 	)
-	spawn_enemy(Vector2(3100, 1200), "CYAN")
-	spawn_enemy(Vector2(3500, 1600), "MAGENTA")
-	spawn_enemy(Vector2(3300, 2100), "YELLOW")
+	spawn_enemy(Vector2(2200, 1380), "CYAN")
+	spawn_enemy(Vector2(2500, 1500), "MAGENTA")
+	spawn_enemy(Vector2(2350, 1620), "YELLOW")
 	enemies_left = 3
 
 func on_orb_converted(orb_col: String, laser_col: String, res_col: String) -> void:

@@ -28,6 +28,8 @@ ROW_CUTS = [0, 155, 310, 465, 620, 775, 930, 1084]
 TARGET_CANVAS = (160, 160)
 SCALE = 0.66
 FEET_Y = 145
+CROP_W = 140
+CROP_H = 155
 
 def get_columns(alpha_slice, min_width=25):
     col_sums = np.sum(alpha_slice > 10, axis=0)
@@ -55,28 +57,38 @@ def extract_sheet_frames(sheet_path, expected_cols_count):
     for r in range(7):
         y0, y1 = ROW_CUTS[r], ROW_CUTS[r+1]
         ground = GROUND_BASELINES[r]
-        sub_alpha = alpha[y0:y1, :]
+        sub = alpha[y0:y1, :]
         
-        cols = get_columns(sub_alpha)
-        # In case extra artifact or merged column, adjust to expected_cols_count
+        cols = get_columns(sub)
         if len(cols) != expected_cols_count:
-            # Sort by width descending, pick the top expected_cols_count, then sort by x
             sorted_cols = sorted(cols, key=lambda c: (c[1]-c[0]), reverse=True)[:expected_cols_count]
             cols = sorted(sorted_cols, key=lambda c: c[0])
             
         assert len(cols) == expected_cols_count, f"Row {r} expected {expected_cols_count} cols, got {len(cols)}"
         
         frames = []
-        crop_h = 155
-        crop_w = 140
-        crop_y0 = max(0, ground - crop_h)
+        crop_y0 = max(0, ground - CROP_H)
         crop_y1 = ground
         
         for c_start, c_end in cols:
-            center_x = (c_start + c_end) // 2
-            crop_x0 = max(0, center_x - (crop_w // 2))
-            crop_x1 = min(im.width, crop_x0 + crop_w)
+            cell = sub[:, c_start:c_end]
+            y_idxs, x_idxs = np.where(cell > 10)
+            if len(y_idxs) > 0:
+                top_y = y_idxs.min()
+                # Focus on head / upper torso for rock-solid spine centering
+                head_mask = (y_idxs >= top_y) & (y_idxs <= top_y + 35)
+                head_xs = x_idxs[head_mask]
+                if len(head_xs) > 0:
+                    head_cx = c_start + (np.min(head_xs) + np.max(head_xs)) / 2.0
+                else:
+                    head_cx = (c_start + c_end) / 2.0
+            else:
+                head_cx = (c_start + c_end) / 2.0
+                
+            crop_x0 = int(round(head_cx - (CROP_W / 2.0)))
+            crop_x1 = crop_x0 + CROP_W
             
+            # Symmetrical crop anchored to head center and fixed ground baseline
             frame_crop = im.crop((crop_x0, crop_y0, crop_x1, crop_y1))
             frames.append(frame_crop)
             
@@ -96,6 +108,7 @@ def process_and_save(row_frames, is_idle=False):
             scaled = frame_img.resize((scaled_w, scaled_h), Image.Resampling.LANCZOS)
             
             canvas = Image.new("RGBA", TARGET_CANVAS, (0, 0, 0, 0))
+            # Fixed symmetrical placement: head centered at x=80, feet grounded at y=145
             paste_x = (TARGET_CANVAS[0] - scaled_w) // 2
             paste_y = FEET_Y - scaled_h
             canvas.paste(scaled, (paste_x, paste_y), scaled)
@@ -109,10 +122,10 @@ def process_and_save(row_frames, is_idle=False):
                 canvas.save(os.path.join(OUTPUT_DIR, f"{direction}_run_{f_idx}.png"))
 
 def main():
-    print("Extracting Run Frames from sprite.zip...")
+    print("Extracting Run Frames from sprite.zip with Head-Centering Alignment...")
     run_row_frames = extract_sheet_frames(RUN_SHEET, 8)
     
-    print("Extracting Idle Frames from sprite.zip...")
+    print("Extracting Idle Frames from sprite.zip with Head-Centering Alignment...")
     idle_row_frames = extract_sheet_frames(IDLE_SHEET, 4)
     
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -127,7 +140,7 @@ def main():
     print("Generating Idle animations...")
     process_and_save(idle_row_frames, is_idle=True)
     
-    print("Hero spritesheet processing complete!")
+    print("Hero spritesheet processing with rock-solid spine centering complete!")
 
 if __name__ == "__main__":
     main()

@@ -18,6 +18,7 @@ func setup(start_pos: Vector2, dir: Vector2, col: String) -> void:
 
 func _ready() -> void:
 	add_to_group("lasers")
+	z_index = 80
 	body_entered.connect(_on_body_entered)
 	area_entered.connect(_on_area_entered)
 
@@ -28,10 +29,22 @@ func _physics_process(delta: float) -> void:
 		queue_free()
 
 func _draw() -> void:
-	# Draw glowing 2.5D chromatic laser bolt
-	draw_line(Vector2(-24, 0), Vector2(24, 0), Color.WHITE, 4.0)
-	draw_line(Vector2(-30, 0), Vector2(30, 0), laser_color, 8.0)
-	draw_circle(Vector2(26, 0), 5.0, Color.WHITE)
+	# 1. Multi-layered intense radial bloom aura (identical to the glowing Orb style)
+	draw_line(Vector2(-38, 0), Vector2(34, 0), Color(laser_color.r, laser_color.g, laser_color.b, 0.14), 36.0)
+	draw_line(Vector2(-34, 0), Vector2(32, 0), Color(laser_color.r, laser_color.g, laser_color.b, 0.32), 24.0)
+	draw_line(Vector2(-30, 0), Vector2(30, 0), Color(laser_color.r, laser_color.g, laser_color.b, 0.75), 14.0)
+	draw_line(Vector2(-26, 0), Vector2(28, 0), laser_color, 8.0)
+	# White-hot plasma core filament
+	draw_line(Vector2(-22, 0), Vector2(24, 0), Color.WHITE, 4.0)
+	
+	# 2. Glowing leading projectile orb tip
+	draw_circle(Vector2(28, 0), 16.0, Color(laser_color.r, laser_color.g, laser_color.b, 0.35))
+	draw_circle(Vector2(28, 0), 10.0, laser_color)
+	draw_circle(Vector2(28, 0), 5.0, Color.WHITE)
+	
+	# 3. Trailing energy sparks
+	draw_circle(Vector2(-24, 0), 6.0, Color(laser_color.r, laser_color.g, laser_color.b, 0.5))
+	draw_circle(Vector2(-36, 0), 3.5, Color(laser_color.r, laser_color.g, laser_color.b, 0.3))
 
 func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("enemies"):

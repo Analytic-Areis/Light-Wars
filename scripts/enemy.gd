@@ -26,6 +26,11 @@ func set_enemy_color(new_col: String) -> void:
 
 func load_sprites_for_color() -> void:
 	troop_sprites.clear()
+	var cached = GameManager.get_troop_sprites(color_id)
+	if not cached.is_empty():
+		troop_sprites = cached
+		return
+		
 	var folder = "troop_" + color_id.to_lower()
 	var dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
 	for d in dirs:

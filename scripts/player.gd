@@ -31,9 +31,6 @@ var walk_anim_time: float = 0.0
 var idle_anim_time: float = 0.0
 var current_dir: String = "S"
 
-const ACCEL: float = 1800.0
-const FRICTION: float = 2400.0
-
 # Cached sprites: dir -> { "idle": [tex0..tex3], "run": [tex0..tex7] }
 var character_sprites: Dictionary = {}
 
@@ -133,23 +130,16 @@ func _physics_process(delta: float) -> void:
 	else:
 		var input_vec = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 		if input_vec.length_squared() > 0.01:
-			# 3) Character faces strictly in the WASD movement direction (NOT cursor)
-			current_dir = GameManager.get_direction_8(input_vec)
-			
-			# 4) Smooth acceleration
-			var target_vel = input_vec.normalized() * speed
-			velocity = velocity.move_toward(target_vel, ACCEL * delta)
-			
-			# Smooth rhythmic walk/run cycle (8 frames at 11 fps)
-			walk_anim_time += delta * 11.0
+			var move_dir = input_vec.normalized()
+			# 3) & 6) Character moves directly with WASD and faces movement direction (like enemy)
+			current_dir = GameManager.get_direction_8(move_dir)
+			velocity = move_dir * speed
+			walk_anim_time += delta * 12.0
 			idle_anim_time = 0.0
 			update_sprite(false)
 		else:
-			# 4) Smooth deceleration to stop
-			velocity = velocity.move_toward(Vector2.ZERO, FRICTION * delta)
+			velocity = Vector2.ZERO
 			walk_anim_time = 0.0
-			
-			# Breathing idle cycle (4 frames at 4 fps)
 			idle_anim_time += delta * 4.0
 			update_sprite(true)
 

@@ -44,8 +44,12 @@ position = Vector2(1352, 1502)
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(1352, 1502)
-zoom = Vector2(1.15, 1.15)
+zoom = Vector2(0.72, 0.72)
+limit_left = 0
+limit_top = 0
+limit_right = 5520
+limit_bottom = 3388
 position_smoothing_enabled = true
-position_smoothing_speed = 6.0
+position_smoothing_speed = 8.0
 
 [node name="HUD" parent="." instance=ExtResource("4_hud")]

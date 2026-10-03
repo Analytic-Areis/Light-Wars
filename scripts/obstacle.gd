@@ -3,11 +3,16 @@ extends StaticBody2D
 @onready var sprite_2d: Sprite2D = $Sprite2D
 @onready var col_poly: CollisionPolygon2D = $CollisionPolygon2D
 
+static var tex_cache: Dictionary = {}
+
 func setup(tex_name: String, obs_type: String) -> void:
 	add_to_group("obstacles")
 	var path = "res://assets/isometric_dungeon/Isometric/" + tex_name + ".png"
-	if ResourceLoader.exists(path) and sprite_2d:
-		sprite_2d.texture = load(path)
+	if not tex_cache.has(path):
+		if ResourceLoader.exists(path):
+			tex_cache[path] = load(path)
+	if tex_cache.has(path) and sprite_2d:
+		sprite_2d.texture = tex_cache[path]
 		
 	# Adjust diamond collision footprint based on type
 	if col_poly:

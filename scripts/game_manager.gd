@@ -101,3 +101,31 @@ static func get_direction_8(dir: Vector2) -> String:
 		return "N"
 	else:
 		return "NE"
+
+var troop_cache: Dictionary = {}
+
+func _ready() -> void:
+	preload_all_troop_sprites()
+
+func preload_all_troop_sprites() -> void:
+	var dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+	for col in ["cyan", "magenta", "yellow", "red"]:
+		var key = col.to_upper()
+		troop_cache[key] = {}
+		var folder = "troop_" + col
+		for d in dirs:
+			troop_cache[key][d] = { "idle": null, "run": [] }
+			var idle_path = "res://assets/sprites/" + folder + "/" + d + "_idle.png"
+			if ResourceLoader.exists(idle_path):
+				troop_cache[key][d]["idle"] = load(idle_path)
+			elif ResourceLoader.exists("res://assets/sprites/" + folder + "/" + d + ".png"):
+				troop_cache[key][d]["idle"] = load("res://assets/sprites/" + folder + "/" + d + ".png")
+			for r in range(8):
+				var r_path = "res://assets/sprites/" + folder + "/" + d + "_run_" + str(r) + ".png"
+				if ResourceLoader.exists(r_path):
+					troop_cache[key][d]["run"].append(load(r_path))
+
+func get_troop_sprites(col_id: String) -> Dictionary:
+	if troop_cache.has(col_id):
+		return troop_cache[col_id]
+	return {}

@@ -101,14 +101,14 @@ func on_laser_hit(laser_col: String) -> void:
 	var player = get_tree().get_first_node_in_group("player")
 	
 	if result_color != "":
-		# Successful conversion!
+		# Successful conversion! (1 ammo crafted)
 		if player and player.ammo.has(result_color):
-			player.ammo[result_color] = min(player.max_ammo_per_color, player.ammo[result_color] + 3)
+			player.ammo[result_color] = min(player.max_ammo_per_color, player.ammo[result_color] + 1)
 			player.emit_signal("ammo_changed", player.ammo, player.get_active_color())
 			
 		if main and main.has_method("spawn_comic_floater"):
 			var res_data = GameManager.COLORS.get(result_color, { "color": Color.WHITE })
-			main.spawn_comic_floater(global_position + Vector2(0, -60), "CRAFTED " + result_color + "!", res_data["color"])
+			main.spawn_comic_floater(global_position + Vector2(0, -60), "+1 " + result_color + "!", res_data["color"])
 		if main and main.has_method("on_orb_converted"):
 			main.on_orb_converted(color_id, laser_col, result_color)
 		
