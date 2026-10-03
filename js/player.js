@@ -10,6 +10,7 @@ class Player {
     this.y = y;
     this.z = 0;
     this.radius = 22;
+    this.bodyRadius = 26; // Full body width radius
     this.speed = window.LightWars.GAME_CONFIG.playerSpeed;
     this.alive = true;
 
@@ -102,6 +103,14 @@ class Player {
     return (this.ammo[colorId] !== undefined) && (this.ammo[colorId] < this.maxAmmo);
   }
 
+  // Whole-body vertical capsule hitbox from feet (y - 10) to head (y - 130)
+  checkLaserHit(laser) {
+    if (!this.alive) return false;
+    const clampedY = Math.max(this.y - 130, Math.min(this.y - 10, laser.y));
+    const dist = Math.hypot(laser.x - this.x, laser.y - clampedY);
+    return dist < (this.bodyRadius || 26) + laser.radius;
+  }
+
   shoot(targetX, targetY) {
     if (!this.alive || this.shootCooldown > 0) return null;
 
@@ -113,14 +122,15 @@ class Player {
 
     this.shootCooldown = window.LightWars.GAME_CONFIG.laserCooldown;
 
-    const angle = Math.atan2(targetY - this.y, targetX - this.x);
+    const gunY = this.y - 45;
+    const angle = Math.atan2(targetY - gunY, targetX - this.x);
     const speed = window.LightWars.GAME_CONFIG.laserSpeed;
     const vx = Math.cos(angle) * speed;
     const vy = Math.sin(angle) * speed;
 
     const spawnDist = 28;
     const spawnX = this.x + Math.cos(angle) * spawnDist;
-    const spawnY = this.y + Math.sin(angle) * spawnDist;
+    const spawnY = gunY + Math.sin(angle) * spawnDist;
 
     if (window.LightWars.sound) {
       window.LightWars.sound.playLaserFire(activeColor);

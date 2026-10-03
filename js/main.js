@@ -466,13 +466,12 @@ class LightWarsGame {
           continue;
         }
 
-        // Player Laser: Check collision with Enemies
+        // Player Laser: Check collision with Enemies (Whole-body hitbox!)
         for (let j = this.enemies.length - 1; j >= 0; j--) {
           const enemy = this.enemies[j];
           if (!enemy.alive) continue;
-          const d = Math.hypot(laser.x - enemy.x, laser.y - enemy.y);
-          if (d < enemy.radius + laser.radius) {
-            const hitAngle = Math.atan2(enemy.y - laser.y, enemy.x - laser.x);
+          if (enemy.checkLaserHit(laser)) {
+            const hitAngle = Math.atan2((enemy.y - 50) - laser.y, enemy.x - laser.x);
             const outcome = enemy.takeLaserHit(laser.colorId, hitAngle);
 
             laser.alive = false;
@@ -481,9 +480,9 @@ class LightWarsGame {
               window.LightWars.sound.playKaboom();
               this.camera.shake(9);
 
-              this.particles.spawnBurst(enemy.x, enemy.y, window.LightWars.COLORS[enemy.colorId].hex, 28);
+              this.particles.spawnBurst(enemy.x, enemy.y - 50, window.LightWars.COLORS[enemy.colorId].hex, 28);
               const deathWord = window.LightWars.COMIC_DEATH_WORDS[Math.floor(Math.random() * window.LightWars.COMIC_DEATH_WORDS.length)];
-              this.particles.spawnComicText(enemy.x, enemy.y, deathWord, window.LightWars.COLORS[enemy.colorId].hex);
+              this.particles.spawnComicText(enemy.x, enemy.y - 70, deathWord, window.LightWars.COLORS[enemy.colorId].hex);
 
               // Drop orb: Cyan -> Red, Magenta -> Green, Yellow -> Blue; RGB troops drop nothing!
               const dropColor = enemy.getOrbDrop();
@@ -494,31 +493,28 @@ class LightWarsGame {
               this.waves.onEnemyDefeated(enemy);
             } else if (outcome.action === 'TRANSFORM') {
               window.LightWars.sound.playTransform();
-              this.particles.spawnBurst(enemy.x, enemy.y, window.LightWars.COLORS[outcome.target].hex, 20);
-              this.particles.spawnComicText(enemy.x, enemy.y, `➔ ${outcome.target}!`, window.LightWars.COLORS[outcome.target].hex);
+              this.particles.spawnBurst(enemy.x, enemy.y - 50, window.LightWars.COLORS[outcome.target].hex, 20);
+              this.particles.spawnComicText(enemy.x, enemy.y - 70, `➔ ${outcome.target}!`, window.LightWars.COLORS[outcome.target].hex);
               enemy.setColor(outcome.target);
             } else {
-              // Hit feedback
-              this.particles.spawnBurst(laser.x, laser.y, '#DDDDDD', 6);
-              this.particles.spawnComicText(enemy.x, enemy.y, 'HIT!', '#FFFFFF');
+              // 'NONE' -> No change when hit by this color!
+              this.particles.spawnBurst(laser.x, laser.y, '#AAAAAA', 8);
+              this.particles.spawnComicText(enemy.x, enemy.y - 70, 'NO EFFECT!', '#888888');
             }
 
             break;
           }
         }
       } else {
-        // Enemy Laser: Check collision with Player!
-        if (this.player && this.player.alive) {
-          const d = Math.hypot(laser.x - this.player.x, laser.y - this.player.y);
-          if (d < this.player.radius + laser.radius) {
-            laser.alive = false;
-            this.player.takeDamage(1, laser.x, laser.y);
-            this.camera.shake(5);
-            this.particles.spawnBurst(laser.x, laser.y, window.LightWars.COLORS[laser.colorId].hex, 16);
-            this.particles.spawnComicText(this.player.x, this.player.y, 'ZAP!', '#FF2A4D');
-            if (window.LightWars.sound) {
-              window.LightWars.sound.playPlayerHurt();
-            }
+        // Enemy Laser: Check collision with Player (Whole-body hitbox!)
+        if (this.player && this.player.alive && this.player.checkLaserHit(laser)) {
+          laser.alive = false;
+          this.player.takeDamage(1, laser.x, laser.y);
+          this.camera.shake(5);
+          this.particles.spawnBurst(laser.x, laser.y, window.LightWars.COLORS[laser.colorId].hex, 16);
+          this.particles.spawnComicText(this.player.x, this.player.y - 70, 'ZAP!', '#FF2A4D');
+          if (window.LightWars.sound) {
+            window.LightWars.sound.playPlayerHurt();
           }
         }
       }

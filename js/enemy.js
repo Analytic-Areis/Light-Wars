@@ -16,9 +16,10 @@ class Enemy {
     this.bandColorData = window.LightWars.COLORS[this.bandColorId] || window.LightWars.COLORS.RED;
 
     this.radius = 22;
+    this.bodyRadius = 26; // Full body width radius
     this.speed = 130 + Math.random() * 30;
     this.alive = true;
-    this.health = 2; // 2 HP base; counter laser deals lethal 1-shot kill
+    this.health = 2;
 
     // Animation & physics
     this.walkAnimTime = Math.random() * 8;
@@ -34,21 +35,32 @@ class Enemy {
     this.shootCooldown = 1.8 + Math.random() * 2.2;
   }
 
+  // Whole-body vertical capsule hitbox from feet (y - 10) to head (y - 130)
+  checkLaserHit(laser) {
+    if (!this.alive) return false;
+    const clampedY = Math.max(this.y - 130, Math.min(this.y - 10, laser.y));
+    const dist = Math.hypot(laser.x - this.x, laser.y - clampedY);
+    return dist < (this.bodyRadius || 26) + laser.radius;
+  }
+
   shoot(targetX, targetY) {
     if (!this.alive || this.shootCooldown > 0) return null;
 
     // Reset slow shooting cooldown: 3.2 to 4.4 seconds (relative to player's 0.28s cooldown)
     this.shootCooldown = 3.2 + Math.random() * 1.2;
 
-    const angle = Math.atan2(targetY - this.y, targetX - this.x);
+    // Fire from blaster at chest level towards target chest level
+    const gunY = this.y - 45;
+    const targetChestY = targetY - 45;
+    const angle = Math.atan2(targetChestY - gunY, targetX - this.x);
     // Slower dodgeable speed (420 px/s vs player's 820 px/s)
     const speed = 420;
     const vx = Math.cos(angle) * speed;
     const vy = Math.sin(angle) * speed;
 
-    const spawnDist = 26;
+    const spawnDist = 28;
     const spawnX = this.x + Math.cos(angle) * spawnDist;
-    const spawnY = this.y + Math.sin(angle) * spawnDist;
+    const spawnY = gunY + Math.sin(angle) * spawnDist;
 
     if (window.LightWars.sound) {
       window.LightWars.sound.playLaserFire(this.colorId);
@@ -162,14 +174,12 @@ class Enemy {
       return { action: 'KILL' };
     }
 
-    // Non-counter laser deals 1 damage
-    this.health -= 1;
-    if (this.health <= 0) {
-      this.alive = false;
-      return { action: 'KILL' };
+    if (interaction.action === 'TRANSFORM') {
+      return { action: 'TRANSFORM', target: interaction.target };
     }
 
-    return interaction;
+    // action === 'NONE' -> No change when hit by this color!
+    return { action: 'NONE' };
   }
 
   draw(ctx, spriteManager) {

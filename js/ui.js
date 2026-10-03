@@ -178,33 +178,41 @@ class UIManager {
 
   drawColorMatrixWidget(ctx, x, y) {
     ctx.save();
-    ctx.fillStyle = 'rgba(16, 20, 34, 0.85)';
+    const w = 210;
+    const h = 138;
+    ctx.fillStyle = 'rgba(16, 20, 34, 0.88)';
     ctx.strokeStyle = '#323E62';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.roundRect(x, y, 180, 105, 8);
+    ctx.roundRect(x - 30, y, w, h, 8);
     ctx.fill();
     ctx.stroke();
 
     ctx.fillStyle = '#00F0FF';
     ctx.font = 'bold 11px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('COLOR RULES (NORMAL)', x + 90, y + 18);
+    ctx.fillText('COLOR COUNTER MATRIX', x - 30 + w / 2, y + 16);
 
-    ctx.font = '10px sans-serif';
+    ctx.font = 'bold 10px sans-serif';
     ctx.textAlign = 'left';
 
     const rules = [
-      { text: '• Cyan Enemy ➔ Dies to Red', color: '#00F0FF' },
-      { text: '• Red Enemy ➔ Dies to Cyan', color: '#FF2A4D' },
-      { text: '• Green Enemy ➔ Dies to Magenta', color: '#22E058' },
-      { text: '• Orbs: Shoot with RGB to craft!', color: '#FFE600' }
+      { text: '• Red ➔ Dies to Cyan', color: '#FF4D66' },
+      { text: '• Blue ➔ Dies to Yellow', color: '#4D88FF' },
+      { text: '• Green ➔ Dies to Magenta', color: '#2CE070' },
+      { text: '• Cyan ➔ Dies to Red', color: '#00F0FF' },
+      { text: '• Yellow ➔ Dies to Blue', color: '#FFE600' },
+      { text: '• Magenta ➔ Dies to Green', color: '#FF33DD' }
     ];
 
     rules.forEach((r, idx) => {
       ctx.fillStyle = r.color;
-      ctx.fillText(r.text, x + 10, y + 36 + idx * 16);
+      ctx.fillText(r.text, x - 20, y + 33 + idx * 15);
     });
+
+    ctx.fillStyle = '#8B9BB4';
+    ctx.font = '9px sans-serif';
+    ctx.fillText('Other hits: Transform / No effect', x - 20, y + 128);
 
     ctx.restore();
   }
