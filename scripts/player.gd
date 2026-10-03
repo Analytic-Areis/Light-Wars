@@ -181,8 +181,10 @@ func try_shoot(aim_dir: Vector2) -> void:
 	velocity -= aim_dir * 50.0
 	
 	var laser = laser_scene.instantiate()
-	get_parent().add_child(laser)
-	laser.setup(global_position + aim_dir * 28.0, aim_dir, active_col)
+	var spawn_pos = global_position + aim_dir * 28.0
+	laser.position = spawn_pos
+	laser.setup(spawn_pos, aim_dir, active_col)
+	get_parent().call_deferred("add_child", laser)
 	
 	var main = get_tree().current_scene
 	if main and main.has_method("play_sfx") and "sfx_laser" in main:

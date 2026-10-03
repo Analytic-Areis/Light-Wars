@@ -100,12 +100,14 @@ func shoot_bullet_at(target_pos: Vector2) -> void:
 	if not bullet_scene: return
 	var dir = (target_pos - global_position).normalized()
 	var bullet = bullet_scene.instantiate()
+	var spawn_pos = global_position + dir * 28.0
+	bullet.position = spawn_pos
+	bullet.setup(spawn_pos, dir, color_id)
 	var main = get_tree().current_scene
 	if main and main.get_node_or_null("Entities"):
-		main.get_node("Entities").add_child(bullet)
+		main.get_node("Entities").call_deferred("add_child", bullet)
 	else:
-		get_parent().add_child(bullet)
-	bullet.setup(global_position + dir * 28.0, dir, color_id)
+		get_parent().call_deferred("add_child", bullet)
 
 func update_sprite(is_idle: bool) -> void:
 	if not sprite_2d or not troop_sprites.has(current_dir):
@@ -139,12 +141,12 @@ func take_laser_hit(laser_col: String, hit_dir: Vector2) -> void:
 			var drop_color = GameManager.ENEMY_ORB_DROPS.get(color_id, "")
 			if drop_color != "":
 				var orb = orb_scene.instantiate()
-				if main and main.get_node_or_null("Entities"):
-					main.get_node("Entities").add_child(orb)
-				else:
-					get_parent().add_child(orb)
-				orb.global_position = global_position
+				orb.position = global_position
 				orb.set_orb_color(drop_color)
+				if main and main.get_node_or_null("Entities"):
+					main.get_node("Entities").call_deferred("add_child", orb)
+				else:
+					get_parent().call_deferred("add_child", orb)
 				
 			if main and main.has_method("on_enemy_killed"):
 				main.on_enemy_killed(self)

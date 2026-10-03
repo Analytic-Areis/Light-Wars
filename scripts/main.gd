@@ -228,8 +228,9 @@ func _process(delta: float) -> void:
 
 func spawn_comic_floater(pos: Vector2, text: String, color: Color) -> void:
 	var pop = comic_pop_scene.instantiate()
-	entities.add_child(pop)
+	pop.position = pos
 	pop.setup(pos, text, color)
+	entities.call_deferred("add_child", pop)
 	
 	if text.contains("BOOM") or text.contains("POW") or text.contains("1CO") or text.contains("ZAP"):
 		play_sfx(sfx_kaboom, randf_range(0.92, 1.08))
