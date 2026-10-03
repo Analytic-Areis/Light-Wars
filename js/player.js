@@ -288,7 +288,7 @@ class Player {
             }
           }
           if (changed && window.LightWars.sound) {
-            window.LightWars.sound.playLaserFire('WHITE');
+            window.LightWars.sound.playRefill();
           }
         }
       } else {

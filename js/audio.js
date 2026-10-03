@@ -305,6 +305,31 @@ class SoundEngine {
       osc.stop(t + dur + 0.05);
     });
   }
+
+  playLaserFire(colorId) {
+    return this.playLaser(colorId);
+  }
+
+  playKaboom() {
+    return this.playComicDeath();
+  }
+
+  playEmpty() {
+    if (this.isMuted) return;
+    this.resume();
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(140, t);
+    gain.gain.setValueAtTime(0.2, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.08);
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+    osc.start(t);
+    osc.stop(t + 0.08);
+  }
 }
 
 window.LightWars = window.LightWars || {};
