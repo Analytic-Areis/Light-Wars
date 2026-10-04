@@ -49,14 +49,17 @@ class SpriteManager {
   initDirectionalSprites() {
     const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 
-    // 1. Luke (Hero) 8-directional sprites
+    // 1. Luke (Hero) 8-directional sprites (idle & walk)
     for (const d of dirs) {
       const fileName = SpriteManager.DIR_FILES[d];
-      const lukePath = `assets/sprites/luke/idle/${fileName}`;
-      this.loadSprite(`luke_${d}_idle`, lukePath);
-      this.loadSprite(`luke_${d}`, lukePath);
-      this.loadSprite(`hero_${d}_idle`, lukePath);
-      this.loadSprite(`hero_${d}`, lukePath);
+      const idlePath = `assets/sprites/luke/idle/${fileName}`;
+      const walkPath = `assets/sprites/luke/walk/${fileName}`;
+      this.loadSprite(`luke_${d}_idle`, idlePath);
+      this.loadSprite(`luke_${d}_walk`, walkPath);
+      this.loadSprite(`luke_${d}`, idlePath);
+      this.loadSprite(`hero_${d}_idle`, idlePath);
+      this.loadSprite(`hero_${d}_walk`, walkPath);
+      this.loadSprite(`hero_${d}`, idlePath);
     }
 
     // 2. Bots & Boss 8-directional idle and walk sprites
@@ -131,21 +134,22 @@ class SpriteManager {
     }
     if (!dir) dir = 'S';
 
-    const img = this.getSprite(`luke_${dir}_idle`) ||
-                this.getSprite(`hero_${dir}_idle`) ||
-                this.getSprite(`luke_S_idle`);
-
-    if (!img) return false;
-
-    // 5x5 sprite sheet: 25 frames of 256x256
+    let img = null;
     let frameIdx = 0;
-    let bobY = 0;
     if (player.isMoving) {
+      img = this.getSprite(`luke_${dir}_walk`) ||
+            this.getSprite(`hero_${dir}_walk`) ||
+            this.getSprite(`luke_${dir}_idle`) ||
+            this.getSprite(`luke_S_walk`);
       frameIdx = Math.floor(player.walkAnimTime) % 25;
-      bobY = Math.abs(Math.sin(player.walkAnimTime * 0.5)) * 3.0;
     } else {
+      img = this.getSprite(`luke_${dir}_idle`) ||
+            this.getSprite(`hero_${dir}_idle`) ||
+            this.getSprite(`luke_S_idle`);
       frameIdx = Math.floor(player.idleAnimTime) % 25;
     }
+
+    if (!img) return false;
 
     const col = frameIdx % 5;
     const row = Math.floor(frameIdx / 5);
@@ -160,7 +164,7 @@ class SpriteManager {
     const w = 150;
     const feetOffset = h * (224 / 256); // 131.25 px
 
-    ctx.drawImage(img, sx, sy, frameW, frameH, -w / 2, -feetOffset + bobY, w, h);
+    ctx.drawImage(img, sx, sy, frameW, frameH, -w / 2, -feetOffset, w, h);
     ctx.restore();
     return true;
   }
@@ -196,9 +200,9 @@ class SpriteManager {
       ctx.filter = 'brightness(3.2) contrast(1.5)';
     }
 
-    // Anchor troop feet directly to ground plane, scaled to fit within one map tile
-    const h = 150;
-    const w = 150;
+    // Anchor troop feet directly to ground plane, scaled bigger (190x190) than player (150x150)
+    const h = 190;
+    const w = 190;
     const feetOffset = h * (224 / 256);
 
     ctx.drawImage(img, sx, sy, frameW, frameH, -w / 2, -feetOffset, w, h);

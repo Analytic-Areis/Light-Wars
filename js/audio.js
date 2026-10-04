@@ -8,6 +8,10 @@ class SoundEngine {
     this.ctx = null;
     this.isMuted = false;
     this.masterGain = null;
+    this.sfxGain = null;
+    this.musicGain = null;
+    this.sfxVolume = 0.8;
+    this.musicVolume = 0.6;
     this.initialized = false;
   }
 
@@ -19,6 +23,15 @@ class SoundEngine {
       this.masterGain = this.ctx.createGain();
       this.masterGain.gain.setValueAtTime(0.35, this.ctx.currentTime);
       this.masterGain.connect(this.ctx.destination);
+
+      this.sfxGain = this.ctx.createGain();
+      this.sfxGain.gain.setValueAtTime(this.sfxVolume, this.ctx.currentTime);
+      this.sfxGain.connect(this.masterGain);
+
+      this.musicGain = this.ctx.createGain();
+      this.musicGain.gain.setValueAtTime(this.musicVolume, this.ctx.currentTime);
+      this.musicGain.connect(this.masterGain);
+
       this.initialized = true;
     } catch (e) {
       console.warn("AudioContext init failed:", e);
@@ -29,6 +42,20 @@ class SoundEngine {
     if (!this.initialized) this.init();
     if (this.ctx && this.ctx.state === 'suspended') {
       this.ctx.resume();
+    }
+  }
+
+  setSfxVolume(val) {
+    this.sfxVolume = Math.max(0, Math.min(1, val));
+    if (this.sfxGain && this.ctx) {
+      this.sfxGain.gain.setValueAtTime(this.sfxVolume, this.ctx.currentTime);
+    }
+  }
+
+  setMusicVolume(val) {
+    this.musicVolume = Math.max(0, Math.min(1, val));
+    if (this.musicGain && this.ctx) {
+      this.musicGain.gain.setValueAtTime(this.musicVolume, this.ctx.currentTime);
     }
   }
 

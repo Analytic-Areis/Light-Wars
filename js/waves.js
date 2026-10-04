@@ -44,9 +44,22 @@ class WaveDirector {
       "PHASE 1 — CYAN INFILTRATORS",
       "Use RED laser [1] to destroy Cyan troops! Cyan troops drop Red Orbs."
     );
-    this.game.spawnEnemy(688, 398, 'CYAN');
-    this.game.spawnEnemy(889, 593, 'CYAN');
+    this.game.spawnEnemy(2741, 1213, 'CYAN');
+    this.game.spawnEnemy(3431, 1530, 'CYAN');
     this.enemiesRemainingInPhase = 2;
+
+    if (this.game.showStopTutorial) {
+      setTimeout(() => {
+        this.game.showStopTutorial(
+          'l1_cyan_intro',
+          'TARGET IN SIGHT: CYAN TROOP!',
+          'Notice the troop ahead wearing a <b>CYAN</b> headband!<br><br>' +
+          '• Cyan is vulnerable to its complementary wavelength: <b>RED</b>.<br>' +
+          '• Press <b>[1]</b> to select RED LASER and fire directly at them!<br>' +
+          '• Firing the wrong color will have <b>NO EFFECT</b>.'
+        );
+      }, 400);
+    }
   }
 
   initL1Phase2() {
@@ -55,9 +68,19 @@ class WaveDirector {
       "PHASE 2 — MAGENTA TROOPERS",
       "Use GREEN laser [2] to destroy Magenta troops! Magenta troops drop Green Orbs."
     );
-    this.game.spawnEnemy(984, 468, 'MAGENTA');
-    this.game.spawnEnemy(565, 409, 'MAGENTA');
+    this.game.spawnEnemy(3937, 1870, 'MAGENTA');
+    this.game.spawnEnemy(2260, 1637, 'MAGENTA');
     this.enemiesRemainingInPhase = 2;
+
+    if (this.game.showStopTutorial) {
+      this.game.showStopTutorial(
+        'l1_magenta_intro',
+        'NEW ENEMY: MAGENTA TROOPER!',
+        'Troops in <b>MAGENTA</b> headbands have entered the arena!<br><br>' +
+        '• Magenta is complementary to <b>GREEN</b>.<br>' +
+        '• Press <b>[2]</b> to equip your GREEN LASER and neutralize them!'
+      );
+    }
   }
 
   initL1Phase3() {
@@ -66,9 +89,19 @@ class WaveDirector {
       "PHASE 3 — YELLOW SQUADRON",
       "Use BLUE laser [3] to eliminate Yellow troops! Yellow troops drop Blue Orbs."
     );
-    this.game.spawnEnemy(512, 529, 'YELLOW');
-    this.game.spawnEnemy(889, 593, 'YELLOW');
+    this.game.spawnEnemy(2046, 2117, 'YELLOW');
+    this.game.spawnEnemy(3556, 2372, 'YELLOW');
     this.enemiesRemainingInPhase = 2;
+
+    if (this.game.showStopTutorial) {
+      this.game.showStopTutorial(
+        'l1_yellow_intro',
+        'NEW ENEMY: YELLOW TROOPER!',
+        '<b>YELLOW</b> troopers are advancing!<br><br>' +
+        '• Yellow is complementary to <b>BLUE</b>.<br>' +
+        '• Press <b>[3]</b> to equip your BLUE LASER and shoot them down!'
+      );
+    }
   }
 
   initL1Phase4() {
@@ -77,11 +110,11 @@ class WaveDirector {
       "FINAL PHASE — CMY TRIAD ASSAULT!",
       "Cyan, Magenta & Yellow attack together! Use the RECHARGE STATION to stay armed!"
     );
-    this.game.spawnEnemy(688, 398, 'CYAN');
-    this.game.spawnEnemy(889, 593, 'MAGENTA');
-    this.game.spawnEnemy(754, 658, 'YELLOW');
-    this.game.spawnEnemy(617, 603, 'CYAN');
-    this.game.spawnEnemy(512, 529, 'MAGENTA');
+    this.game.spawnEnemy(2741, 1213, 'CYAN');
+    this.game.spawnEnemy(3556, 2372, 'MAGENTA');
+    this.game.spawnEnemy(3015, 2632, 'YELLOW');
+    this.game.spawnEnemy(2469, 2413, 'CYAN');
+    this.game.spawnEnemy(2046, 2117, 'MAGENTA');
     this.enemiesRemainingInPhase = 5;
   }
 

@@ -62,7 +62,7 @@
             </div>
 
             <div class="box-art-wrap">
-              <img src="assets/comic_art/cyan_combat_cutout.png" alt="Cyan Infiltrator" class="panel-char-img combat-img">
+              <img src="assets/comic_art/cyan_combat_cutout_tight.png" alt="Cyan Infiltrator" class="panel-char-img combat-img">
             </div>
 
             <div class="comic-sfx sfx-red">PEW! PEW!</div>
@@ -225,6 +225,76 @@
         <div class="modal-actions">
           <button id="restartBtn" class="comic-btn">RETRY</button>
           <button onclick="window.game.showMenu()" class="comic-btn secondary">MENU</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Escape Pause Menu Modal -->
+    <div id="escapePauseModal" class="modal-overlay">
+      <div class="comic-modal-box pause-modal-box">
+        <h2 class="comic-modal-title">MISSION PAUSED</h2>
+        
+        <!-- Controls & Settings Grid -->
+        <div class="pause-settings-panel">
+          <div class="volume-control-group">
+            <div class="volume-slider-row">
+              <label for="sfxVolumeSlider" class="volume-label">&#x1F50A; SOUND FX</label>
+              <input type="range" id="sfxVolumeSlider" min="0" max="1" step="0.05" value="0.8" class="comic-slider">
+              <span id="sfxVolumeVal" class="volume-value-badge">80%</span>
+            </div>
+            <div class="volume-slider-row">
+              <label for="musicVolumeSlider" class="volume-label">&#x1F3B5; MUSIC</label>
+              <input type="range" id="musicVolumeSlider" min="0" max="1" step="0.05" value="0.6" class="comic-slider">
+              <span id="musicVolumeVal" class="volume-value-badge">60%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="pause-modal-actions">
+          <button id="pauseResumeBtn" class="comic-btn">RESUME</button>
+          <button id="pauseRestartBtn" class="comic-btn secondary">RESTART</button>
+          <button id="pauseMenuBtn" class="comic-btn secondary">COMIC STRIP</button>
+        </div>
+
+        <!-- Level Hints & Color Counter Reference (At the bottom of Escape menu) -->
+        <div class="pause-hints-section">
+          <div class="pause-hints-header">&#x1F4A1; LEVEL 1 TACTICAL HINTS &amp; COLOR COUNTERS</div>
+          <div class="hints-grid">
+            <div class="hint-card">
+              <div class="hint-title" style="color: #00F0FF;">&#x25C6; CYAN TROOPS</div>
+              <p>Eliminate with <b>RED LASER [1]</b>.<br>Drops <span style="color: #FF4D66;">RED ORBS</span>.</p>
+            </div>
+            <div class="hint-card">
+              <div class="hint-title" style="color: #FF33DD;">&#x25C6; MAGENTA TROOPS</div>
+              <p>Eliminate with <b>GREEN LASER [2]</b>.<br>Drops <span style="color: #2CE070;">GREEN ORBS</span>.</p>
+            </div>
+            <div class="hint-card">
+              <div class="hint-title" style="color: #FFE600;">&#x25C6; YELLOW TROOPS</div>
+              <p>Eliminate with <b>BLUE LASER [3]</b>.<br>Drops <span style="color: #4D88FF;">BLUE ORBS</span>.</p>
+            </div>
+            <div class="hint-card">
+              <div class="hint-title" style="color: #FFFFFF;">&#x25C6; ORB CONVERSION</div>
+              <p>Shoot orbs with <b>complementary laser</b> to craft ammo crystals, or walk over them!</p>
+            </div>
+            <div class="hint-card full-span">
+              <div class="hint-title" style="color: #FFE600;">&#x26AA; WHITE LIGHT RECHARGE SANCTUARY</div>
+              <p>Step onto the glowing white circle at the top-center to instantly reload all depleted lasers!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interactive Stop Tutorial Overlay Modal -->
+    <div id="tutorialModal" class="modal-overlay">
+      <div class="comic-modal-box tutorial-modal-box">
+        <div class="tutorial-comic-bubble">
+          <div class="tutorial-badge">&#x26A1; COMIC INTEL BRIEFING &#x26A1;</div>
+          <h3 id="tutorialTitle" class="tutorial-title">TUTORIAL ALERT</h3>
+          <p id="tutorialMessage" class="tutorial-text">Instructions here...</p>
+          <div id="tutorialKeyHint" class="tutorial-key-hint">PRESS [ENTER] OR CLICK TO CONTINUE</div>
+          <button id="tutorialDismissBtn" class="comic-btn play-btn pulse-glow">GOT IT! CONTINUE &#x25B6;</button>
         </div>
       </div>
     </div>

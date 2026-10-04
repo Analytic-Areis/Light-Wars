@@ -11,9 +11,9 @@ class Arena {
     this.currentLevel = 1;
     this.mapImg = new Image();
     this.whiteLight = {
-      x: 856,
-      y: 273,
-      radius: 36,
+      x: 3425,
+      y: 1091,
+      radius: 75,
       pulseTime: 0,
       particles: []
     };

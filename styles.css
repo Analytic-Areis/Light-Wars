@@ -137,6 +137,26 @@ body, html {
     3px 3px 0 #FF2A4D,
     5px 5px 0 #000;
   transform: skew(-3deg);
+  animation: comicChromaticCycle 6s infinite alternate;
+}
+
+@keyframes comicChromaticCycle {
+  0% {
+    color: #FFE600;
+    text-shadow: 3px 3px 0 #FF2A4D, 5px 5px 0 #000;
+  }
+  33% {
+    color: #00F0FF;
+    text-shadow: 3px 3px 0 #FF00E5, 5px 5px 0 #000;
+  }
+  66% {
+    color: #FF33DD;
+    text-shadow: 3px 3px 0 #00FF66, 5px 5px 0 #000;
+  }
+  100% {
+    color: #FFE600;
+    text-shadow: 3px 3px 0 #FF2A4D, 5px 5px 0 #000;
+  }
 }
 
 .sw-comic-page-tracker {
@@ -176,7 +196,7 @@ body, html {
 /* Comic Book Page 1 Container (Matching user template layout) */
 .sw-comic-page {
   width: 100%;
-  max-width: 960px;
+  max-width: 1100px;
   flex: 1;
   min-height: 0;
   background: #F5F2E8;
@@ -189,8 +209,8 @@ body, html {
   box-shadow: 7px 7px 0 #000, 12px 12px 0 rgba(0, 240, 255, 0.2);
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: 6px;
+  gap: 6px;
+  padding: 8px;
   position: relative;
   overflow: hidden;
 }
@@ -204,15 +224,15 @@ body, html {
 }
 
 .comic-row.row-1 {
-  flex: 3;
+  flex: 3.5;
 }
 
 .comic-row.row-2 {
-  flex: 2;
+  flex: 2.2;
 }
 
 .comic-row.row-3 {
-  flex: 3;
+  flex: 2.8;
 }
 
 /* Locked-row visual overlay */
@@ -434,8 +454,8 @@ body, html {
 }
 
 .combat-img {
-  height: 120px;
-  transform: translate(95px, -6px);
+  height: 95px;
+  transform: translate(65px, -2px);
 }
 
 .troops-img {
@@ -483,17 +503,17 @@ body, html {
   z-index: 3;
   background: rgba(10, 14, 25, 0.94);
   border: 2px solid #00F0FF;
-  box-shadow: 2px 2px 0 #000;
-  padding: 3px 6px;
+  box-shadow: 3px 3px 0 #000;
+  padding: 4px 8px;
   margin-top: auto;
   margin-bottom: 2px;
-  max-width: 58%;
+  max-width: 52%;
 }
 
 .briefing-rule {
   font-size: 9.5px;
   color: #D2DEFF;
-  line-height: 1.3;
+  line-height: 1.35;
   font-weight: 700;
 }
 
@@ -503,26 +523,27 @@ body, html {
 
 /* Play Button */
 .play-btn {
-  position: relative;
-  z-index: 4;
-  align-self: flex-end;
+  position: absolute;
+  right: 14px;
+  bottom: 8px;
+  z-index: 6;
   font-family: 'Bangers', cursive;
-  font-size: 19px;
+  font-size: 20px;
   color: #000;
-  background: #FFE600;
-  padding: 4px 15px;
-  border: 2.5px solid #000;
-  box-shadow: 3px 3px 0 #FF2A4D, 5px 5px 0 #000;
+  background: linear-gradient(180deg, #FFF033 0%, #FFE600 55%, #FFCC00 100%);
+  padding: 5px 18px;
+  border: 3px solid #000;
+  box-shadow: 4px 4px 0 #FF2A4D, 6px 6px 0 #000;
   cursor: pointer;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
-  transition: all 0.15s ease;
+  transition: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .play-btn:hover {
-  transform: translate(-2px, -2px) scale(1.04);
-  box-shadow: 6px 6px 0 #FF2A4D, 8px 8px 0 #000;
-  background: #FFF033;
+  transform: translate(-2px, -2px) scale(1.06);
+  box-shadow: 6px 6px 0 #FF2A4D, 9px 9px 0 #000;
+  background: #FFF766;
 }
 
 .pulse-glow {
@@ -816,4 +837,198 @@ body, html {
   display: flex;
   gap: 15px;
   justify-content: center;
+}
+
+/* Pause Modal Custom Styling */
+.pause-modal-box {
+  max-width: 650px;
+  width: 92%;
+  padding: 24px 32px;
+  background: #111628;
+  border: 5px solid #FFE600;
+  box-shadow: 10px 10px 0 #FF2A4D, 14px 14px 0 #000;
+  transform: rotate(0deg);
+}
+
+.pause-settings-panel {
+  background: #0B0E1A;
+  border: 2px solid #273352;
+  padding: 14px 20px;
+  margin-bottom: 18px;
+}
+
+.volume-control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.volume-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.volume-label {
+  font-family: 'Bangers', cursive;
+  font-size: 18px;
+  color: #FFE600;
+  letter-spacing: 1px;
+  width: 120px;
+  text-align: left;
+}
+
+.comic-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 10px;
+  background: #1E2742;
+  outline: none;
+  border: 2px solid #000;
+  box-shadow: 2px 2px 0 #000;
+}
+
+.comic-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  background: #00F0FF;
+  border: 2px solid #000;
+  box-shadow: 2px 2px 0 #FF2A4D;
+  cursor: pointer;
+  transform: rotate(45deg);
+  transition: transform 0.1s ease;
+}
+
+.comic-slider::-webkit-slider-thumb:hover {
+  transform: rotate(45deg) scale(1.15);
+  background: #FFE600;
+}
+
+.volume-value-badge {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  font-weight: 900;
+  color: #00F0FF;
+  width: 45px;
+  text-align: right;
+}
+
+.pause-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.pause-hints-section {
+  background: #0A0D18;
+  border: 3px solid #00F0FF;
+  box-shadow: 4px 4px 0 #000;
+  padding: 14px;
+  text-align: left;
+}
+
+.pause-hints-header {
+  font-family: 'Bangers', cursive;
+  font-size: 19px;
+  color: #FFE600;
+  letter-spacing: 1.5px;
+  margin-bottom: 10px;
+  text-align: center;
+  border-bottom: 2px dashed #2A365A;
+  padding-bottom: 6px;
+}
+
+.hints-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.hint-card {
+  background: #13192C;
+  border: 1.5px solid #2E3B63;
+  padding: 8px 10px;
+}
+
+.hint-card.full-span {
+  grid-column: span 2;
+  background: #151F3A;
+  border-color: #00F0FF;
+}
+
+.hint-title {
+  font-family: 'Bangers', cursive;
+  font-size: 15px;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.hint-card p {
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: #C0CFEE;
+  margin: 0;
+}
+
+.hint-card b {
+  color: #FFE600;
+}
+
+/* Stop Tutorial Modal */
+.tutorial-modal-box {
+  max-width: 560px;
+  width: 90%;
+  padding: 30px 36px;
+  background: #0D1120;
+  border: 6px solid #00F0FF;
+  box-shadow: 12px 12px 0 #FF2A4D, 16px 16px 0 #000;
+  transform: rotate(-1deg);
+  text-align: center;
+}
+
+.tutorial-badge {
+  font-family: 'Bangers', cursive;
+  font-size: 15px;
+  color: #000;
+  background: #00F0FF;
+  padding: 3px 12px;
+  display: inline-block;
+  letter-spacing: 1.5px;
+  margin-bottom: 12px;
+  border: 2px solid #000;
+  box-shadow: 2px 2px 0 #FF2A4D;
+}
+
+.tutorial-title {
+  font-family: 'Bangers', cursive;
+  font-size: 38px;
+  color: #FFE600;
+  letter-spacing: 2px;
+  text-shadow: 3px 3px 0 #FF2A4D, 5px 5px 0 #000;
+  margin-bottom: 12px;
+}
+
+.tutorial-text {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #FFFFFF;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+.tutorial-text b {
+  color: #FFE600;
+}
+
+.tutorial-key-hint {
+  font-family: 'Bangers', cursive;
+  font-size: 14px;
+  color: #7B8BAF;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
 }

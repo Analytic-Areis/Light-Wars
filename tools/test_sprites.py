@@ -57,21 +57,25 @@ def main():
                 break
             time.sleep(0.2)
 
-        # Check sprite presence for Luke
+        # Check sprite presence for Luke (idle & walk)
         luke_check = eval_js('''
             (() => {
                 const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
                 const sm = window.game.spriteManager;
                 const res = {};
                 for (const d of dirs) {
-                    res[d] = sm.hasSprite(`luke_${d}_idle`);
+                    res[d] = {
+                        idle: sm.hasSprite(`luke_${d}_idle`),
+                        walk: sm.hasSprite(`luke_${d}_walk`)
+                    };
                 }
                 return res;
             })()
         ''', 50)
-        print("Luke directional sprites check:", luke_check)
+        print("Luke directional sprites check:", json.dumps(luke_check, indent=2))
         for d, has in luke_check.items():
-            assert has, f"Missing Luke sprite for direction {d}!"
+            assert has['idle'], f"Missing Luke idle sprite for direction {d}!"
+            assert has['walk'], f"Missing Luke walk sprite for direction {d}!"
 
         # Check sprite presence for all Bot schemes and Boss
         schemes = ['RED', 'GREEN', 'BLUE', 'CYAN', 'MAGENTA', 'YELLOW', 'WHITE', 'BOSS'];

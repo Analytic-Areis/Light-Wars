@@ -15,8 +15,8 @@ class Enemy {
     this.bandColorId = this.colorData.band || this.colorData.complementary;
     this.bandColorData = window.LightWars.COLORS[this.bandColorId] || window.LightWars.COLORS.RED;
 
-    this.radius = 20;
-    this.bodyRadius = 24; // Full body width radius
+    this.radius = 24;
+    this.bodyRadius = 30; // Scaled for larger enemy body
     this.speed = 130 + Math.random() * 30;
     this.alive = true;
     this.health = 2;
@@ -36,24 +36,24 @@ class Enemy {
     this.shootCooldown = 1.8 + Math.random() * 2.2;
   }
 
-  // Whole-body vertical capsule hitbox from feet (y - 10) to head (y - 110)
+  // Whole-body vertical capsule hitbox from feet (y - 10) to head (y - 140)
   checkLaserHit(laser) {
     if (!this.alive) return false;
-    const clampedY = Math.max(this.y - 110, Math.min(this.y - 10, laser.y));
+    const clampedY = Math.max(this.y - 140, Math.min(this.y - 10, laser.y));
     const dist = Math.hypot(laser.x - this.x, laser.y - clampedY);
-    return dist < (this.bodyRadius || 24) + laser.radius;
+    return dist < (this.bodyRadius || 30) + laser.radius;
   }
 
-  // Exact ground-contact-relative sniper rifle muzzle offsets for troops in all 8 directions
+  // Ground-contact-relative sniper rifle muzzle offsets scaled to match 190x190 model
   static MUZZLE_OFFSETS = {
-    N:  { x: -4.1,  y: -106.0 },
-    NE: { x: 22.3,  y: -58.6 },
-    E:  { x: 55.1,  y: -65.6 },
-    SE: { x: 51.6,  y: -75.6 },
-    S:  { x: 0.0,   y: -35.0 },
-    SW: { x: -25.2, y: -69.1 },
-    W:  { x: -55.0, y: -50.0 },
-    NW: { x: -54.5, y: -58.6 }
+    N:  { x: -5.2,  y: -134.0 },
+    NE: { x: 28.3,  y: -74.4 },
+    E:  { x: 69.9,  y: -83.3 },
+    SE: { x: 65.5,  y: -96.0 },
+    S:  { x: 0.0,   y: -44.5 },
+    SW: { x: -32.0, y: -87.8 },
+    W:  { x: -69.9, y: -63.5 },
+    NW: { x: -69.2, y: -74.4 }
   };
 
   getMuzzlePos(dir) {

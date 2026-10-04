@@ -149,9 +149,6 @@ class UIManager {
       ctx.fillText("⚠️ NO AMMO IN THIS COLOR! RETURN TO RECHARGE STATION!", width / 2, height - 110);
       ctx.restore();
     }
-
-    // 5. Mini Color Matrix / Combat Reference (Top Right)
-    this.drawColorMatrixWidget(ctx, width - 200, 20);
   }
 
   drawHeart(ctx, x, y, filled) {

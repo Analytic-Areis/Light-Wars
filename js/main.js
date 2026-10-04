@@ -106,8 +106,20 @@ class LightWarsGame {
           document.exitFullscreen().catch(() => {});
         }
       }
+      if (e.code === 'Escape') {
+        if (this.state === 'TUTORIAL') {
+          this.dismissTutorial();
+        } else if (this.state === 'PLAYING') {
+          this.togglePauseMenu(true);
+        } else if (this.state === 'PAUSED') {
+          this.togglePauseMenu(false);
+        }
+      }
+      if (e.code === 'Enter' && this.state === 'TUTORIAL') {
+        this.dismissTutorial();
+      }
       if (e.code === 'KeyP' && (this.state === 'PLAYING' || this.state === 'PAUSED')) {
-        this.state = (this.state === 'PLAYING') ? 'PAUSED' : 'PLAYING';
+        this.togglePauseMenu(this.state === 'PLAYING');
       }
     });
 
@@ -222,8 +234,108 @@ class LightWarsGame {
       });
     }
 
+    // Escape Pause Menu controls
+    const pauseResumeBtn = document.getElementById('pauseResumeBtn');
+    if (pauseResumeBtn) {
+      pauseResumeBtn.addEventListener('click', () => {
+        this.togglePauseMenu(false);
+      });
+    }
+
+    const pauseRestartBtn = document.getElementById('pauseRestartBtn');
+    if (pauseRestartBtn) {
+      pauseRestartBtn.addEventListener('click', () => {
+        this.togglePauseMenu(false);
+        if (this._lastLevel === 2) this.startLevel2();
+        else this.startLevel1();
+      });
+    }
+
+    const pauseMenuBtn = document.getElementById('pauseMenuBtn');
+    if (pauseMenuBtn) {
+      pauseMenuBtn.addEventListener('click', () => {
+        this.togglePauseMenu(false);
+        this.showMenu();
+      });
+    }
+
+    // Volume sliders
+    const sfxSlider = document.getElementById('sfxVolumeSlider');
+    const sfxVal = document.getElementById('sfxVolumeVal');
+    if (sfxSlider && sfxVal) {
+      sfxSlider.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        sfxVal.textContent = `${Math.round(val * 100)}%`;
+        if (window.LightWars.sound) {
+          window.LightWars.sound.setSfxVolume(val);
+        }
+      });
+    }
+
+    const musicSlider = document.getElementById('musicVolumeSlider');
+    const musicVal = document.getElementById('musicVolumeVal');
+    if (musicSlider && musicVal) {
+      musicSlider.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        musicVal.textContent = `${Math.round(val * 100)}%`;
+        if (window.LightWars.sound) {
+          window.LightWars.sound.setMusicVolume(val);
+        }
+      });
+    }
+
+    // Stop Tutorial Modal dismiss
+    const tutorialDismissBtn = document.getElementById('tutorialDismissBtn');
+    if (tutorialDismissBtn) {
+      tutorialDismissBtn.addEventListener('click', () => {
+        this.dismissTutorial();
+      });
+    }
+
     this.updateComicMenuLockState();
     this.updateComicMenuBossState();
+  }
+
+  togglePauseMenu(show) {
+    const pauseModal = document.getElementById('escapePauseModal');
+    if (!pauseModal) return;
+
+    if (show) {
+      this.state = 'PAUSED';
+      pauseModal.style.display = 'flex';
+    } else {
+      pauseModal.style.display = 'none';
+      if (this.state === 'PAUSED') {
+        this.state = 'PLAYING';
+      }
+    }
+  }
+
+  showStopTutorial(id, title, message) {
+    if (this._tutorialsSeen && this._tutorialsSeen[id]) return;
+    if (!this._tutorialsSeen) this._tutorialsSeen = {};
+    this._tutorialsSeen[id] = true;
+
+    if (this.state !== 'TUTORIAL') {
+      this._savedPreTutorialState = this.state;
+    }
+    this.state = 'TUTORIAL';
+
+    const modal = document.getElementById('tutorialModal');
+    const titleEl = document.getElementById('tutorialTitle');
+    const msgEl = document.getElementById('tutorialMessage');
+    if (titleEl) titleEl.innerText = title;
+    if (msgEl) msgEl.innerHTML = message;
+    if (modal) modal.style.display = 'flex';
+  }
+
+  dismissTutorial() {
+    const modal = document.getElementById('tutorialModal');
+    if (modal) modal.style.display = 'none';
+    this.state = (this._savedPreTutorialState && this._savedPreTutorialState !== 'TUTORIAL') 
+      ? this._savedPreTutorialState 
+      : 'PLAYING';
+    this._savedPreTutorialState = 'PLAYING';
   }
 
   /** Show/hide row lock overlays based on progress flags */
@@ -367,6 +479,18 @@ class LightWarsGame {
     this._resetGameEntities();
     this.waves.startLevel1();
     this.state = 'PLAYING';
+
+    // Stop Tutorial 1: Mission Briefing & Controls
+    setTimeout(() => {
+      this.showStopTutorial(
+        'l1_intro',
+        'WELCOME TO THE SPECTRUM WAR!',
+        'Move with <b>[W][A][S][D]</b>, aim & fire with <b>[MOUSE]</b>.<br><br>' +
+        'Troops in Level 1 wear Cyan, Magenta, or Yellow headbands.<br>' +
+        'Equip the <b>complementary color laser</b> using <b>[1] [2] [3]</b> to defeat them!<br><br>' +
+        'Press <b>[ESC]</b> anytime to pause, view settings, or check color hints.'
+      );
+    }, 100);
   }
 
   startLevel2() {
@@ -456,6 +580,18 @@ class LightWarsGame {
     const orb = new window.LightWars.Orb(x, y, colorId);
     this.orbs.push(orb);
     window.LightWars.sound.playOrbSpawn();
+
+    // Stop Tutorial: First Orb dropped
+    if (this._lastLevel === 1) {
+      this.showStopTutorial(
+        'l1_orb_drop',
+        'CHROMATIC ORB DETECTED!',
+        'Defeated troops leave behind energy <b>ORBS</b>!<br><br>' +
+        '• Shoot this orb with its <b>complementary laser</b> to convert it into Ammo Crystals!<br>' +
+        '• Or walk over it to absorb basic spectral charge.<br><br>' +
+        'Experiment with your lasers to craft ammo!'
+      );
+    }
   }
 
   handlePlayerShoot() {
@@ -524,6 +660,20 @@ class LightWarsGame {
       if (!this.player.alive) {
         this.onGameOver();
         return;
+      }
+
+      // Check for low ammo stop tutorial in Level 1
+      if (this._lastLevel === 1) {
+        const totalAmmo = Object.values(this.player.ammo).reduce((a, b) => a + b, 0);
+        if (totalAmmo <= 3) {
+          this.showStopTutorial(
+            'l1_low_ammo',
+            'LOW CHROMATIC AMMO ALERT!',
+            'Your laser energy is running low!<br><br>' +
+            'Head directly to the <b>WHITE LIGHT RECHARGE SANCTUARY</b> at the top of the chamber.<br>' +
+            'Stepping into the white glow will recharge all your weapons!'
+          );
+        }
       }
     }
 

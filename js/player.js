@@ -319,25 +319,41 @@ class Player {
         const nextX = this.x + normX * this.speed * dt;
         const nextY = this.y + normY * this.speed * dt;
 
+        let distMoved = 0;
         if (arena && arena.resolveMovement) {
           const res = arena.resolveMovement(this.x, this.y, nextX, nextY, this.radius);
+          distMoved = Math.hypot(res.x - this.x, res.y - this.y);
           this.x = res.x;
           this.y = res.y;
         } else {
+          distMoved = Math.hypot(nextX - this.x, nextY - this.y);
           this.x = nextX;
           this.y = nextY;
         }
 
-        this.isMoving = true;
-        this.walkAnimTime += dt * 12.0;
-        this.idleAnimTime = 0;
+        if (distMoved > 0.2) {
+          this.isMoving = true;
+          this.walkAnimTime += dt * 12.0;
+          this.idleAnimTime = 0;
 
-        // Face movement direction, unless actively aiming/firing
-        const moveAngle = Math.atan2(normY, normX);
-        if ((input && input.isMouseDown) || this.shootFaceTimer > 0) {
-          this.facingDir = SpriteManager.getDirection8(this.aimAngle);
+          // Face movement direction, unless actively aiming/firing
+          const moveAngle = Math.atan2(normY, normX);
+          if ((input && input.isMouseDown) || this.shootFaceTimer > 0) {
+            this.facingDir = SpriteManager.getDirection8(this.aimAngle);
+          } else {
+            this.facingDir = SpriteManager.getDirection8(moveAngle);
+          }
         } else {
-          this.facingDir = SpriteManager.getDirection8(moveAngle);
+          // Blocked by wall: enter idle animation facing wall/aim direction
+          this.isMoving = false;
+          this.walkAnimTime = 0;
+          this.idleAnimTime += dt * 10.0;
+          if ((input && input.isMouseDown) || this.shootFaceTimer > 0) {
+            this.facingDir = SpriteManager.getDirection8(this.aimAngle);
+          } else {
+            const moveAngle = Math.atan2(normY, normX);
+            this.facingDir = SpriteManager.getDirection8(moveAngle);
+          }
         }
       } else {
         this.isMoving = false;
