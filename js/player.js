@@ -104,12 +104,30 @@ class Player {
     return (this.ammo[colorId] !== undefined) && (this.ammo[colorId] < this.maxAmmo);
   }
 
-  // Whole-body vertical capsule hitbox from feet (y - 10) to head (y - 130)
+  // Whole-body vertical capsule hitbox from feet (y - 10) to head (y - 130) with sweep support
   checkLaserHit(laser) {
     if (!this.alive) return false;
     const clampedY = Math.max(this.y - 130, Math.min(this.y - 10, laser.y));
     const dist = Math.hypot(laser.x - this.x, laser.y - clampedY);
-    return dist < (this.bodyRadius || 26) + laser.radius;
+    const hitRadius = (this.bodyRadius || 26) + laser.radius;
+    if (dist < hitRadius) return true;
+
+    // Check continuous sweep segment from prevX, prevY to laser.x, laser.y
+    if (laser.prevX !== undefined && laser.prevY !== undefined) {
+      const dx = laser.x - laser.prevX;
+      const dy = laser.y - laser.prevY;
+      const segLenSq = dx * dx + dy * dy;
+      if (segLenSq > 0.001) {
+        const segClampedY = Math.max(this.y - 130, Math.min(this.y - 10, (laser.prevY + laser.y) / 2));
+        const t = Math.max(0, Math.min(1, ((this.x - laser.prevX) * dx + (segClampedY - laser.prevY) * dy) / segLenSq));
+        const projX = laser.prevX + t * dx;
+        const projY = laser.prevY + t * dy;
+        const sweepDist = Math.hypot(this.x - projX, segClampedY - projY);
+        if (sweepDist < hitRadius) return true;
+      }
+    }
+
+    return false;
   }
 
   // Exact ground-contact-relative blaster muzzle offsets for all 8 directions
@@ -171,20 +189,28 @@ class Player {
     return laser;
   }
 
-  takeDamage(amount = 1, fromX = 0, fromY = 0, applyKnockback = true) {
-    if (this.invulnerableTimer > 0 || !this.alive) return;
-    this.health = Math.max(0, this.health - amount);
-    this.invulnerableTimer = 1.0;
+  takeDamage(amount = 1, fromX = 0, fromY = 0, applyKnockback = true, knockbackAngle = null) {
+    if (!this.alive) return;
 
-    // Knockback only if applyKnockback is true (shot impact, NOT enemy collision)
-    if (applyKnockback && (fromX !== 0 || fromY !== 0)) {
-      const angle = Math.atan2(this.y - fromY, this.x - fromX);
-      this.vx = Math.cos(angle) * 320;
-      this.vy = Math.sin(angle) * 320;
-    } else {
-      this.vx = 0;
-      this.vy = 0;
+    // 1. Always apply shot impact / knockback if requested (even during invulnerability frames)
+    if (applyKnockback) {
+      let angle = knockbackAngle;
+      if (angle === null || angle === undefined) {
+        if (fromX !== 0 || fromY !== 0) {
+          angle = Math.atan2(this.y - fromY, this.x - fromX);
+        } else {
+          angle = 0;
+        }
+      }
+      this.vx = Math.cos(angle) * 340;
+      this.vy = Math.sin(angle) * 340;
     }
+    // Note: Melee collision (applyKnockback = false) adds zero knockback, but leaves existing player velocity intact
+
+    // 2. Health damage is guarded by invulnerability cooldown
+    if (this.invulnerableTimer > 0) return;
+    this.health = Math.max(0, this.health - amount);
+    this.invulnerableTimer = 0.8;
 
     if (window.LightWars.sound) {
       window.LightWars.sound.playPlayerHurt();

@@ -76,16 +76,34 @@ class Enemy {
 
     // Aim towards target player chest height (targetY - 55)
     const targetAimY = targetY - 55;
-    const angle = Math.atan2(targetAimY - muzzle.y, targetX - muzzle.x);
+    const enemyCenterY = this.y - 60;
+    const bodyAngle = Math.atan2(targetAimY - enemyCenterY, targetX - this.x);
+    const distToTarget = Math.hypot(targetX - this.x, targetAimY - enemyCenterY);
+
+    let angle;
+    let spawnX;
+    let spawnY;
+
+    // At close/point-blank range (or if muzzle could overshoot), aim strictly along body angle and spawn at enemy front
+    if (distToTarget < 115) {
+      angle = bodyAngle;
+      spawnX = this.x + Math.cos(angle) * 20;
+      spawnY = enemyCenterY + Math.sin(angle) * 20;
+    } else {
+      angle = Math.atan2(targetAimY - muzzle.y, targetX - muzzle.x);
+      // Safeguard: if angle diverges drastically from body direction towards target, fallback to body angle
+      const dot = Math.cos(angle) * Math.cos(bodyAngle) + Math.sin(angle) * Math.sin(bodyAngle);
+      if (dot < 0.5) {
+        angle = bodyAngle;
+      }
+      spawnX = muzzle.x + Math.cos(angle) * 12;
+      spawnY = muzzle.y + Math.sin(angle) * 12;
+    }
+
     // Slower dodgeable speed (420 px/s vs player's 820 px/s)
     const speed = 420;
     const vx = Math.cos(angle) * speed;
     const vy = Math.sin(angle) * speed;
-
-    // Spawn starting right at the tip of the sniper rifle
-    const spawnDist = 12;
-    const spawnX = muzzle.x + Math.cos(angle) * spawnDist;
-    const spawnY = muzzle.y + Math.sin(angle) * spawnDist;
 
     if (window.LightWars.sound) {
       window.LightWars.sound.playLaserFire(this.colorId);
@@ -93,8 +111,10 @@ class Enemy {
 
     // Enemy shoots its own color! isPlayer = false
     const laser = new window.LightWars.Laser(spawnX, spawnY, vx, vy, this.colorId, false);
-    laser.originX = muzzle.x;
-    laser.originY = muzzle.y;
+    laser.originX = spawnX;
+    laser.originY = spawnY;
+    laser.prevX = spawnX;
+    laser.prevY = spawnY;
     return laser;
   }
 
@@ -136,8 +156,8 @@ class Enemy {
 
       this.facingAngle = Math.atan2(dy, dx);
 
-      // Shoot slowly at player if within line of sight / engagement range
-      if (dist >= 60 && dist <= 750 && this.shootCooldown <= 0) {
+      // Shoot slowly at player if within line of sight / engagement range (even at point blank)
+      if (dist <= 750 && this.shootCooldown <= 0) {
         firedLaser = this.shoot(player.x, player.y);
       }
 

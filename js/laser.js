@@ -17,11 +17,16 @@ class Laser {
     this.angle = Math.atan2(vy, vx);
     this.life = window.LightWars.GAME_CONFIG.laserLifetime;
     this.alive = true;
+    this.prevX = x;
+    this.prevY = y;
     this.trail = [];
   }
 
   update(dt) {
     if (!this.alive) return;
+
+    this.prevX = this.x;
+    this.prevY = this.y;
 
     // Record trail positions
     this.trail.push({ x: this.x, y: this.y, alpha: 1.0 });
