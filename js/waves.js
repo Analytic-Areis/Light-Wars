@@ -53,9 +53,9 @@ class WaveDirector {
         this.game.showStopTutorial(
           'l1_cyan_intro',
           'TARGET IN SIGHT: CYAN TROOP!',
-          'Notice the troop ahead wearing a <b>CYAN</b> headband!<br><br>' +
-          '• Cyan is vulnerable to its complementary wavelength: <b>RED</b>.<br>' +
-          '• Press <b>[1]</b> to select RED LASER and fire directly at them!<br>' +
+          'Notice the troop ahead wearing a <span class="noobi-hl cyan">CYAN</span> headband!<br><br>' +
+          '• Cyan is vulnerable to its complementary wavelength: <span class="noobi-hl red">RED</span>.<br>' +
+          '• Press <span class="noobi-key">[1]</span> to select <span class="noobi-hl red">RED LASER</span> and fire directly at them!<br>' +
           '• Firing the wrong color will have <b>NO EFFECT</b>.'
         );
       }, 400);
@@ -76,9 +76,9 @@ class WaveDirector {
       this.game.showStopTutorial(
         'l1_magenta_intro',
         'NEW ENEMY: MAGENTA TROOPER!',
-        'Troops in <b>MAGENTA</b> headbands have entered the arena!<br><br>' +
-        '• Magenta is complementary to <b>GREEN</b>.<br>' +
-        '• Press <b>[2]</b> to equip your GREEN LASER and neutralize them!'
+        'Troops in <span class="noobi-hl magenta">MAGENTA</span> headbands have entered the arena!<br><br>' +
+        '• Magenta is complementary to <span class="noobi-hl green">GREEN</span>.<br>' +
+        '• Press <span class="noobi-key">[2]</span> to equip your <span class="noobi-hl green">GREEN LASER</span> and neutralize them!'
       );
     }
   }
@@ -97,9 +97,9 @@ class WaveDirector {
       this.game.showStopTutorial(
         'l1_yellow_intro',
         'NEW ENEMY: YELLOW TROOPER!',
-        '<b>YELLOW</b> troopers are advancing!<br><br>' +
-        '• Yellow is complementary to <b>BLUE</b>.<br>' +
-        '• Press <b>[3]</b> to equip your BLUE LASER and shoot them down!'
+        '<span class="noobi-hl yellow">YELLOW</span> troopers are advancing!<br><br>' +
+        '• Yellow is complementary to <span class="noobi-hl blue">BLUE</span>.<br>' +
+        '• Press <span class="noobi-key">[3]</span> to equip your <span class="noobi-hl blue">BLUE LASER</span> and shoot them down!'
       );
     }
   }

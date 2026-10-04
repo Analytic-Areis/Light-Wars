@@ -115,8 +115,15 @@ class LightWarsGame {
           this.togglePauseMenu(false);
         }
       }
-      if (e.code === 'Enter' && this.state === 'TUTORIAL') {
+      if ((e.code === 'Enter' || e.code === 'Space') && this.state === 'TUTORIAL') {
         this.dismissTutorial();
+      }
+      if (e.code === 'KeyH' || e.code === 'KeyI') {
+        if (this.state === 'TUTORIAL') {
+          this.dismissTutorial();
+        } else if (this.state === 'PLAYING') {
+          this.showInstructionsModal();
+        }
       }
       if (e.code === 'KeyP' && (this.state === 'PLAYING' || this.state === 'PAUSED')) {
         this.togglePauseMenu(this.state === 'PLAYING');
@@ -284,11 +291,28 @@ class LightWarsGame {
       });
     }
 
-    // Stop Tutorial Modal dismiss
+    // Stop Tutorial / Noobi-Wan Instruction Modal dismiss
     const tutorialDismissBtn = document.getElementById('tutorialDismissBtn');
     if (tutorialDismissBtn) {
       tutorialDismissBtn.addEventListener('click', () => {
         this.dismissTutorial();
+      });
+    }
+
+    const tutorialModal = document.getElementById('tutorialModal');
+    if (tutorialModal) {
+      tutorialModal.addEventListener('click', (e) => {
+        if (e.target === tutorialModal || e.target.classList.contains('noobi-art-img')) {
+          this.dismissTutorial();
+        }
+      });
+    }
+
+    const pauseInstructionsBtn = document.getElementById('pauseInstructionsBtn');
+    if (pauseInstructionsBtn) {
+      pauseInstructionsBtn.addEventListener('click', () => {
+        this.togglePauseMenu(false);
+        this.showInstructionsModal();
       });
     }
 
@@ -312,30 +336,97 @@ class LightWarsGame {
   }
 
   showStopTutorial(id, title, message) {
-    if (this._tutorialsSeen && this._tutorialsSeen[id]) return;
-    if (!this._tutorialsSeen) this._tutorialsSeen = {};
-    this._tutorialsSeen[id] = true;
+    if (id && this._tutorialsSeen && this._tutorialsSeen[id]) return;
+    if (id) {
+      if (!this._tutorialsSeen) this._tutorialsSeen = {};
+      this._tutorialsSeen[id] = true;
+    }
+
+    if (!this._tutorialQueue) this._tutorialQueue = [];
+
+    // If currently displaying a tutorial, queue this one
+    if (this.state === 'TUTORIAL') {
+      this._tutorialQueue.push({ title, message });
+      return;
+    }
 
     if (this.state !== 'TUTORIAL') {
       this._savedPreTutorialState = this.state;
     }
     this.state = 'TUTORIAL';
+    this._displayTutorialModal(title, message);
+  }
 
+  _displayTutorialModal(title, message) {
     const modal = document.getElementById('tutorialModal');
     const titleEl = document.getElementById('tutorialTitle');
     const msgEl = document.getElementById('tutorialMessage');
-    if (titleEl) titleEl.innerText = title;
+    if (titleEl) titleEl.innerHTML = title;
     if (msgEl) msgEl.innerHTML = message;
-    if (modal) modal.style.display = 'flex';
+
+    if (modal) {
+      modal.style.display = 'flex';
+      // Force reflow and add visible class for smooth slide-up & fade-in transition
+      void modal.offsetWidth;
+      requestAnimationFrame(() => {
+        modal.classList.add('visible');
+      });
+    }
   }
 
   dismissTutorial() {
     const modal = document.getElementById('tutorialModal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+      modal.classList.remove('visible');
+    }
+
+    // If another instruction is queued, transition smoothly to it
+    if (this._tutorialQueue && this._tutorialQueue.length > 0) {
+      const next = this._tutorialQueue.shift();
+      setTimeout(() => {
+        this._displayTutorialModal(next.title, next.message);
+      }, 250);
+      return;
+    }
+
+    setTimeout(() => {
+      if (this.state !== 'TUTORIAL') {
+        if (modal) modal.style.display = 'none';
+      }
+    }, 350);
+
     this.state = (this._savedPreTutorialState && this._savedPreTutorialState !== 'TUTORIAL') 
       ? this._savedPreTutorialState 
       : 'PLAYING';
     this._savedPreTutorialState = 'PLAYING';
+  }
+
+  showInstructionsModal() {
+    const lvl = this._lastLevel || 1;
+    let title, message;
+    if (lvl === 1) {
+      title = "FIELD GUIDE: LEVEL 1 TACTICS";
+      message = 
+        "Listen closely, Luke. Here is your tactical briefing for Level 1:<br><br>" +
+        "• <b>CONTROLS:</b> Move with <span class=\"noobi-key\">[W][A][S][D]</span> | Aim & Shoot: <span class=\"noobi-key\">[MOUSE]</span> | Dash: <span class=\"noobi-key\">[SPACE / RMB]</span>.<br>" +
+        "• <b>LEVEL 1 RULES:</b> Firing wrong colors has <b>NO EFFECT</b>. Strike enemies with their exact complementary counter:<br>" +
+        "&nbsp;&nbsp;&bull; <span class=\"noobi-hl cyan\">CYAN TROOP</span> &rarr; Kill with <span class=\"noobi-hl red\">RED LASER [1]</span> (Drops <span class=\"noobi-hl red\">Red Orbs</span>)<br>" +
+        "&nbsp;&nbsp;&bull; <span class=\"noobi-hl magenta\">MAGENTA TROOP</span> &rarr; Kill with <span class=\"noobi-hl green\">GREEN LASER [2]</span> (Drops <span class=\"noobi-hl green\">Green Orbs</span>)<br>" +
+        "&nbsp;&nbsp;&bull; <span class=\"noobi-hl yellow\">YELLOW TROOP</span> &rarr; Kill with <span class=\"noobi-hl blue\">BLUE LASER [3]</span> (Drops <span class=\"noobi-hl blue\">Blue Orbs</span>)<br>" +
+        "• <b>ORB FUSION:</b> Walk over orbs to collect, or shoot with your laser to craft 2 Ammo Crystals on the spot!<br>" +
+        "• <b>RECHARGE:</b> Step onto the white glowing sanctuary circle to reload your energy.<br><br>" +
+        "Press <span class=\"noobi-key\">[H]</span> anytime in battle to re-open this guide.";
+    } else {
+      title = "FIELD GUIDE: LEVEL 2 TACTICS";
+      message = 
+        "Welcome to the Dungeon Arena, Luke. The chromatic battlefield expands:<br><br>" +
+        "• <b>NEW TROOPS:</b> <span class=\"noobi-hl red\">RED</span>, <span class=\"noobi-hl green\">GREEN</span>, and <span class=\"noobi-hl blue\">BLUE</span> troops enter the war!<br>" +
+        "• <b>COLOR TRANSFORMATION:</b> Hitting troops with non-lethal wavelengths transforms them into another color!<br>" +
+        "• <b>COUNTER MATRIX:</b><br>" +
+        "&nbsp;&nbsp;&bull; <span class=\"noobi-hl red\">RED</span> dies to <span class=\"noobi-hl cyan\">CYAN [4]</span> | <span class=\"noobi-hl green\">GREEN</span> dies to <span class=\"noobi-hl magenta\">MAGENTA [5]</span> | <span class=\"noobi-hl blue\">BLUE</span> dies to <span class=\"noobi-hl yellow\">YELLOW [6]</span><br>" +
+        "• Fuse orbs with your blasters to synthesize high-spectrum Ammo Crystals!";
+    }
+    this.showStopTutorial(null, title, message);
   }
 
   /** Show/hide row lock overlays based on progress flags */
@@ -485,12 +576,14 @@ class LightWarsGame {
       this.showStopTutorial(
         'l1_intro',
         'WELCOME TO THE SPECTRUM WAR!',
-        'Move with <b>[W][A][S][D]</b>, aim & fire with <b>[MOUSE]</b>.<br><br>' +
-        'Troops in Level 1 wear Cyan, Magenta, or Yellow headbands.<br>' +
-        'Equip the <b>complementary color laser</b> using <b>[1] [2] [3]</b> to defeat them!<br><br>' +
-        'Press <b>[ESC]</b> anytime to pause, view settings, or check color hints.'
+        'Greetings, Luke! Master <b>NOOBI-WAN</b> here.<br>' +
+        'Troops in Level 1 wear <span class="noobi-hl cyan">CYAN</span>, <span class="noobi-hl magenta">MAGENTA</span>, or <span class="noobi-hl yellow">YELLOW</span> headbands.<br><br>' +
+        '• <b>CONTROLS:</b> <span class="noobi-key">[W][A][S][D]</span> Move | <span class="noobi-key">[MOUSE]</span> Aim & Shoot | <span class="noobi-key">[SPACE / RMB]</span> Dash.<br>' +
+        '• <b>COUNTER WEAPONS:</b> Press <span class="noobi-key">[1]</span> Red, <span class="noobi-key">[2]</span> Green, <span class="noobi-key">[3]</span> Blue to equip the complementary laser!<br>' +
+        '• <b>RECHARGE:</b> Step onto the white glowing sanctuary circle to reload your energy.<br><br>' +
+        'Press <span class="noobi-key">[H]</span> anytime during battle to review my teachings.'
       );
-    }, 100);
+    }, 150);
   }
 
   startLevel2() {
@@ -499,6 +592,19 @@ class LightWarsGame {
     this._resetGameEntities();
     this.waves.startLevel2();
     this.state = 'PLAYING';
+
+    // Level 2 Briefing: RGB Troops & Transformation Mechanics
+    setTimeout(() => {
+      this.showStopTutorial(
+        'l2_intro',
+        'LEVEL 2: CHROMATIC TRANSFORMATION!',
+        'You entered the Dungeon Arena, Luke! Here, the Empire deploys <span class="noobi-hl red">RED</span>, <span class="noobi-hl green">GREEN</span>, and <span class="noobi-hl blue">BLUE</span> troops.<br><br>' +
+        '• <b>TRANSFORMATION ACTIVE:</b> Non-lethal laser hits cause enemy wavelengths to <b>transform</b> into other colors!<br>' +
+        '• <b>COUNTER WEAKNESSES:</b><br>' +
+        '&nbsp;&nbsp;&bull; <span class="noobi-hl red">RED</span> dies to <span class="noobi-hl cyan">CYAN [4]</span> | <span class="noobi-hl green">GREEN</span> dies to <span class="noobi-hl magenta">MAGENTA [5]</span> | <span class="noobi-hl blue">BLUE</span> dies to <span class="noobi-hl yellow">YELLOW [6]</span><br>' +
+        '• Shoot dropped orbs with your blasters to synthesize high-energy crystals!'
+      );
+    }, 150);
   }
 
 

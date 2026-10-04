@@ -253,6 +253,7 @@
         <!-- Action Buttons -->
         <div class="pause-modal-actions">
           <button id="pauseResumeBtn" class="comic-btn">RESUME</button>
+          <button id="pauseInstructionsBtn" class="comic-btn" style="background: #00F0FF; color: #000; box-shadow: 4px 4px 0 #FFE600;">&#x1F4DC; INSTRUCTIONS</button>
           <button id="pauseRestartBtn" class="comic-btn secondary">RESTART</button>
           <button id="pauseMenuBtn" class="comic-btn secondary">COMIC STRIP</button>
         </div>
@@ -286,15 +287,25 @@
       </div>
     </div>
 
-    <!-- Interactive Stop Tutorial Overlay Modal -->
-    <div id="tutorialModal" class="modal-overlay">
-      <div class="comic-modal-box tutorial-modal-box">
-        <div class="tutorial-comic-bubble">
-          <div class="tutorial-badge">&#x26A1; COMIC INTEL BRIEFING &#x26A1;</div>
-          <h3 id="tutorialTitle" class="tutorial-title">TUTORIAL ALERT</h3>
-          <p id="tutorialMessage" class="tutorial-text">Instructions here...</p>
-          <div id="tutorialKeyHint" class="tutorial-key-hint">PRESS [ENTER] OR CLICK TO CONTINUE</div>
-          <button id="tutorialDismissBtn" class="comic-btn play-btn pulse-glow">GOT IT! CONTINUE &#x25B6;</button>
+    <!-- Interactive Noobi-Wan Instruction Overlay Modal -->
+    <div id="tutorialModal" class="noobi-instruction-overlay">
+      <div class="noobi-scene-wrap">
+        <img src="assets/comic_art/noobi_wan_instructions.png" alt="Master Noobi-Wan Instructions" class="noobi-art-img">
+        
+        <div class="noobi-box-header">
+          <span class="noobi-intel-badge">&#x26A1; JEDI MASTER INTEL</span>
+          <h3 id="tutorialTitle" class="noobi-instruction-title">MISSION BRIEFING</h3>
+        </div>
+
+        <div class="noobi-parchment-box">
+          <div id="tutorialMessage" class="noobi-instruction-body">
+            <!-- Instructions injected here -->
+          </div>
+          
+          <div class="noobi-box-footer">
+            <div id="tutorialKeyHint" class="noobi-key-hint">PRESS [SPACE] OR [ENTER] TO PROCEED</div>
+            <button id="tutorialDismissBtn" class="noobi-continue-btn">CONTINUE MISSION &#x25B6;</button>
+          </div>
         </div>
       </div>
     </div>

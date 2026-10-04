@@ -978,57 +978,196 @@ body, html {
   color: #FFE600;
 }
 
-/* Stop Tutorial Modal */
-.tutorial-modal-box {
-  max-width: 560px;
-  width: 90%;
-  padding: 30px 36px;
-  background: #0D1120;
-  border: 6px solid #00F0FF;
-  box-shadow: 12px 12px 0 #FF2A4D, 16px 16px 0 #000;
-  transform: rotate(-1deg);
-  text-align: center;
+/* Interactive Noobi-Wan Instruction Overlay */
+.noobi-instruction-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: none;
+  justify-content: center;
+  align-items: flex-end;
+  background: rgba(4, 7, 16, 0.52);
+  backdrop-filter: blur(2.5px);
+  -webkit-backdrop-filter: blur(2.5px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, backdrop-filter 0.35s ease;
 }
 
-.tutorial-badge {
+.noobi-instruction-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.noobi-scene-wrap {
+  position: relative;
+  width: min(1500px, 96vw);
+  max-width: calc(94vh * 2520 / 1844);
+  max-height: 94vh;
+  aspect-ratio: 2520 / 1844;
+  margin-bottom: 0;
+  transform: translateY(35px) scale(0.97);
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.2), opacity 0.35s ease;
+  filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.85));
+}
+
+.noobi-instruction-overlay.visible .noobi-scene-wrap {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+
+.noobi-art-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+}
+
+.noobi-box-header {
+  position: absolute;
+  left: 58.2%;
+  right: 4%;
+  top: 65.0%;
+  height: 6.5%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.noobi-intel-badge {
   font-family: 'Bangers', cursive;
-  font-size: 15px;
-  color: #000;
-  background: #00F0FF;
-  padding: 3px 12px;
-  display: inline-block;
-  letter-spacing: 1.5px;
-  margin-bottom: 12px;
-  border: 2px solid #000;
-  box-shadow: 2px 2px 0 #FF2A4D;
-}
-
-.tutorial-title {
-  font-family: 'Bangers', cursive;
-  font-size: 38px;
-  color: #FFE600;
-  letter-spacing: 2px;
-  text-shadow: 3px 3px 0 #FF2A4D, 5px 5px 0 #000;
-  margin-bottom: 12px;
-}
-
-.tutorial-text {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 15px;
-  line-height: 1.5;
-  color: #FFFFFF;
-  margin-bottom: 20px;
-  font-weight: 700;
-}
-
-.tutorial-text b {
-  color: #FFE600;
-}
-
-.tutorial-key-hint {
-  font-family: 'Bangers', cursive;
-  font-size: 14px;
-  color: #7B8BAF;
+  font-size: 12px;
   letter-spacing: 1px;
-  margin-bottom: 16px;
+  color: #FFE600;
+  background: #0E1322;
+  border: 1.5px solid #FFE600;
+  padding: 2px 7px;
+  border-radius: 3px;
+  box-shadow: 2px 2px 0 #FF2A4D;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.noobi-instruction-title {
+  font-family: 'Bangers', cursive;
+  font-size: clamp(16px, 1.4vw, 21px);
+  color: #FFE600;
+  letter-spacing: 1.2px;
+  margin: 0;
+  line-height: 1.1;
+  text-shadow: 2px 2px 0 #000;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.noobi-parchment-box {
+  position: absolute;
+  left: 37.2%;
+  right: 3.8%;
+  top: 73.0%;
+  bottom: 3.6%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 5px 16px 6px 14px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.noobi-instruction-body {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: clamp(12px, 1.1vw, 14px);
+  line-height: 1.4;
+  color: #1A1F30;
+  overflow-y: auto;
+  max-height: 100%;
+  padding-right: 8px;
+  margin: 2px 0 4px 0;
+}
+
+.noobi-instruction-body b {
+  color: #0B0E18;
+  font-weight: 900;
+}
+
+/* Custom scrollbar for parchment dialogue */
+.noobi-instruction-body::-webkit-scrollbar {
+  width: 5px;
+}
+.noobi-instruction-body::-webkit-scrollbar-thumb {
+  background: #C4B9A3;
+  border-radius: 4px;
+}
+
+.noobi-box-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.noobi-key-hint {
+  font-family: 'Bangers', cursive;
+  font-size: 13px;
+  color: #4B5268;
+  letter-spacing: 1px;
+}
+
+.noobi-continue-btn {
+  font-family: 'Bangers', cursive;
+  font-size: clamp(14px, 1.3vw, 17px);
+  letter-spacing: 1.2px;
+  color: #000;
+  background: #FFE600;
+  border: 3px solid #000;
+  padding: 5px 18px;
+  border-radius: 4px;
+  box-shadow: 3px 3px 0 #FF2A4D;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.noobi-continue-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #FF2A4D;
+  background: #FFF04D;
+}
+
+.noobi-continue-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 #FF2A4D;
+}
+
+/* Comic highlights on parchment */
+.noobi-hl {
+  display: inline-block;
+  padding: 0 5px;
+  border-radius: 3px;
+  font-weight: 900;
+}
+.noobi-hl.cyan { color: #007A8F; background: rgba(0, 240, 255, 0.22); border: 1px solid #00B8CC; }
+.noobi-hl.magenta { color: #9E0A82; background: rgba(255, 42, 212, 0.20); border: 1px solid #D612B0; }
+.noobi-hl.yellow { color: #876500; background: rgba(255, 230, 0, 0.25); border: 1px solid #CCA000; }
+.noobi-hl.red { color: #B3001E; background: rgba(255, 42, 77, 0.20); border: 1px solid #E60026; }
+.noobi-hl.green { color: #07782A; background: rgba(34, 224, 88, 0.22); border: 1px solid #0FA63C; }
+.noobi-hl.blue { color: #0846B3; background: rgba(42, 133, 255, 0.20); border: 1px solid #1461E6; }
+
+.noobi-key {
+  display: inline-block;
+  background: #1B2136;
+  color: #FFF;
+  font-family: 'Bangers', cursive;
+  font-size: 13px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  border: 1px solid #364269;
+  letter-spacing: 0.8px;
 }
