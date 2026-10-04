@@ -113,8 +113,8 @@ class SpriteManager {
     if (!img) return false;
 
     ctx.save();
-    // Anchor sprite directly to ground plane (matching Godot scale 0.68)
-    const h = 168;
+    // Anchor sprite directly to ground plane, fitting cleanly within one floor tile
+    const h = 150;
     const w = (img.width / img.height) * h;
     const feetOffset = h * (237 / 256);
 
@@ -147,8 +147,8 @@ class SpriteManager {
       ctx.filter = 'brightness(3.2) contrast(1.5)';
     }
 
-    // Anchor troop feet directly to ground plane (matching Godot scale 0.68)
-    const h = 168;
+    // Anchor troop feet directly to ground plane, fitting cleanly within one floor tile
+    const h = 150;
     const w = (img.width / img.height) * h;
     const feetOffset = h * (251 / 256);
 

@@ -15,9 +15,9 @@ class Enemy {
     this.bandColorId = this.colorData.band || this.colorData.complementary;
     this.bandColorData = window.LightWars.COLORS[this.bandColorId] || window.LightWars.COLORS.RED;
 
-    this.radius = 22;
-    this.bodyRadius = 26; // Full body width radius
-    this.speed = 130 + Math.random() * 30;
+    this.radius = 18;
+    this.bodyRadius = 22; // Full body width radius
+    this.speed = 110 + Math.random() * 25;
     this.alive = true;
     this.health = 2;
 
@@ -85,10 +85,10 @@ class Enemy {
     let spawnY;
 
     // At close/point-blank range (or if muzzle could overshoot), aim strictly along body angle and spawn at enemy front
-    if (distToTarget < 115) {
+    if (distToTarget < 90) {
       angle = bodyAngle;
-      spawnX = this.x + Math.cos(angle) * 20;
-      spawnY = enemyCenterY + Math.sin(angle) * 20;
+      spawnX = this.x + Math.cos(angle) * 16;
+      spawnY = enemyCenterY + Math.sin(angle) * 16;
     } else {
       angle = Math.atan2(targetAimY - muzzle.y, targetX - muzzle.x);
       // Safeguard: if angle diverges drastically from body direction towards target, fallback to body angle
@@ -100,8 +100,8 @@ class Enemy {
       spawnY = muzzle.y + Math.sin(angle) * 12;
     }
 
-    // Slower dodgeable speed (420 px/s vs player's 820 px/s)
-    const speed = 420;
+    // Slower dodgeable speed (360 px/s vs player's 680 px/s)
+    const speed = 360;
     const vx = Math.cos(angle) * speed;
     const vy = Math.sin(angle) * speed;
 

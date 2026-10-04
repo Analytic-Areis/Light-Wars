@@ -151,18 +151,18 @@ const COMIC_DEATH_WORDS = ['KAABOOM!', 'BOOM!', '1CO!', 'POW!', 'ZAP!', 'CRASH!'
 
 // Game Tunings
 const GAME_CONFIG = {
-  arenaWidth: 6144,
-  arenaHeight: 4096,
+  arenaWidth: 1536,
+  arenaHeight: 1024,
   maxAmmoPerType: 6,
-  playerSpeed: 340,
-  playerDashSpeed: 780,
-  playerDashDuration: 0.22,
-  playerDashCooldown: 1.2,
+  playerSpeed: 250,
+  playerDashSpeed: 540,
+  playerDashDuration: 0.16,
+  playerDashCooldown: 1.0,
   playerMaxHealth: 3,
-  laserSpeed: 950,
-  laserLifetime: 1.4,
+  laserSpeed: 680,
+  laserLifetime: 1.6,
   laserCooldown: 0.22,
-  whiteLightRadius: 80,
+  whiteLightRadius: 36,
   refillRate: 1.0 // seconds to fully refill RGB
 };
 

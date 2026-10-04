@@ -9,8 +9,8 @@ class Player {
     this.x = x;
     this.y = y;
     this.z = 0;
-    this.radius = 22;
-    this.bodyRadius = 26; // Full body width radius
+    this.radius = 18;
+    this.bodyRadius = 22; // Full body width radius
     this.speed = window.LightWars.GAME_CONFIG.playerSpeed;
     this.alive = true;
 
@@ -202,8 +202,8 @@ class Player {
           angle = 0;
         }
       }
-      this.vx = Math.cos(angle) * 340;
-      this.vy = Math.sin(angle) * 340;
+      this.vx = Math.cos(angle) * 260;
+      this.vy = Math.sin(angle) * 260;
     }
     // Note: Melee collision (applyKnockback = false) adds zero knockback, but leaves existing player velocity intact
 

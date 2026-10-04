@@ -11,9 +11,9 @@ class Arena {
     this.currentLevel = 1;
     this.mapImg = new Image();
     this.whiteLight = {
-      x: 3689,
-      y: 1161,
-      radius: 75,
+      x: 856,
+      y: 273,
+      radius: 36,
       pulseTime: 0,
       particles: []
     };
@@ -28,7 +28,7 @@ class Arena {
       const data = window.LightWars.LEVEL1_MAP_DATA;
       this.cols = data.cols;
       this.rows = data.rows;
-      this.scale = data.scale || 3.6;
+      this.scale = data.scale !== undefined ? data.scale : 1.0;
       this.width = data.width || Math.round(1536 * this.scale);
       this.height = data.height || Math.round(1024 * this.scale);
       this.blocked = data.blocked;

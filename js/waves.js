@@ -44,8 +44,8 @@ class WaveDirector {
       "PHASE 1 — CYAN INFILTRATORS",
       "Use RED laser [1] to destroy Cyan troops! Cyan troops drop Red Orbs."
     );
-    this.game.spawnEnemy(2741, 1213, 'CYAN');
-    this.game.spawnEnemy(3431, 1530, 'CYAN');
+    this.game.spawnEnemy(688, 398, 'CYAN');
+    this.game.spawnEnemy(889, 593, 'CYAN');
     this.enemiesRemainingInPhase = 2;
   }
 
@@ -55,8 +55,8 @@ class WaveDirector {
       "PHASE 2 — MAGENTA TROOPERS",
       "Use GREEN laser [2] to destroy Magenta troops! Magenta troops drop Green Orbs."
     );
-    this.game.spawnEnemy(3937, 1870, 'MAGENTA');
-    this.game.spawnEnemy(2260, 1637, 'MAGENTA');
+    this.game.spawnEnemy(984, 468, 'MAGENTA');
+    this.game.spawnEnemy(565, 409, 'MAGENTA');
     this.enemiesRemainingInPhase = 2;
   }
 
@@ -66,8 +66,8 @@ class WaveDirector {
       "PHASE 3 — YELLOW SQUADRON",
       "Use BLUE laser [3] to eliminate Yellow troops! Yellow troops drop Blue Orbs."
     );
-    this.game.spawnEnemy(2046, 2117, 'YELLOW');
-    this.game.spawnEnemy(3556, 2372, 'YELLOW');
+    this.game.spawnEnemy(512, 529, 'YELLOW');
+    this.game.spawnEnemy(889, 593, 'YELLOW');
     this.enemiesRemainingInPhase = 2;
   }
 
@@ -77,11 +77,11 @@ class WaveDirector {
       "FINAL PHASE — CMY TRIAD ASSAULT!",
       "Cyan, Magenta & Yellow attack together! Use the RECHARGE STATION to stay armed!"
     );
-    this.game.spawnEnemy(2741, 1213, 'CYAN');
-    this.game.spawnEnemy(3556, 2372, 'MAGENTA');
-    this.game.spawnEnemy(3015, 2632, 'YELLOW');
-    this.game.spawnEnemy(2469, 2413, 'CYAN');
-    this.game.spawnEnemy(2046, 2117, 'MAGENTA');
+    this.game.spawnEnemy(688, 398, 'CYAN');
+    this.game.spawnEnemy(889, 593, 'MAGENTA');
+    this.game.spawnEnemy(754, 658, 'YELLOW');
+    this.game.spawnEnemy(617, 603, 'CYAN');
+    this.game.spawnEnemy(512, 529, 'MAGENTA');
     this.enemiesRemainingInPhase = 5;
   }
 
