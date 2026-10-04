@@ -685,7 +685,7 @@ class LightWarsGame {
         // Enemy Laser: Check collision with Player (Whole-body hitbox!)
         if (this.player && this.player.alive && this.player.checkLaserHit(laser)) {
           laser.alive = false;
-          this.player.takeDamage(1, laser.x, laser.y);
+          this.player.takeDamage(1, laser.x, laser.y, true);
           this.camera.shake(5);
           this.particles.spawnBurst(laser.x, laser.y, window.LightWars.COLORS[laser.colorId].hex, 16);
           this.particles.spawnComicText(this.player.x, this.player.y - 70, 'ZAP!', '#FF2A4D');

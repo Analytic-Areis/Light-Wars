@@ -141,14 +141,15 @@ class Enemy {
         firedLaser = this.shoot(player.x, player.y);
       }
 
-      if (dist > 35 && dist < this.aggroRange) {
+      const minContactDist = this.radius + player.radius;
+      if (dist > minContactDist && dist < this.aggroRange) {
         const nx = dx / dist;
         const ny = dy / dist;
         const nextX = this.x + nx * this.speed * dt;
         const nextY = this.y + ny * this.speed * dt;
 
         if (arena && arena.resolveMovement) {
-          const res = arena.resolveMovement(this.x, this.y, nextX, nextY);
+          const res = arena.resolveMovement(this.x, this.y, nextX, nextY, this.radius);
           this.x = res.x;
           this.y = res.y;
         } else {
@@ -164,9 +165,9 @@ class Enemy {
         this.facingDir = SpriteManager.getDirection8(this.facingAngle);
       }
 
-      // Attack player if in melee contact
-      if (dist < this.radius + player.radius && this.attackCooldown <= 0) {
-        player.takeDamage(1, this.x, this.y);
+      // Attack player if in melee contact (NO knockback / impact during collision)
+      if (dist <= minContactDist + 4 && this.attackCooldown <= 0) {
+        player.takeDamage(1, this.x, this.y, false);
         this.attackCooldown = 1.2;
       }
     } else {

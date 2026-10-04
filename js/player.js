@@ -171,16 +171,19 @@ class Player {
     return laser;
   }
 
-  takeDamage(amount = 1, fromX = 0, fromY = 0) {
+  takeDamage(amount = 1, fromX = 0, fromY = 0, applyKnockback = true) {
     if (this.invulnerableTimer > 0 || !this.alive) return;
     this.health = Math.max(0, this.health - amount);
     this.invulnerableTimer = 1.0;
 
-    // Knockback
-    if (fromX !== 0 || fromY !== 0) {
+    // Knockback only if applyKnockback is true (shot impact, NOT enemy collision)
+    if (applyKnockback && (fromX !== 0 || fromY !== 0)) {
       const angle = Math.atan2(this.y - fromY, this.x - fromX);
-      this.vx = Math.cos(angle) * 380;
-      this.vy = Math.sin(angle) * 380;
+      this.vx = Math.cos(angle) * 320;
+      this.vy = Math.sin(angle) * 320;
+    } else {
+      this.vx = 0;
+      this.vy = 0;
     }
 
     if (window.LightWars.sound) {
@@ -200,11 +203,31 @@ class Player {
     if (this.shootFaceTimer > 0) this.shootFaceTimer -= dt;
     if (this.dashCooldown > 0) this.dashCooldown -= dt;
 
-    // Decay knockback
-    this.x += this.vx * dt;
-    this.y += this.vy * dt;
-    this.vx *= Math.pow(0.1, dt);
-    this.vy *= Math.pow(0.1, dt);
+    // 1. Safety check: ensure player is never pushed or stuck inside a wall
+    if (arena && arena.pushOutOfWall) {
+      const safe = arena.pushOutOfWall(this.x, this.y, this.radius);
+      this.x = safe.x;
+      this.y = safe.y;
+    }
+
+    // 2. Apply & decay shot impact knockback with strict wall-collision check
+    if (Math.abs(this.vx) > 0.1 || Math.abs(this.vy) > 0.1) {
+      const nextX = this.x + this.vx * dt;
+      const nextY = this.y + this.vy * dt;
+      if (arena && arena.resolveMovement) {
+        const res = arena.resolveMovement(this.x, this.y, nextX, nextY, this.radius);
+        // If movement was stopped by a wall in X or Y, stop velocity in that axis
+        if (Math.abs(res.x - nextX) > 0.05) this.vx = 0;
+        if (Math.abs(res.y - nextY) > 0.05) this.vy = 0;
+        this.x = res.x;
+        this.y = res.y;
+      } else {
+        this.x = nextX;
+        this.y = nextY;
+      }
+      this.vx *= Math.pow(0.01, dt);
+      this.vy *= Math.pow(0.01, dt);
+    }
 
     // Aim Angle towards Mouse in World Space
     this.aimAngle = Math.atan2(input.mouseY - this.y, input.mouseX - this.x);
@@ -239,7 +262,7 @@ class Player {
       const nextX = this.x + this.dashDirX * dashSpeed * dt;
       const nextY = this.y + this.dashDirY * dashSpeed * dt;
       if (arena && arena.resolveMovement) {
-        const res = arena.resolveMovement(this.x, this.y, nextX, nextY);
+        const res = arena.resolveMovement(this.x, this.y, nextX, nextY, this.radius);
         this.x = res.x;
         this.y = res.y;
       } else {
@@ -271,7 +294,7 @@ class Player {
         const nextY = this.y + normY * this.speed * dt;
 
         if (arena && arena.resolveMovement) {
-          const res = arena.resolveMovement(this.x, this.y, nextX, nextY);
+          const res = arena.resolveMovement(this.x, this.y, nextX, nextY, this.radius);
           this.x = res.x;
           this.y = res.y;
         } else {

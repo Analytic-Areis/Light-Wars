@@ -231,6 +231,40 @@ class Arena {
     return { x: oldX, y: oldY };
   }
 
+  /**
+   * Safety check: push entity back onto nearest walkable floor if ever inside a blocked tile
+   */
+  pushOutOfWall(px, py, radius = 18) {
+    if (!this.isPointBlocked(px, py)) return { x: px, y: py };
+
+    const g = this.toGrid(px, py);
+    const tc = Math.floor(g.c);
+    const tr = Math.floor(g.r);
+
+    let bestDist = Infinity;
+    let bestX = px;
+    let bestY = py;
+
+    if (this.currentLevel === 1 && this.blocked) {
+      for (let dr = -4; dr <= 4; dr++) {
+        for (let dc = -4; dc <= 4; dc++) {
+          const nc = tc + dc;
+          const nr = tr + dr;
+          if (nc >= 0 && nr >= 0 && nc < this.cols && nr < this.rows && this.blocked[nr][nc] === 0) {
+            const cand = this.toScreen(nc + 0.5, nr + 0.5);
+            const d = Math.hypot(cand.x - px, cand.y - py);
+            if (d < bestDist) {
+              bestDist = d;
+              bestX = cand.x;
+              bestY = cand.y;
+            }
+          }
+        }
+      }
+    }
+    return { x: bestX, y: bestY };
+  }
+
   update(dt) {
     this.whiteLight.pulseTime += dt * 3.0;
 
