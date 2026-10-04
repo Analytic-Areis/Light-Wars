@@ -15,14 +15,15 @@ class Enemy {
     this.bandColorId = this.colorData.band || this.colorData.complementary;
     this.bandColorData = window.LightWars.COLORS[this.bandColorId] || window.LightWars.COLORS.RED;
 
-    this.radius = 18;
-    this.bodyRadius = 22; // Full body width radius
-    this.speed = 110 + Math.random() * 25;
+    this.radius = 20;
+    this.bodyRadius = 24; // Full body width radius
+    this.speed = 130 + Math.random() * 30;
     this.alive = true;
     this.health = 2;
 
     // Animation & physics
-    this.walkAnimTime = Math.random() * 8;
+    this.walkAnimTime = Math.random() * 25;
+    this.idleAnimTime = Math.random() * 25;
     this.isMoving = false;
     this.facingDir = 'S';
     this.facingAngle = 0;
@@ -35,24 +36,24 @@ class Enemy {
     this.shootCooldown = 1.8 + Math.random() * 2.2;
   }
 
-  // Whole-body vertical capsule hitbox from feet (y - 10) to head (y - 130)
+  // Whole-body vertical capsule hitbox from feet (y - 10) to head (y - 110)
   checkLaserHit(laser) {
     if (!this.alive) return false;
-    const clampedY = Math.max(this.y - 130, Math.min(this.y - 10, laser.y));
+    const clampedY = Math.max(this.y - 110, Math.min(this.y - 10, laser.y));
     const dist = Math.hypot(laser.x - this.x, laser.y - clampedY);
-    return dist < (this.bodyRadius || 26) + laser.radius;
+    return dist < (this.bodyRadius || 24) + laser.radius;
   }
 
   // Exact ground-contact-relative sniper rifle muzzle offsets for troops in all 8 directions
   static MUZZLE_OFFSETS = {
-    N:  { x: 11.8,  y: -112.2 },
-    NE: { x: 45.9,  y: -102.4 },
-    E:  { x: 51.2,  y: -83.3 },
-    SE: { x: 27.6,  y: -66.9 },
-    S:  { x: -17.1, y: -69.6 },
-    SW: { x: -47.2, y: -76.1 },
-    W:  { x: -52.5, y: -95.8 },
-    NW: { x: -28.9, y: -112.2 }
+    N:  { x: -4.1,  y: -106.0 },
+    NE: { x: 22.3,  y: -58.6 },
+    E:  { x: 55.1,  y: -65.6 },
+    SE: { x: 51.6,  y: -75.6 },
+    S:  { x: 0.0,   y: -35.0 },
+    SW: { x: -25.2, y: -69.1 },
+    W:  { x: -55.0, y: -50.0 },
+    NW: { x: -54.5, y: -58.6 }
   };
 
   getMuzzlePos(dir) {
@@ -85,10 +86,10 @@ class Enemy {
     let spawnY;
 
     // At close/point-blank range (or if muzzle could overshoot), aim strictly along body angle and spawn at enemy front
-    if (distToTarget < 90) {
+    if (distToTarget < 115) {
       angle = bodyAngle;
-      spawnX = this.x + Math.cos(angle) * 16;
-      spawnY = enemyCenterY + Math.sin(angle) * 16;
+      spawnX = this.x + Math.cos(angle) * 20;
+      spawnY = enemyCenterY + Math.sin(angle) * 20;
     } else {
       angle = Math.atan2(targetAimY - muzzle.y, targetX - muzzle.x);
       // Safeguard: if angle diverges drastically from body direction towards target, fallback to body angle
@@ -100,8 +101,8 @@ class Enemy {
       spawnY = muzzle.y + Math.sin(angle) * 12;
     }
 
-    // Slower dodgeable speed (360 px/s vs player's 680 px/s)
-    const speed = 360;
+    // Slower dodgeable speed (420 px/s vs player's 820 px/s)
+    const speed = 420;
     const vx = Math.cos(angle) * speed;
     const vy = Math.sin(angle) * speed;
 
@@ -182,6 +183,7 @@ class Enemy {
         this.facingDir = SpriteManager.getDirection8(this.facingAngle);
       } else {
         this.isMoving = false;
+        this.idleAnimTime += dt * 10.0;
         this.facingDir = SpriteManager.getDirection8(this.facingAngle);
       }
 
@@ -192,6 +194,7 @@ class Enemy {
       }
     } else {
       this.isMoving = false;
+      this.idleAnimTime += dt * 10.0;
     }
 
     // 2. Barrels Collision

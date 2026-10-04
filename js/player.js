@@ -9,8 +9,8 @@ class Player {
     this.x = x;
     this.y = y;
     this.z = 0;
-    this.radius = 18;
-    this.bodyRadius = 22; // Full body width radius
+    this.radius = 20;
+    this.bodyRadius = 24; // Full body width radius
     this.speed = window.LightWars.GAME_CONFIG.playerSpeed;
     this.alive = true;
 
@@ -104,12 +104,12 @@ class Player {
     return (this.ammo[colorId] !== undefined) && (this.ammo[colorId] < this.maxAmmo);
   }
 
-  // Whole-body vertical capsule hitbox from feet (y - 10) to head (y - 130) with sweep support
+  // Whole-body vertical capsule hitbox from feet (y - 10) to head (y - 110) with sweep support
   checkLaserHit(laser) {
     if (!this.alive) return false;
-    const clampedY = Math.max(this.y - 130, Math.min(this.y - 10, laser.y));
+    const clampedY = Math.max(this.y - 110, Math.min(this.y - 10, laser.y));
     const dist = Math.hypot(laser.x - this.x, laser.y - clampedY);
-    const hitRadius = (this.bodyRadius || 26) + laser.radius;
+    const hitRadius = (this.bodyRadius || 24) + laser.radius;
     if (dist < hitRadius) return true;
 
     // Check continuous sweep segment from prevX, prevY to laser.x, laser.y
@@ -118,7 +118,7 @@ class Player {
       const dy = laser.y - laser.prevY;
       const segLenSq = dx * dx + dy * dy;
       if (segLenSq > 0.001) {
-        const segClampedY = Math.max(this.y - 130, Math.min(this.y - 10, (laser.prevY + laser.y) / 2));
+        const segClampedY = Math.max(this.y - 110, Math.min(this.y - 10, (laser.prevY + laser.y) / 2));
         const t = Math.max(0, Math.min(1, ((this.x - laser.prevX) * dx + (segClampedY - laser.prevY) * dy) / segLenSq));
         const projX = laser.prevX + t * dx;
         const projY = laser.prevY + t * dy;
@@ -132,14 +132,14 @@ class Player {
 
   // Exact ground-contact-relative blaster muzzle offsets for all 8 directions
   static MUZZLE_OFFSETS = {
-    N:  { x: 6.6,   y: -117.5 },
-    NE: { x: 68.2,  y: -114.2 },
-    E:  { x: 74.8,  y: -87.9 },
-    SE: { x: 57.8,  y: -52.5 },
-    S:  { x: 10.5,  y: -26.9 },
-    SW: { x: -55.1, y: -47.9 },
-    W:  { x: -75.5, y: -86.6 },
-    NW: { x: -67.6, y: -115.5 }
+    N:  { x: -7.6,  y: -110.0 },
+    NE: { x: 51.6,  y: -90.2 },
+    E:  { x: 56.8,  y: -73.2 },
+    SE: { x: 43.4,  y: -60.9 },
+    S:  { x: 0.0,   y: -35.0 },
+    SW: { x: -44.0, y: -60.9 },
+    W:  { x: -56.8, y: -72.7 },
+    NW: { x: -51.0, y: -89.6 }
   };
 
   getMuzzlePos(dir) {
@@ -202,8 +202,8 @@ class Player {
           angle = 0;
         }
       }
-      this.vx = Math.cos(angle) * 260;
-      this.vy = Math.sin(angle) * 260;
+      this.vx = Math.cos(angle) * 340;
+      this.vy = Math.sin(angle) * 340;
     }
     // Note: Melee collision (applyKnockback = false) adds zero knockback, but leaves existing player velocity intact
 

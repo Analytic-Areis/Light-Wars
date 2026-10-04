@@ -57,12 +57,12 @@ def main():
         eval_js('window.game.startLevel1();', 100)
         time.sleep(0.5)
 
-        # Place player safely in wide open floor away from any immediate enemies
+        # Place player safely in open floor away from any immediate enemies
         eval_js('''
             window.game.enemies = [];
             window.game.lasers = [];
-            window.game.player.x = 650;
-            window.game.player.y = 440;
+            window.game.player.x = 880;
+            window.game.player.y = 380;
             window.game.player.vx = 0;
             window.game.player.vy = 0;
             window.game.player.health = 3;
@@ -76,7 +76,7 @@ def main():
         print("\n--- TEST 1: MELEE CONTACT ---")
         eval_js('''
             (() => {
-                const e = new window.LightWars.Enemy(620, 440, 'CYAN');
+                const e = new window.LightWars.Enemy(840, 380, 'CYAN');
                 e.shootCooldown = 999; // ensure it doesn't shoot yet
                 window.game.enemies.push(e);
             })()
@@ -91,7 +91,7 @@ def main():
             vy: window.game.player.vy,
             hp: window.game.player.health,
             invulnerableTimer: window.game.player.invulnerableTimer,
-            distMoved: Math.hypot(window.game.player.x - 650, window.game.player.y - 440)
+            distMoved: Math.hypot(window.game.player.x - 880, window.game.player.y - 380)
         })''', 120)
         print(f"After melee collision: {after_melee}")
         assert after_melee['distMoved'] == 0, f"Melee collision caused unwanted displacement! {after_melee['distMoved']}"
@@ -129,36 +129,45 @@ def main():
             y: window.game.player.y,
             vx: window.game.player.vx,
             vy: window.game.player.vy,
-            distMoved: Math.hypot(window.game.player.x - 650, window.game.player.y - 440),
+            distMoved: Math.hypot(window.game.player.x - 880, window.game.player.y - 380),
             lasersCount: window.game.lasers.length
         })''', 150)
         print(f"After point-blank shot: {after_shot}")
 
         assert after_shot['distMoved'] > 1.0, f"Player did NOT move from point-blank shot impact! distMoved={after_shot['distMoved']}"
-        assert after_shot['x'] > 650, f"Player was NOT knocked away from the enemy! x={after_shot['x']}"
+        assert after_shot['x'] > 880, f"Player was NOT knocked away from the enemy! x={after_shot['x']}"
         print(">>> Step 2 PASSED: Point-blank shot hit player and knocked player backwards away from enemy!")
 
         # TEST 3: PLAYER BESIDE WALL - IMPACT MUST NOT PUSH INTO WALL
         print("\n--- TEST 3: WALL COLLISION SAFETY ---")
-        eval_js('''
+        wall_setup = eval_js('''
             (() => {
                 window.game.lasers = [];
                 window.game.enemies = [];
-                // Place player near right wall (r=4, c=14 is open, c=15 is solid wall)
-                const openX = 920;
-                const openY = 282;
-                window.game.player.x = openX;
-                window.game.player.y = openY;
+                // Dynamically scan rightward from open floor (880, 380) to find the right room boundary
+                let px = 880;
+                let py = 380;
+                while (!window.game.arena.isPointBlocked(px + 4, py) && px < 1400) {
+                    px += 4;
+                }
+                // Step 2px back inside walkable bounds
+                px -= 2;
+
+                window.game.player.x = px;
+                window.game.player.y = py;
                 window.game.player.vx = 0;
                 window.game.player.vy = 0;
 
-                // Enemy positioned to the left (openX - 35), shooting directly into player towards the wall (+X)
-                const e = new window.LightWars.Enemy(openX - 35, openY, 'RED');
+                // Enemy positioned to the left (px - 45), shooting directly into player towards the wall (+X)
+                const e = new window.LightWars.Enemy(px - 45, py, 'RED');
                 e.shootCooldown = 0;
-                const l = e.shoot(openX, openY);
+                const l = e.shoot(px, py);
                 if (l) window.game.lasers.push(l);
+
+                return { px, py };
             })()
         ''', 160)
+        print(f"Wall test setup: {wall_setup}")
 
         # Wait 0.3s for shot to strike and knock player towards the wall
         time.sleep(0.3)
@@ -167,7 +176,7 @@ def main():
             x: window.game.player.x,
             y: window.game.player.y,
             isBlocked: window.game.arena.isPointBlocked(window.game.player.x, window.game.player.y),
-            safePos: window.game.arena.pushOutOfWall(window.game.player.x, window.game.player.y, window.game.player.radius)
+            safePos: window.game.arena.pushOutOfWall ? window.game.arena.pushOutOfWall(window.game.player.x, window.game.player.y, window.game.player.radius) : null
         })''', 180)
         print(f"Wall test result: {wall_test}")
         assert not wall_test['isBlocked'], f"Player was pushed into wall! isBlocked={wall_test['isBlocked']}"

@@ -15,58 +15,91 @@ const HERO_FRAME_COUNTS = {
 };
 
 class SpriteManager {
+  static DIR_FILES = {
+    N: 'up.png',
+    NE: 'northeast.png',
+    E: 'right.png',
+    SE: 'southeast.png',
+    S: 'down.png',
+    SW: 'southwest.png',
+    W: 'left.png',
+    NW: 'northwest.png'
+  };
+
+  static BOT_SCHEMES = {
+    RED: 'bots/red-cyan',
+    GREEN: 'bots/green-magenta',
+    BLUE: 'bots/blue-yellow',
+    CYAN: 'bots/cyan-red',
+    MAGENTA: 'bots/magenta-green',
+    YELLOW: 'bots/yellow-blue',
+    WHITE: 'bots/white-pink',
+    BLACK: 'boss',
+    BOSS: 'boss'
+  };
+
   constructor() {
     this.sprites = {};
+    this.imageCache = {};
     this.loadedCount = 0;
+    this.totalCount = 0;
     this.initDirectionalSprites();
   }
 
   initDirectionalSprites() {
     const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-    const characters = [
-      'hero',
-      'troop_cyan',
-      'troop_magenta',
-      'troop_yellow',
-      'troop_red',
-      'troop_green',
-      'troop_blue'
-    ];
 
-    for (const charId of characters) {
+    // 1. Luke (Hero) 8-directional sprites
+    for (const d of dirs) {
+      const fileName = SpriteManager.DIR_FILES[d];
+      const lukePath = `assets/sprites/luke/idle/${fileName}`;
+      this.loadSprite(`luke_${d}_idle`, lukePath);
+      this.loadSprite(`luke_${d}`, lukePath);
+      this.loadSprite(`hero_${d}_idle`, lukePath);
+      this.loadSprite(`hero_${d}`, lukePath);
+    }
+
+    // 2. Bots & Boss 8-directional idle and walk sprites
+    for (const [schemeKey, subfolder] of Object.entries(SpriteManager.BOT_SCHEMES)) {
       for (const d of dirs) {
-        // Base / Idle frames
-        this.loadSprite(`${charId}_${d}_idle`, `assets/sprites/${charId}/${d}_idle.png`);
-        // Directional idle frames (25 frames for hero idle bob animation)
-        if (charId === 'hero') {
-          for (let r = 0; r < 25; r++) {
-            const idleId = `hero_${d}_idle_${r}`;
-            const idlePath = `assets/sprites/hero/${d}_idle_${r}.png`;
-            this.loadSprite(idleId, idlePath);
-          }
-        }
+        const fileName = SpriteManager.DIR_FILES[d];
+        const idlePath = `assets/sprites/${subfolder}/idle/${fileName}`;
+        const walkPath = `assets/sprites/${subfolder}/walk/${fileName}`;
 
-        // Directional run frames (Full Luke sprite sheet frames for hero, 8 for troops)
-        const frameCount = (charId === 'hero') ? (HERO_FRAME_COUNTS[d] || 8) : 8;
-        for (let r = 0; r < frameCount; r++) {
-          const runId = `${charId}_${d}_run_${r}`;
-          const runPath = `assets/sprites/${charId}/${d}_run_${r}.png`;
-          this.loadSprite(runId, runPath);
-        }
+        // Canonical uppercase scheme keys
+        this.loadSprite(`${schemeKey}_${d}_idle`, idlePath);
+        this.loadSprite(`${schemeKey}_${d}_walk`, walkPath);
+
+        // Aliases for lowercase and troop_ prefixes
+        const lower = schemeKey.toLowerCase();
+        this.loadSprite(`${lower}_${d}_idle`, idlePath);
+        this.loadSprite(`${lower}_${d}_walk`, walkPath);
+        this.loadSprite(`troop_${lower}_${d}_idle`, idlePath);
+        this.loadSprite(`troop_${lower}_${d}_walk`, walkPath);
       }
     }
   }
 
   loadSprite(id, src) {
+    if (this.imageCache[src]) {
+      this.sprites[id] = this.imageCache[src];
+      return;
+    }
+    this.totalCount++;
     const img = new Image();
     img.src = src;
+    this.imageCache[src] = img;
+    this.sprites[id] = img;
     img.onload = () => {
-      this.sprites[id] = img;
       this.loadedCount++;
     };
     img.onerror = () => {
       // Graceful fallback
     };
+  }
+
+  isLoaded() {
+    return this.totalCount > 0 && this.loadedCount >= this.totalCount;
   }
 
   hasSprite(id) {
@@ -91,68 +124,84 @@ class SpriteManager {
   }
 
   drawPlayer(ctx, player) {
-    // Face movement direction when running, or aim direction when idle
-    const dir = player.isMoving ? player.facingDir : (player.facingDir || SpriteManager.getDirection8(player.aimAngle));
-    let img = null;
-
-    if (player.isMoving) {
-      const maxFrames = HERO_FRAME_COUNTS[dir] || 8;
-      const frameIdx = Math.floor(player.walkAnimTime) % maxFrames;
-      img = this.getSprite(`hero_${dir}_run_${frameIdx}`) ||
-            this.getSprite(`hero_${dir}_idle`) ||
-            this.getSprite(`hero_${dir}`) ||
-            this.getSprite('hero_S');
-    } else {
-      const idleIdx = Math.floor(player.idleAnimTime) % 25;
-      img = this.getSprite(`hero_${dir}_idle_${idleIdx}`) ||
-            this.getSprite(`hero_${dir}_idle`) ||
-            this.getSprite(`hero_${dir}`) ||
-            this.getSprite('hero_S');
+    // Face aim direction when idle or shooting, movement direction when walking
+    let dir = player.facingDir;
+    if (!player.isMoving || player.shootFaceTimer > 0) {
+      dir = SpriteManager.getDirection8(player.aimAngle);
     }
+    if (!dir) dir = 'S';
+
+    const img = this.getSprite(`luke_${dir}_idle`) ||
+                this.getSprite(`hero_${dir}_idle`) ||
+                this.getSprite(`luke_S_idle`);
 
     if (!img) return false;
 
-    ctx.save();
-    // Anchor sprite directly to ground plane, fitting cleanly within one floor tile
-    const h = 150;
-    const w = (img.width / img.height) * h;
-    const feetOffset = h * (237 / 256);
+    // 5x5 sprite sheet: 25 frames of 256x256
+    let frameIdx = 0;
+    let bobY = 0;
+    if (player.isMoving) {
+      frameIdx = Math.floor(player.walkAnimTime) % 25;
+      bobY = Math.abs(Math.sin(player.walkAnimTime * 0.5)) * 3.0;
+    } else {
+      frameIdx = Math.floor(player.idleAnimTime) % 25;
+    }
 
-    ctx.drawImage(img, -w / 2, -feetOffset, w, h);
+    const col = frameIdx % 5;
+    const row = Math.floor(frameIdx / 5);
+    const frameW = 256;
+    const frameH = 256;
+    const sx = col * frameW;
+    const sy = row * frameH;
+
+    ctx.save();
+    // Anchor sprite directly to ground plane, scaled to fit within one map tile
+    const h = 150;
+    const w = 150;
+    const feetOffset = h * (224 / 256); // 131.25 px
+
+    ctx.drawImage(img, sx, sy, frameW, frameH, -w / 2, -feetOffset + bobY, w, h);
     ctx.restore();
     return true;
   }
 
   drawEnemy(ctx, enemy) {
-    const col = enemy.colorId.toLowerCase();
-    const dir = enemy.facingDir || SpriteManager.getDirection8(enemy.facingAngle);
+    const colName = (enemy.colorId || 'CYAN').toUpperCase();
+    const dir = enemy.facingDir || SpriteManager.getDirection8(enemy.facingAngle) || 'S';
     let img = null;
+    let frameIdx = 0;
 
     if (enemy.isMoving) {
-      const frameIdx = Math.floor(enemy.walkAnimTime) % 8;
-      img = this.getSprite(`troop_${col}_${dir}_run_${frameIdx}`) ||
-            this.getSprite(`troop_${col}_${dir}_idle`) ||
-            this.getSprite(`troop_${col}_${dir}`) ||
-            this.getSprite(`troop_${col}_S`);
+      img = this.getSprite(`${colName}_${dir}_walk`) ||
+            this.getSprite(`${colName}_${dir}_idle`) ||
+            this.getSprite(`${colName}_S_walk`);
+      frameIdx = Math.floor(enemy.walkAnimTime) % 25;
     } else {
-      img = this.getSprite(`troop_${col}_${dir}_idle`) ||
-            this.getSprite(`troop_${col}_${dir}`) ||
-            this.getSprite(`troop_${col}_S`);
+      img = this.getSprite(`${colName}_${dir}_idle`) ||
+            this.getSprite(`${colName}_S_idle`);
+      frameIdx = Math.floor(enemy.idleAnimTime || 0) % 25;
     }
 
     if (!img) return false;
+
+    const col = frameIdx % 5;
+    const row = Math.floor(frameIdx / 5);
+    const frameW = 256;
+    const frameH = 256;
+    const sx = col * frameW;
+    const sy = row * frameH;
 
     ctx.save();
     if (enemy.hurtFlash > 0) {
       ctx.filter = 'brightness(3.2) contrast(1.5)';
     }
 
-    // Anchor troop feet directly to ground plane, fitting cleanly within one floor tile
+    // Anchor troop feet directly to ground plane, scaled to fit within one map tile
     const h = 150;
-    const w = (img.width / img.height) * h;
-    const feetOffset = h * (251 / 256);
+    const w = 150;
+    const feetOffset = h * (224 / 256);
 
-    ctx.drawImage(img, -w / 2, -feetOffset, w, h);
+    ctx.drawImage(img, sx, sy, frameW, frameH, -w / 2, -feetOffset, w, h);
     ctx.restore();
     return true;
   }
