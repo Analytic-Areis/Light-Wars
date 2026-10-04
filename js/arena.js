@@ -296,6 +296,8 @@ class Arena {
   draw(ctx) {
     // 1. Draw Map Image
     if (this.mapImg.complete && this.mapImg.naturalWidth > 0) {
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(this.mapImg, 0, 0, this.width, this.height);
     } else {
       ctx.fillStyle = '#08090E';
