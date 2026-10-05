@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Light-Wars</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="gameContainer">
+    <canvas id="gameCanvas" width="1280" height="720"></canvas>
+
+    <!-- Star Wars Authentic Comic-Strip Level Menu Overlay -->
+    <div id="comicMenu" class="comic-menu-overlay">
+      <!-- Comic Header Strip (Star Wars 1970s Marvel style) -->
+      <div class="sw-comic-header">
+        <div class="sw-comic-corner-box">
+          <div class="corner-brand">LIGHT-WARS</div>
+          <div class="corner-issue">#1</div>
+          <div class="corner-price">35&cent;</div>
+        </div>
+
+        <div class="sw-comic-title-wrap">
+          <div class="sw-comic-subtitle">A SPECTRUM ODYSSEY IN WAVELENGTH WARFARE</div>
+          <h1 class="sw-comic-title">LIGHT-WARS</h1>
+        </div>
+
+        <div class="sw-comic-page-tracker">
+          <span class="page-badge current">PAGE 01</span>
+          <span class="page-badge locked" id="page2TeaserBadge">PAGE 02 &#x1F512;</span>
+        </div>
+      </div>
+
+      <!-- Comic Book Page 1 (The 5-Box Strip) -->
+      <div class="sw-comic-page" id="comicPage1">
+
+        <!-- Row 1: Level 1 Story & Action -->
+        <div class="comic-row row-1">
+          <!-- Box 1: Episode 1 Story / Rebel Luke -->
+          <div class="comic-box box-1" id="comicBox1">
+            <div class="comic-box-bg" style="background-image: url('assets/comic_panels/panel_1_bg.png');"></div>
+            <div class="comic-caption-box top">
+              <span class="comic-chapter-tag">EPISODE I</span>
+              <span class="comic-caption-text">A SPECTRUM FAR, FAR AWAY...</span>
+            </div>
+            <div class="box-art-wrap">
+              <img src="assets/comic_art/luke_cutout.png" alt="Luke Commando" class="panel-char-img luke-img">
+            </div>
+            <div class="comic-sfx sfx-yellow">STANDBY!</div>
+            <div class="comic-caption-box bottom">
+              <p>DEFENDER OF THE WHITE LIGHT RECHARGE SANCTUARY!</p>
+            </div>
+          </div>
+
+          <!-- Box 2: Mission 01 First Strike - CMY lasers & Orbs only -->
+          <div class="comic-box box-2 active-mission-box" id="comicBox2">
+            <div class="comic-box-bg" style="background-image: url('assets/comic_panels/panel_2_bg.png');"></div>
+            <div class="comic-caption-box top mission-header">
+              <span class="comic-mission-pill">MISSION 01</span>
+              <span class="comic-mission-name">FIRST STRIKE</span>
+              <span class="comic-status-pill ready" id="mission1StatusPill">READY</span>
+            </div>
+
+            <div class="box-art-wrap">
+              <img src="assets/comic_art/cyan_combat_cutout_tight.png" alt="Cyan Infiltrator" class="panel-char-img combat-img">
+            </div>
+
+            <div class="comic-sfx sfx-red">PEW! PEW!</div>
+
+            <div class="mission-briefing-box">
+              <div class="briefing-rule">&#x1F4A0; <b>CYAN TROOPS</b> &bull; Kill with RED [1]</div>
+              <div class="briefing-rule">&#x1F497; <b>MAGENTA TROOPS</b> &bull; Kill with GREEN [2]</div>
+              <div class="briefing-rule">&#x1F4DB; <b>YELLOW TROOPS</b> &bull; Kill with BLUE [3]</div>
+              <div class="briefing-rule">&#x1F7E2; <b>GREEN ORB</b> &bull; Shoot RED &rarr; &#x1F7E1; Yellow ammo</div>
+              <div class="briefing-rule">&#x26AA; <b>RECHARGE STATION</b> &bull; Step on to refill</div>
+            </div>
+
+            <button id="startLevel1Btn" class="comic-btn play-btn pulse-glow">
+              <span class="btn-icon">&#x26A1;</span> PLAY LEVEL 1 <span class="btn-icon">&#x26A1;</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Row 2: Level 2 Story & Mission (locked until Level 1 cleared) -->
+        <div class="comic-row row-2" id="comicRow2">
+          <!-- Lock overlay -->
+          <div class="comic-row-lock-overlay" id="row2LockOverlay">
+            <div class="lock-icon">&#x1F512;</div>
+            <div class="lock-label">CLEAR LEVEL 1 TO UNLOCK</div>
+          </div>
+
+          <!-- Box 3: Episode 2 - RGB troops intro -->
+          <div class="comic-box box-3" id="comicBox3">
+            <div class="comic-box-bg" style="background-image: url('assets/comic_panels/panel_3_bg.png');"></div>
+            <div class="comic-caption-box top">
+              <span class="comic-chapter-tag">EPISODE II</span>
+              <span class="comic-caption-text">THE SPECTRUM WAR ESCALATES!</span>
+            </div>
+            <div class="box-art-wrap">
+              <img src="assets/comic_art/dual_troops_cutout.png" alt="Dual Troops" class="panel-char-img troops-img">
+            </div>
+            <div class="comic-sfx sfx-magenta">BZZZT!</div>
+            <div class="comic-caption-box bottom">
+              <p>RED &bull; GREEN &bull; BLUE LEGIONS INVADE &mdash; AND THEY TRANSFORM!</p>
+            </div>
+          </div>
+
+          <!-- Box 4: Mission 02 - RGB + Color Transform mechanism -->
+          <div class="comic-box box-4" id="comicBox4">
+            <div class="comic-box-bg" style="background-image: url('assets/comic_panels/panel_4_bg.png');"></div>
+            <div class="comic-caption-box top mission-header">
+              <span class="comic-mission-pill" id="mission2Pill">MISSION 02</span>
+              <span class="comic-mission-name">CHROMATIC WAR</span>
+              <span class="comic-status-pill locked" id="mission2StatusPill">LOCKED</span>
+            </div>
+            <div class="mission-briefing-box" id="mission2Briefing" style="display:none;">
+              <div class="briefing-rule">&#x1F534; <b>RED</b> killed by CYAN[4] &bull; Green&rarr;Yellow, Blue&rarr;Magenta</div>
+              <div class="briefing-rule">&#x1F7E2; <b>GREEN</b> killed by MAGENTA[5] &bull; Red&rarr;Yellow, Blue&rarr;Cyan</div>
+              <div class="briefing-rule">&#x1F535; <b>BLUE</b> killed by YELLOW[6] &bull; Red&rarr;Magenta, Green&rarr;Cyan</div>
+            </div>
+            <div class="box-content-locked" id="mission2LockedContent">
+              <div class="comic-lock-icon">&#x1F512;</div>
+              <p class="locked-desc">Enemies TRANSFORM when hit with the wrong color. Master all 6 lasers!</p>
+              <div class="comic-stamp">CLEAR LEVEL 1 TO UNLOCK</div>
+            </div>
+            <button id="startLevel2Btn" class="comic-btn play-btn pulse-glow" style="display:none;">
+              <span class="btn-icon">&#x26A1;</span> PLAY LEVEL 2 <span class="btn-icon">&#x26A1;</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Row 3: Final Boss (locked until Level 2 cleared) -->
+        <div class="comic-row row-3" id="comicRow3">
+          <!-- Lock overlay -->
+          <div class="comic-row-lock-overlay" id="row3LockOverlay">
+            <div class="lock-icon">&#x1F512;</div>
+            <div class="lock-label">CLEAR LEVEL 2 TO REVEAL</div>
+          </div>
+
+          <!-- Box 5: The Boss Box -->
+          <div class="comic-box box-5 boss-box" id="comicBox5">
+            <div class="comic-box-bg" style="background-image: url('assets/comic_panels/panel_5_bg.png');"></div>
+
+            <!-- Dynamic Boss Badge -->
+            <div class="boss-banner-header">
+              <div class="boss-role-badge" id="bossRoleBadge">&#x2605; FINAL BOSS &#x2605;</div>
+              <h2 class="boss-name" id="bossNameTitle">THE BLACK BOSS &bull; VOID OVERLORD</h2>
+              <div class="boss-threat-tag">THREAT: OMEGA</div>
+            </div>
+
+            <div class="boss-panel-body">
+              <div class="boss-art-wrap">
+                <img src="assets/comic_art/black_boss_cutout.png" alt="The Black Boss" class="boss-figure-img">
+              </div>
+
+              <div class="boss-lore-wrap">
+                <div class="comic-caption-box boss-lore-caption">
+                  <p>&ldquo;HE WHO DEVOURS ALL VISIBLE WAVELENGTHS INTO TOTAL DARKNESS!&rdquo;</p>
+                  <p class="boss-subtext">The sinister ruler of the void realm awaits at the end of the strip...</p>
+                </div>
+
+                <div class="boss-encounter-status" id="bossEncounterStatus">
+                  <div class="comic-stamp boss-stamp">
+                    &#x1F512; CLASSIFIED BOSS ENCOUNTER<br>
+                    <small>DEFEAT MISSIONS 01 &amp; 02 TO CHALLENGE</small>
+                  </div>
+                </div>
+
+                <!-- Plot twist reveal (reveals White Boss when Black Boss is defeated) -->
+                <div class="boss-plot-twist-reveal" id="bossPlotTwistReveal" style="display: none;">
+                  <div class="twist-alert-badge">&#x26A1; SPECTRAL REVELATION &#x26A1;</div>
+                  <p class="twist-text">THE BLACK BOSS HAS FALLEN! But as the shadows parted, the TRUE MASTER of the galaxy was revealed: THE WHITE BOSS! The strip expands!</p>
+                  <button id="goToPage2Btn" class="comic-btn page2-action-btn">
+                    PAGE 02: THE WHITE AWAKENING &#x25B6;
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="comic-footer-legend">
+        <div><span>[WASD]</span> MOVE</div>
+        <div><span>[MOUSE]</span> AIM &amp; SHOOT</div>
+        <div><span>[1-6 / Q-E / SCROLL]</span> LASER COLOR</div>
+        <div><span>[SPACE / RMB]</span> DASH</div>
+        <div><span>[F]</span> FULLSCREEN</div>
+        <div><span>[M]</span> AUDIO</div>
+      </div>
+    </div>
+
+    <!-- Level Complete Modal -->
+    <div id="levelClearModal" class="modal-overlay">
+      <div class="comic-modal-box">
+        <h2 class="comic-modal-title" id="levelClearTitle">LEVEL 1 CLEARED!</h2>
+        <div class="stars-rating">&#x2605;&#x2605;&#x2605;</div>
+        <p style="color: #A0B2DE; font-size: 13px; margin-bottom: 20px;" id="levelClearMsg">
+          You eliminated the CMY invasion force! The Spectrum War continues...
+        </p>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-label">ENEMIES DEFEATED</div>
+            <div id="clearKills" class="stat-val">0</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">ORBS CONVERTED</div>
+            <div id="clearOrbs" class="stat-val">0</div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="menuReturnBtn" class="comic-btn secondary">COMIC STRIP</button>
+          <button id="playAgainBtn" class="comic-btn">PLAY AGAIN</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="gameOverModal" class="modal-overlay">
+      <div class="comic-modal-box" style="border-color: #FF2A4D; box-shadow: 10px 10px 0 #FFE600, 14px 14px 0 #000;">
+        <h2 class="comic-modal-title" style="color: #FF2A4D;">DEFEATED!</h2>
+        <p style="color: #A0B2DE; font-size: 13px; margin-bottom: 20px;">
+          Your chromatic shields gave out! Remember to step on the Recharge Station when low on ammo.
+        </p>
+        <div class="modal-actions">
+          <button id="restartBtn" class="comic-btn">RETRY</button>
+          <button onclick="window.game.showMenu()" class="comic-btn secondary">MENU</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Escape Pause Menu Modal -->
+    <div id="escapePauseModal" class="modal-overlay">
+      <div class="comic-modal-box pause-modal-box">
+        <h2 class="comic-modal-title">MISSION PAUSED</h2>
+        
+        <!-- Controls & Settings Grid -->
+        <div class="pause-settings-panel">
+          <div class="volume-control-group">
+            <div class="volume-slider-row">
+              <label for="sfxVolumeSlider" class="volume-label">&#x1F50A; SOUND FX</label>
+              <input type="range" id="sfxVolumeSlider" min="0" max="1" step="0.05" value="0.8" class="comic-slider">
+              <span id="sfxVolumeVal" class="volume-value-badge">80%</span>
+            </div>
+            <div class="volume-slider-row">
+              <label for="musicVolumeSlider" class="volume-label">&#x1F3B5; MUSIC</label>
+              <input type="range" id="musicVolumeSlider" min="0" max="1" step="0.05" value="0.6" class="comic-slider">
+              <span id="musicVolumeVal" class="volume-value-badge">60%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="pause-modal-actions">
+          <button id="pauseResumeBtn" class="comic-btn">RESUME</button>
+          <button id="pauseInstructionsBtn" class="comic-btn" style="background: #00F0FF; color: #000; box-shadow: 4px 4px 0 #FFE600;">&#x1F4DC; INSTRUCTIONS</button>
+          <button id="pauseRestartBtn" class="comic-btn secondary">RESTART</button>
+          <button id="pauseMenuBtn" class="comic-btn secondary">COMIC STRIP</button>
+        </div>
+
+        <!-- Level Hints & Color Counter Reference (At the bottom of Escape menu) -->
+        <div class="pause-hints-section">
+          <div class="pause-hints-header">&#x1F4A1; LEVEL 1 TACTICAL HINTS &amp; COLOR COUNTERS</div>
+          <div class="hints-grid">
+            <div class="hint-card">
+              <div class="hint-title" style="color: #00F0FF;">&#x25C6; CYAN TROOPS</div>
+              <p>Eliminate with <b>RED LASER [1]</b>.<br>Drops <span style="color: #FF4D66;">RED ORBS</span>.</p>
+            </div>
+            <div class="hint-card">
+              <div class="hint-title" style="color: #FF33DD;">&#x25C6; MAGENTA TROOPS</div>
+              <p>Eliminate with <b>GREEN LASER [2]</b>.<br>Drops <span style="color: #2CE070;">GREEN ORBS</span>.</p>
+            </div>
+            <div class="hint-card">
+              <div class="hint-title" style="color: #FFE600;">&#x25C6; YELLOW TROOPS</div>
+              <p>Eliminate with <b>BLUE LASER [3]</b>.<br>Drops <span style="color: #4D88FF;">BLUE ORBS</span>.</p>
+            </div>
+            <div class="hint-card">
+              <div class="hint-title" style="color: #FFFFFF;">&#x25C6; ORB CONVERSION</div>
+              <p>Shoot orbs with <b>complementary laser</b> to craft ammo crystals, or walk over them!</p>
+            </div>
+            <div class="hint-card full-span">
+              <div class="hint-title" style="color: #FFE600;">&#x26AA; WHITE LIGHT RECHARGE SANCTUARY</div>
+              <p>Step onto the glowing white circle at the top-center to instantly reload all depleted lasers!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interactive Noobi-Wan Instruction Overlay Modal -->
+    <div id="tutorialModal" class="noobi-instruction-overlay">
+      <div class="noobi-scene-wrap">
+        <img src="assets/comic_art/noobi_wan_instructions.png" alt="Master Noobi-Wan Instructions" class="noobi-art-img">
+        
+        <div class="noobi-box-header">
+          <span class="noobi-intel-badge">&#x26A1; JEDI MASTER INTEL</span>
+          <h3 id="tutorialTitle" class="noobi-instruction-title">MISSION BRIEFING</h3>
+        </div>
+
+        <div class="noobi-parchment-box">
+          <div id="tutorialMessage" class="noobi-instruction-body">
+            <!-- Instructions injected here -->
+          </div>
+          
+          <div class="noobi-box-footer">
+            <div id="tutorialKeyHint" class="noobi-key-hint">PRESS [SPACE] OR [ENTER] TO PROCEED</div>
+            <button id="tutorialDismissBtn" class="noobi-continue-btn">CONTINUE MISSION &#x25B6;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/map_data.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/laser.js"></script>
+  <script src="js/crystal.js"></script>
+  <script src="js/barrel.js"></script>
+  <script src="js/orb.js"></script>
+  <script src="js/enemy.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/arena.js"></script>
+  <script src="js/occlusion.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/waves.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
