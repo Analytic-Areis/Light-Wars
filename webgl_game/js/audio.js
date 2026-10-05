@@ -232,6 +232,25 @@ class SoundEngine {
     });
   }
 
+  // Dialogue card advance chime
+  playDialogueAdvance() {
+    if (this.isMuted) return;
+    this.resume();
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(587.33, t); // D5
+    osc.frequency.exponentialRampToValueAtTime(880, t + 0.08); // A5
+    gain.gain.setValueAtTime(0.18, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+    osc.start(t);
+    osc.stop(t + 0.1);
+  }
+
   // White Light Refill
   playRefill() {
     if (this.isMuted) return;

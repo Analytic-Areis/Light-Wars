@@ -159,10 +159,10 @@ class SpriteManager {
     const sy = row * frameH;
 
     ctx.save();
-    // Anchor sprite directly to ground plane, scaled to fit within one map tile
-    const h = 150;
-    const w = 150;
-    const feetOffset = h * (224 / 256); // 131.25 px
+    // Anchor sprite directly to ground plane, scaled to fit exactly 1x1 on the tile map (~50x50 px)
+    const h = 50;
+    const w = 50;
+    const feetOffset = h * (224 / 256); // ~43.75 px
 
     ctx.drawImage(img, sx, sy, frameW, frameH, -w / 2, -feetOffset, w, h);
     ctx.restore();
@@ -200,9 +200,9 @@ class SpriteManager {
       ctx.filter = 'brightness(3.2) contrast(1.5)';
     }
 
-    // Anchor troop feet directly to ground plane, scaled bigger (190x190) than player (150x150)
-    const h = 190;
-    const w = 190;
+    // Anchor troop feet directly to ground plane, scaled 1x1 on the tile map (~50x50 px)
+    const h = 50;
+    const w = 50;
     const feetOffset = h * (224 / 256);
 
     ctx.drawImage(img, sx, sy, frameW, frameH, -w / 2, -feetOffset, w, h);
@@ -368,11 +368,13 @@ class ParticleSystem {
 }
 
 class Camera {
-  constructor(viewportWidth, viewportHeight) {
-    this.x = 1352;
-    this.y = 1502;
+  constructor(viewportWidth = 1280, viewportHeight = 720) {
+    this.x = 856;
+    this.y = 273;
     this.viewportWidth = viewportWidth;
     this.viewportHeight = viewportHeight;
+    this.zoom = 2.0; // Focused zoom onto player and local region
+    this.targetZoom = 2.0;
     this.shakeIntensity = 0;
     this.shakeOffsetX = 0;
     this.shakeOffsetY = 0;
@@ -382,10 +384,19 @@ class Camera {
     this.shakeIntensity = Math.min(22, this.shakeIntensity + amount);
   }
 
+  setZoom(val) {
+    this.targetZoom = Math.max(1.4, Math.min(2.8, val));
+  }
+
   update(dt, targetX, targetY, arenaWidth, arenaHeight) {
-    // Smooth lerp to target
-    this.x += (targetX - this.x) * 0.14;
-    this.y += (targetY - this.y) * 0.14;
+    // Smooth responsive lerp to player target
+    this.x += (targetX - this.x) * 0.16;
+    this.y += (targetY - this.y) * 0.16;
+
+    // Smooth zoom interpolation
+    if (this.targetZoom !== undefined) {
+      this.zoom += (this.targetZoom - this.zoom) * 0.15;
+    }
 
     // Decay screen shake
     if (this.shakeIntensity > 0) {
@@ -398,16 +409,16 @@ class Camera {
       this.shakeOffsetY = 0;
     }
 
-    // Clamp camera within arena bounds
-    const halfW = this.viewportWidth / 2;
-    const halfH = this.viewportHeight / 2;
-    if (this.viewportWidth < arenaWidth) {
-      this.x = Math.max(halfW, Math.min(arenaWidth - halfW, this.x));
+    // Clamp camera within arena bounds according to zoomed viewport
+    const halfViewW = (this.viewportWidth / this.zoom) / 2;
+    const halfViewH = (this.viewportHeight / this.zoom) / 2;
+    if (halfViewW * 2 < arenaWidth) {
+      this.x = Math.max(halfViewW, Math.min(arenaWidth - halfViewW, this.x));
     } else {
       this.x = arenaWidth / 2;
     }
-    if (this.viewportHeight < arenaHeight) {
-      this.y = Math.max(halfH, Math.min(arenaHeight - halfH, this.y));
+    if (halfViewH * 2 < arenaHeight) {
+      this.y = Math.max(halfViewH, Math.min(arenaHeight - halfViewH, this.y));
     } else {
       this.y = arenaHeight / 2;
     }
@@ -416,9 +427,11 @@ class Camera {
   apply(ctx) {
     ctx.save();
     ctx.translate(
-      this.viewportWidth / 2 - this.x + this.shakeOffsetX,
-      this.viewportHeight / 2 - this.y + this.shakeOffsetY
+      this.viewportWidth / 2 + this.shakeOffsetX,
+      this.viewportHeight / 2 + this.shakeOffsetY
     );
+    ctx.scale(this.zoom, this.zoom);
+    ctx.translate(-this.x, -this.y);
   }
 
   restore(ctx) {
@@ -427,8 +440,8 @@ class Camera {
 
   screenToWorld(screenX, screenY) {
     return {
-      x: screenX - (this.viewportWidth / 2 - this.x),
-      y: screenY - (this.viewportHeight / 2 - this.y)
+      x: this.x + (screenX - this.viewportWidth / 2) / this.zoom,
+      y: this.y + (screenY - this.viewportHeight / 2) / this.zoom
     };
   }
 }

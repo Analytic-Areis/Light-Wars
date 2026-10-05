@@ -41,7 +41,7 @@ class UIManager {
 
     // 2. Ammo Bar (Bottom Center - Brawl Stars Style Selector)
     ctx.save();
-    const ammoBarWidth = 440;
+    const ammoBarWidth = 520;
     const ammoBarHeight = 64;
     const startX = (width - ammoBarWidth) / 2;
     const startY = height - ammoBarHeight - 20;

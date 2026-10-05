@@ -159,6 +159,78 @@ body, html {
   }
 }
 
+.sw-comic-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* Developer Mode Retro Comic Toggle */
+.dev-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #101626;
+  border: 2px solid #FFE600;
+  box-shadow: 2px 2px 0 #000;
+  padding: 3px 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.dev-mode-toggle:hover {
+  background: #19233D;
+  box-shadow: 3px 3px 0 #FF2A4D;
+}
+
+.dev-mode-label {
+  font-family: 'Bangers', cursive;
+  font-size: 13px;
+  color: #FFE600;
+  letter-spacing: 1px;
+}
+
+.dev-mode-checkbox {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.dev-mode-slider {
+  position: relative;
+  display: inline-block;
+  width: 32px;
+  height: 16px;
+  background-color: #2F3956;
+  border: 1.5px solid #000;
+  border-radius: 9px;
+  transition: background-color 0.2s;
+}
+
+.dev-mode-slider::before {
+  position: absolute;
+  content: "";
+  height: 10px;
+  width: 10px;
+  left: 2px;
+  top: 1.5px;
+  background-color: #8E9AB0;
+  border-radius: 50%;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.dev-mode-checkbox:checked + .dev-mode-slider {
+  background-color: #00F0FF;
+}
+
+.dev-mode-checkbox:checked + .dev-mode-slider::before {
+  transform: translateX(15px);
+  background-color: #000;
+}
+
 .sw-comic-page-tracker {
   display: flex;
   gap: 8px;
@@ -1054,6 +1126,20 @@ body, html {
   flex-shrink: 0;
 }
 
+.noobi-card-tracker {
+  font-family: 'Bangers', cursive;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: #000;
+  background: #00F0FF;
+  border: 1.5px solid #000;
+  padding: 2px 7px;
+  border-radius: 3px;
+  box-shadow: 2px 2px 0 #FFE600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .noobi-instruction-title {
   font-family: 'Bangers', cursive;
   font-size: clamp(16px, 1.4vw, 21px);
@@ -1114,11 +1200,63 @@ body, html {
   margin-top: 4px;
 }
 
+.noobi-footer-left {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.noobi-dots-wrap {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.noobi-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #B0A288;
+  transition: all 0.2s ease;
+}
+
+.noobi-dot.active {
+  width: 16px;
+  border-radius: 4px;
+  background: #FF2A4D;
+  box-shadow: 0 0 6px rgba(255, 42, 77, 0.6);
+}
+
 .noobi-key-hint {
   font-family: 'Bangers', cursive;
   font-size: 13px;
   color: #4B5268;
   letter-spacing: 1px;
+}
+
+.noobi-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.noobi-skip-btn {
+  font-family: 'Bangers', cursive;
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: #4B5268;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1.5px solid #A0AABF;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.noobi-skip-btn:hover {
+  background: rgba(255, 42, 77, 0.15);
+  color: #FF2A4D;
+  border-color: #FF2A4D;
 }
 
 .noobi-continue-btn {
@@ -1144,6 +1282,55 @@ body, html {
 .noobi-continue-btn:active {
   transform: translate(2px, 2px);
   box-shadow: 1px 1px 0 #FF2A4D;
+}
+
+/* Comic Tip Box */
+.noobi-tip-box {
+  margin: 6px 0 3px 0;
+  padding: 6px 10px;
+  background: rgba(255, 230, 0, 0.22);
+  border-left: 4px solid #CCA000;
+  border-radius: 3px;
+  font-size: clamp(11.5px, 1.05vw, 13px);
+  color: #261D00;
+  line-height: 1.35;
+}
+
+/* Comic Combos Grid */
+.noobi-combos-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 6px 0 4px 0;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.combo-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: clamp(11.5px, 1.05vw, 13px);
+  font-weight: 700;
+}
+
+/* 6-Color Pips Preview Box */
+.noobi-color-pips-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  margin: 7px 0 5px 0;
+  padding: 6px 10px;
+  background: #11131E;
+  border-radius: 4px;
+  border: 1.5px solid #33384D;
+  font-family: 'Bangers', cursive;
+  font-size: clamp(12px, 1.1vw, 14px);
+  letter-spacing: 0.8px;
 }
 
 /* Comic highlights on parchment */

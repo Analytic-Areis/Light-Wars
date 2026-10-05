@@ -25,9 +25,17 @@
           <h1 class="sw-comic-title">LIGHT-WARS</h1>
         </div>
 
-        <div class="sw-comic-page-tracker">
-          <span class="page-badge current">PAGE 01</span>
-          <span class="page-badge locked" id="page2TeaserBadge">PAGE 02 &#x1F512;</span>
+        <div class="sw-comic-header-controls">
+          <label class="dev-mode-toggle" title="Developer Mode: Unlock all levels for instant testing">
+            <span class="dev-mode-label">DEV MODE</span>
+            <input type="checkbox" id="devModeCheckbox" class="dev-mode-checkbox">
+            <span class="dev-mode-slider"></span>
+          </label>
+
+          <div class="sw-comic-page-tracker">
+            <span class="page-badge current">PAGE 01</span>
+            <span class="page-badge locked" id="page2TeaserBadge" style="display: none;">PAGE 02 &#x1F512;</span>
+          </div>
         </div>
       </div>
 
@@ -160,10 +168,13 @@
                 </div>
 
                 <div class="boss-encounter-status" id="bossEncounterStatus">
-                  <div class="comic-stamp boss-stamp">
+                  <div class="comic-stamp boss-stamp" id="bossStampLocked">
                     &#x1F512; CLASSIFIED BOSS ENCOUNTER<br>
                     <small>DEFEAT MISSIONS 01 &amp; 02 TO CHALLENGE</small>
                   </div>
+                  <button id="startLevel3Btn" class="comic-btn play-btn pulse-glow" style="display:none; margin-top: 12px; background: #FF2A4D; border-color: #FFE600;">
+                    <span class="btn-icon">&#x2694;&#xFE0F;</span> BATTLE BLACK BOSS <span class="btn-icon">&#x2694;&#xFE0F;</span>
+                  </button>
                 </div>
 
                 <!-- Plot twist reveal (reveals White Boss when Black Boss is defeated) -->
@@ -184,7 +195,7 @@
         <div><span>[WASD]</span> MOVE</div>
         <div><span>[MOUSE]</span> AIM &amp; SHOOT</div>
         <div><span>[1-6 / Q-E / SCROLL]</span> LASER COLOR</div>
-        <div><span>[SPACE / RMB]</span> DASH</div>
+        <!-- <div><span>[SPACE / RMB]</span> DASH</div> -->
         <div><span>[F]</span> FULLSCREEN</div>
         <div><span>[M]</span> AUDIO</div>
       </div>
@@ -290,10 +301,11 @@
     <!-- Interactive Noobi-Wan Instruction Overlay Modal -->
     <div id="tutorialModal" class="noobi-instruction-overlay">
       <div class="noobi-scene-wrap">
-        <img src="assets/comic_art/noobi_wan_instructions.png" alt="Master Noobi-Wan Instructions" class="noobi-art-img">
+        <img src="assets/noobi/noobi_wan_instructions.png" alt="Master Noobi-Wan Instructions" class="noobi-art-img">
         
         <div class="noobi-box-header">
-          <span class="noobi-intel-badge">&#x26A1; JEDI MASTER INTEL</span>
+          <span class="noobi-intel-badge" id="tutorialBadge">&#x26A1; JEDI MASTER INTEL</span>
+          <span id="tutorialCardTracker" class="noobi-card-tracker">CARD 01 / 06</span>
           <h3 id="tutorialTitle" class="noobi-instruction-title">MISSION BRIEFING</h3>
         </div>
 
@@ -303,8 +315,14 @@
           </div>
           
           <div class="noobi-box-footer">
-            <div id="tutorialKeyHint" class="noobi-key-hint">PRESS [SPACE] OR [ENTER] TO PROCEED</div>
-            <button id="tutorialDismissBtn" class="noobi-continue-btn">CONTINUE MISSION &#x25B6;</button>
+            <div class="noobi-footer-left">
+              <div id="tutorialDots" class="noobi-dots-wrap"></div>
+              <div id="tutorialKeyHint" class="noobi-key-hint">PRESS [SPACE] OR [ENTER] TO PROCEED</div>
+            </div>
+            <div class="noobi-btn-group">
+              <button id="tutorialSkipBtn" class="noobi-skip-btn" title="Skip this tutorial sequence">SKIP &#x23ED;</button>
+              <button id="tutorialDismissBtn" class="noobi-continue-btn">CONTINUE NOOBI-WAN &#x25B6;</button>
+            </div>
           </div>
         </div>
       </div>

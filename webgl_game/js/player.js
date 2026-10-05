@@ -5,12 +5,14 @@
  */
 
 class Player {
-  constructor(x = 1352, y = 1502) {
+  constructor(x = 856, y = 273) {
     this.x = x;
     this.y = y;
     this.z = 0;
-    this.radius = 20;
-    this.bodyRadius = 24; // Full body width radius
+    this.radius = 14; // Solid ground body collision radius
+    this.bodyRadius = 15; // Full body laser hit capsule radius
+    this.spriteWidth = 50;
+    this.spriteHeight = 50;
     this.speed = window.LightWars.GAME_CONFIG.playerSpeed;
     this.alive = true;
 
@@ -32,7 +34,7 @@ class Player {
     };
 
     // Active color selection
-    this.colorOrder = ['RED', 'GREEN', 'BLUE', 'CYAN', 'MAGENTA', 'YELLOW'];
+    this.colorOrder = ['RED', 'GREEN', 'BLUE', 'CYAN', 'MAGENTA', 'YELLOW', 'WHITE'];
     this.activeColorIndex = 0; // Starts with RED
 
     // Shooting
@@ -40,7 +42,8 @@ class Player {
     this.shootFaceTimer = 0;
     this.aimAngle = 0;
 
-    // Dash
+    // Dash (Unlocked after destroying the Black Barrel at end of Level 1)
+    this.dashUnlocked = false;
     this.isDashing = false;
     this.dashTimer = 0;
     this.dashCooldown = 0;
@@ -104,12 +107,12 @@ class Player {
     return (this.ammo[colorId] !== undefined) && (this.ammo[colorId] < this.maxAmmo);
   }
 
-  // Whole-body vertical capsule hitbox from feet (y - 10) to head (y - 110) with sweep support
+  // Whole-body vertical capsule hitbox from feet (y - 4) to head (y - 44) with sweep support
   checkLaserHit(laser) {
     if (!this.alive) return false;
-    const clampedY = Math.max(this.y - 110, Math.min(this.y - 10, laser.y));
+    const clampedY = Math.max(this.y - 44, Math.min(this.y - 4, laser.y));
     const dist = Math.hypot(laser.x - this.x, laser.y - clampedY);
-    const hitRadius = (this.bodyRadius || 24) + laser.radius;
+    const hitRadius = (this.bodyRadius || 15) + laser.radius;
     if (dist < hitRadius) return true;
 
     // Check continuous sweep segment from prevX, prevY to laser.x, laser.y
@@ -118,7 +121,7 @@ class Player {
       const dy = laser.y - laser.prevY;
       const segLenSq = dx * dx + dy * dy;
       if (segLenSq > 0.001) {
-        const segClampedY = Math.max(this.y - 110, Math.min(this.y - 10, (laser.prevY + laser.y) / 2));
+        const segClampedY = Math.max(this.y - 44, Math.min(this.y - 4, (laser.prevY + laser.y) / 2));
         const t = Math.max(0, Math.min(1, ((this.x - laser.prevX) * dx + (segClampedY - laser.prevY) * dy) / segLenSq));
         const projX = laser.prevX + t * dx;
         const projY = laser.prevY + t * dy;
@@ -130,21 +133,21 @@ class Player {
     return false;
   }
 
-  // Exact ground-contact-relative blaster muzzle offsets for all 8 directions
+  // Ground-contact-relative blaster muzzle offsets for 1x1 tile size
   static MUZZLE_OFFSETS = {
-    N:  { x: -7.6,  y: -110.0 },
-    NE: { x: 51.6,  y: -90.2 },
-    E:  { x: 56.8,  y: -73.2 },
-    SE: { x: 43.4,  y: -60.9 },
-    S:  { x: 0.0,   y: -35.0 },
-    SW: { x: -44.0, y: -60.9 },
-    W:  { x: -56.8, y: -72.7 },
-    NW: { x: -51.0, y: -89.6 }
+    N:  { x: -2.5, y: -36.0 },
+    NE: { x: 17.0, y: -30.0 },
+    E:  { x: 18.5, y: -24.0 },
+    SE: { x: 14.5, y: -20.0 },
+    S:  { x: 0.0,  y: -12.0 },
+    SW: { x: -14.5, y: -20.0 },
+    W:  { x: -18.5, y: -24.0 },
+    NW: { x: -17.0, y: -30.0 }
   };
 
   getMuzzlePos(dir) {
     const d = dir || this.facingDir || SpriteManager.getDirection8(this.aimAngle);
-    const offset = Player.MUZZLE_OFFSETS[d] || { x: 0, y: -70 };
+    const offset = Player.MUZZLE_OFFSETS[d] || { x: 0, y: -24 };
     return {
       x: this.x + offset.x,
       y: this.y + offset.y,
@@ -164,7 +167,7 @@ class Player {
     this.shootCooldown = window.LightWars.GAME_CONFIG.laserCooldown;
 
     // Face towards the target when shooting
-    const aimAngle = Math.atan2(targetY - (this.y - 70), targetX - this.x);
+    const aimAngle = Math.atan2(targetY - (this.y - 24), targetX - this.x);
     this.facingDir = SpriteManager.getDirection8(aimAngle);
     this.shootFaceTimer = 0.22;
 
@@ -258,8 +261,8 @@ class Player {
     // Aim Angle towards Mouse in World Space
     this.aimAngle = Math.atan2(input.mouseY - this.y, input.mouseX - this.x);
 
-    // Handle Dash
-    if (input.dashRequested && this.dashCooldown <= 0 && !this.isDashing) {
+    // Dash feature (enabled when dashUnlocked is true)
+    if (this.dashUnlocked && input.dashRequested && this.dashCooldown <= 0 && !this.isDashing) {
       input.dashRequested = false;
       this.isDashing = true;
       this.dashTimer = window.LightWars.GAME_CONFIG.playerDashDuration;

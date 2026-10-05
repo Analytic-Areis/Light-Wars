@@ -1,15 +1,32 @@
 /**
- * Light-Wars: Wave Director with Level 1 & Level 2 support
+ * Light-Wars: Wave Director with Levels 1, 2, and 3 Scripts & Narrative Progression
  *
- * LEVEL 1 — CMY only:
- *   Phases 1-4: Cyan, Magenta, Yellow troops only.
- *   NO color-changing mechanism — wrong-color hits just show "NO EFFECT!"
- *   CMY drop orbs (C→Red, M→Green, Y→Blue). Orbs convert to ammo crystals.
+ * LEVEL 1:
+ *   - Exactly 6 enemies: 2 Cyan, 2 Magenta, 2 Yellow.
+ *   - After killing all 6, Master Noobi-Wan explains how to craft different color bullets
+ *     and how to destroy the Black Barrel by firing one bullet of each type (Red, Green, Blue, Cyan, Magenta, Yellow).
+ *   - Spawns the Black Barrel. Player crafts remaining bullets by shooting orbs.
+ *   - Shooting 1 of each of the 6 colors destroys the barrel and unlocks the Dash ability!
  *
- * LEVEL 2 — RGB + Full Chromatic War:
- *   Phases 1-4: Red, Green, Blue troops introduced.
- *   FULL color-changing mechanism ACTIVE (TRANSFORM hits work).
- *   Mixed CMY + RGB battles. Bigger waves.
+ * LEVEL 2:
+ *   - At start, Master Noobi-Wan explains how to use Dash ([SPACE] or [Right Mouse Button]).
+ *   - Phase 1: 3 CMY enemies spawn together (1 Cyan, 1 Magenta, 1 Yellow).
+ *   - Phase 2: After defeating them, 3 RGB enemies spawn (1 Red, 1 Green, 1 Blue).
+ *     Noobi-Wan explains why CMY are easier to beat (enemies follow CMY colors whereas we follow RGB which counters them),
+ *     while RGB enemies stole our technology and are as strong as us, and explains how to counter them (Cyan kills Red, Magenta kills Green, Yellow kills Blue).
+ *   - After defeating them, Level 2 completes.
+ *
+ * LEVEL 3:
+ *   - The Black Boss encounter!
+ *   - Black Boss speaks demeaning words to Luke.
+ *   - Boss spawns with minions of all 6 colors (Cyan, Yellow, Magenta, Red, Green, Blue).
+ *   - Noobi-Wan explains how to defeat the Black Boss: normal enemies take 1 hit, but Black Boss takes 3 hits of WHITE bullets!
+ *     White bullets are synthesized by shooting a complementary wavelength into an orb (e.g. Red into Cyan orb, or Cyan into Red orb, etc.).
+ *     Also warns about the boss's homing black bullets and how to dodge them with skill, range, and dash!
+ *   - MECHANIC: Reality Distortion / Light Physics Inversion!
+ *     Boss shakes left/right at high speed for 1s, then inverts light physics for 10s (weak becomes strong, strong becomes weak: e.g. Cyan now needs Cyan instead of Red).
+ *     Noobi-Wan explains this the first time it happens, and warns that it will trigger periodically every 30s after losing 1 heart.
+ *     When Boss loses another heart (down to 1 HP), Noobi-Wan warns the frequency has increased to every 15s!
  */
 
 class WaveDirector {
@@ -24,188 +41,651 @@ class WaveDirector {
       orbsCrafted: 0,
       shotsFired: 0
     };
+
+    // Tracking for tutorials and boss states
+    this.seenInversionExplanation = false;
+    this.seen15sWarning = false;
+    this.bossRef = null;
+
+    // Level 1: 2-2-2 sequential CYM spawn state
+    this.l1Subwave = 'CYAN'; // 'CYAN' -> 'YELLOW' -> 'MAGENTA' -> done
+
+    // Level 2: C+R -> Y+B -> M+G progression state
+    this.l2PairStep = 0; // 0: C+R, 1: Y+B, 2: M+G
+
+    // Level 3: Replenish cycle & 3-second gap timer
+    this.l3ReplenishPending = false;
+    this.l3ReplenishTimer = 0;
+    this.l3NextBatch = 'RGB'; // 'RGB' or 'CYM'
   }
 
-  // ── LEVEL 1 ────────────────────────────────────────────────────────────────
+  spawnAt(col, row, colorId) {
+    if (this.game.arena && this.game.arena.toScreen) {
+      const pos = this.game.arena.toScreen(col + 0.5, row + 0.5);
+      return this.game.spawnEnemy(pos.x, pos.y, colorId);
+    } else {
+      return this.game.spawnEnemy(col, row, colorId);
+    }
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════════
+  // LEVEL 1: Master Noobi-Wan 10-Card Interactive Tutorial & CMY Infiltration
+  // ═════════════════════════════════════════════════════════════════════════════
 
   startLevel1() {
     this.level = 1;
     this.phase = 1;
     this.cleared = false;
     this.stats = { enemiesKilled: 0, orbsCrafted: 0, shotsFired: 0 };
-    // Disable color-changing for Level 1
     this.game.colorChangingEnabled = false;
-    this.initL1Phase1();
-  }
+    this.l1Subwave = 'CYAN';
 
-  initL1Phase1() {
-    this.phase = 1;
     this.game.ui.setObjective(
-      "PHASE 1 — CYAN INFILTRATORS",
-      "Use RED laser [1] to destroy Cyan troops! Cyan troops drop Red Orbs."
+      "LEVEL 1 — CMY INFILTRATION",
+      "Eliminate the 2 CYAN troops with RED [1]!"
     );
-    this.game.spawnEnemy(2741, 1213, 'CYAN');
-    this.game.spawnEnemy(3431, 1530, 'CYAN');
+
+    // Initial 6 Tutorial Cards from Master Noobi-Wan
+    const startCards = [
+      {
+        id: 'l1_card1',
+        tag: 'TRANSMISSION // 01',
+        tracker: 'CARD 01 / 06',
+        step: 1,
+        totalSteps: 6,
+        title: 'HI FLUKE! THE BLACK BOSS AWAITS',
+        message:
+          'Greetings, <b>Fluke</b>! Master <b>NOOBI-WAN</b> contacting you across the stars.<br><br>' +
+          'Listen closely: your ultimate mission is to infiltrate the Imperial flagship and <b>kill the Black Boss in the space ship</b>!<br>' +
+          'He rules from the dark void, devouring all visible light in the galaxy. Only you can ignite the stars once more!',
+        btnText: 'CONTINUE NOOBI-WAN ▶'
+      },
+      {
+        id: 'l1_card2',
+        tag: 'TUTORIAL // 02',
+        tracker: 'CARD 02 / 06',
+        step: 2,
+        totalSteps: 6,
+        title: "NOOBI-WAN'S TRAINING GROUNDS",
+        message:
+          '<b>This level is the tutorial for you!</b> Before you face the deep void, I will give you a tutorial on the ancient laws of chromatic warfare.<br><br>' +
+          'Take a breath, steady your blasters, and follow my guidance step by step!',
+        btnText: 'CONTINUE NOOBI-WAN ▶'
+      },
+      {
+        id: 'l1_card3',
+        tag: 'LIGHT CURSE // 03',
+        tracker: 'CARD 03 / 06',
+        step: 3,
+        totalSteps: 6,
+        title: 'THE CURSE OF THE LIGHT',
+        message:
+          'All imperial combatants are bound by <b>THE LIGHT CURSE</b>!<br><br>' +
+          'The curse shields them against ordinary attacks: <b>ENEMIES ONLY DIE TO THEIR CONTRARY (COMPLEMENTARY) COLOUR</b>!<br><br>' +
+          '• <span class="noobi-hl cyan">CYAN TROOPS</span> &rarr; Die ONLY to <span class="noobi-hl red">RED LASER [1]</span><br>' +
+          '• <span class="noobi-hl magenta">MAGENTA TROOPS</span> &rarr; Die ONLY to <span class="noobi-hl green">GREEN LASER [2]</span><br>' +
+          '• <span class="noobi-hl yellow">YELLOW TROOPS</span> &rarr; Die ONLY to <span class="noobi-hl blue">BLUE LASER [3]</span><br><br>' +
+          'Shooting them with matching or non-contrary colors deals no damage!',
+        btnText: 'CONTINUE NOOBI-WAN ▶'
+      },
+      {
+        id: 'l1_card4',
+        tag: 'CONTRARY ESSENCE // 04',
+        tracker: 'CARD 04 / 06',
+        step: 4,
+        totalSteps: 6,
+        title: 'CONTRARY ESSENCE & ORBS',
+        message:
+          'Because of this curse, <b>aspects of that contrary colour are trapped within them</b>!<br><br>' +
+          'When you destroy an enemy, that contrary essence destabilizes and is <b>DROPPED INTO ORBS</b> on the deck:<br><br>' +
+          '• Eliminating <span class="noobi-hl cyan">Cyan</span> drops a <span class="noobi-hl red">RED ORB</span><br>' +
+          '• Eliminating <span class="noobi-hl magenta">Magenta</span> drops a <span class="noobi-hl green">GREEN ORB</span><br>' +
+          '• Eliminating <span class="noobi-hl yellow">Yellow</span> drops a <span class="noobi-hl blue">BLUE ORB</span><br><br>' +
+          'These orbs hold the secret to forging secondary ammunition!',
+        btnText: 'CONTINUE NOOBI-WAN ▶'
+      },
+      {
+        id: 'l1_card5',
+        tag: 'SANCTUARY // 05',
+        tracker: 'CARD 05 / 06',
+        step: 5,
+        totalSteps: 6,
+        title: 'SPAWN POINT REFILL & HEAL',
+        message:
+          'Remember this survival rule, Fluke: <b>when you are at the spawn point, your RGB shots will refill and heal</b>!<br><br>' +
+          'The glowing <b>White Sanctuary</b> in the center chamber radiates pure restorative light. Step onto it anytime to reload your Red, Green, and Blue blasters and mend your health hearts!',
+        btnText: 'CONTINUE NOOBI-WAN ▶'
+      },
+      {
+        id: 'l1_card6',
+        tag: 'FIRST STRIKE // 06',
+        tracker: 'CARD 06 / 06',
+        step: 6,
+        totalSteps: 6,
+        title: '2 CYAN TROOPS INCOMING!',
+        message:
+          'Battle begins now, Fluke! <b>2 Cyan troops are going to come</b> right now into the corridor! Select your <span class="noobi-hl red">RED LASER [1]</span> and kill them!<br><br>' +
+          '<div class="noobi-tip-box">💡 <b>TIP:</b> Every bot contains some visible essence of their contrary colour on them — watch for the red energy core glowing on their chest and armor!</div>',
+        btnText: 'FIGHT CYAN TROOPS! ⚔️'
+      }
+    ];
+
+    // Spawn the 2 Cyan enemies
+    this.spawnAt(11, 4, 'CYAN');
+    this.spawnAt(6, 13, 'CYAN');
     this.enemiesRemainingInPhase = 2;
 
-    if (this.game.showStopTutorial) {
+    if (this.game.showTutorialSequence) {
       setTimeout(() => {
-        this.game.showStopTutorial(
-          'l1_cyan_intro',
-          'TARGET IN SIGHT: CYAN TROOP!',
-          'Notice the troop ahead wearing a <span class="noobi-hl cyan">CYAN</span> headband!<br><br>' +
-          '• Cyan is vulnerable to its complementary wavelength: <span class="noobi-hl red">RED</span>.<br>' +
-          '• Press <span class="noobi-key">[1]</span> to select <span class="noobi-hl red">RED LASER</span> and fire directly at them!<br>' +
-          '• Firing the wrong color will have <b>NO EFFECT</b>.'
-        );
-      }, 400);
+        this.game.showTutorialSequence(startCards);
+      }, 150);
     }
   }
 
-  initL1Phase2() {
-    this.phase = 2;
-    this.game.ui.setObjective(
-      "PHASE 2 — MAGENTA TROOPERS",
-      "Use GREEN laser [2] to destroy Magenta troops! Magenta troops drop Green Orbs."
-    );
-    this.game.spawnEnemy(3937, 1870, 'MAGENTA');
-    this.game.spawnEnemy(2260, 1637, 'MAGENTA');
-    this.enemiesRemainingInPhase = 2;
+  showL1Card7() {
+    const card7 = [
+      {
+        id: 'l1_card7',
+        tag: 'REINFORCEMENTS // 07',
+        tracker: 'CARD 07 / 10',
+        step: 7,
+        totalSteps: 10,
+        title: 'REPEAT FOR MAGENTA & YELLOW!',
+        message:
+          'Outstanding shooting, Fluke! The 2 Cyan scouts are eliminated, leaving 2 Red orbs on the deck.<br><br>' +
+          'Now <b>REPEAT THE SAME FOR MAGENTA AND YELLOW</b>!<br><br>' +
+          '• Destroy <span class="noobi-hl magenta">MAGENTA TROOPS</span> with <span class="noobi-hl green">GREEN LASER [2]</span> (notice their glowing green essence!)<br>' +
+          '• Destroy <span class="noobi-hl yellow">YELLOW TROOPS</span> with <span class="noobi-hl blue">BLUE LASER [3]</span> (notice their glowing blue essence!)<br><br>' +
+          'Eliminate them to harvest their Green and Blue energy orbs!',
+        btnText: 'FIGHT REINFORCEMENTS! ⚔️',
+        onDismiss: () => {
+          this.spawnL1MagentaYellowWave();
+        }
+      }
+    ];
 
+    setTimeout(() => {
+      this.game.showTutorialSequence(card7, () => {
+        this.spawnL1MagentaYellowWave();
+      });
+    }, 600);
+  }
+
+  spawnL1MagentaYellowWave() {
+    if (this.l1Subwave === 'MAGENTA_YELLOW') return; // Guard against duplicate calls
+    this.l1Subwave = 'MAGENTA_YELLOW';
+    this.game.ui.setObjective(
+      "LEVEL 1 — MAGENTA & YELLOW INCOMING",
+      "Defeat Magenta with Green [2], and Yellow with Blue [3]!"
+    );
+
+    if (this.game.particles) {
+      this.game.particles.spawnComicText(this.game.player.x, this.game.player.y - 80, "REINFORCEMENTS!", "#FF2AD4");
+    }
+
+    // Spawn 2 Yellow and 2 Magenta troops
+    this.spawnAt(5, 12, 'YELLOW');
+    this.spawnAt(12, 5, 'YELLOW');
+    this.spawnAt(13, 11, 'MAGENTA');
+    this.spawnAt(7, 4, 'MAGENTA');
+    this.enemiesRemainingInPhase = 4;
+  }
+
+  showL1Cards8to10() {
+    const finalCards = [
+      {
+        id: 'l1_card8',
+        tag: 'SPECTRUM FUSION // 08',
+        tracker: 'CARD 08 / 10',
+        step: 8,
+        totalSteps: 10,
+        title: 'ALL ORB COMBINATIONS OF RGB',
+        message:
+          'Superb combat, Fluke! All imperial scouts are eliminated, leaving <b>RED, GREEN, and BLUE ORBS</b> across the deck!<br><br>' +
+          'Firing your RGB lasers into contrary orbs triggers additive light fusion:<br>' +
+          '<div class="noobi-combos-grid">' +
+            '<div class="combo-row">🔴 <b>Red Laser</b> + 🟢 <b>Green Orb</b> &rarr; <span class="noobi-hl yellow">🟡 YELLOW AMMO [6]</span></div>' +
+            '<div class="combo-row">🔵 <b>Blue Laser</b> + 🟢 <b>Green Orb</b> &rarr; <span class="noobi-hl cyan">💠 CYAN AMMO [4]</span></div>' +
+            '<div class="combo-row">🔵 <b>Blue Laser</b> + 🔴 <b>Red Orb</b> &rarr; <span class="noobi-hl magenta">💖 MAGENTA AMMO [5]</span></div>' +
+          '</div>' +
+          '<div class="noobi-tip-box">💡 Additive symmetry: Green laser into Red orb also yields Yellow!</div>',
+        btnText: 'CONTINUE NOOBI-WAN ▶'
+      },
+      {
+        id: 'l1_card9',
+        tag: 'CMY ARSENAL // 09',
+        tracker: 'CARD 09 / 10',
+        step: 9,
+        totalSteps: 10,
+        title: 'PICK UP BULLETS & USE CMY NOW!',
+        message:
+          'When you shoot an orb with a fusing laser, it shatters into ammo crystals.<br><br>' +
+          '<b>PICK THOSE BULLETS AND YOU CAN USE CMY BULLETS NOW</b>!<br><br>' +
+          '• Press <span class="noobi-key">[4]</span> for <span class="noobi-hl cyan">CYAN LASER</span><br>' +
+          '• Press <span class="noobi-key">[5]</span> for <span class="noobi-hl magenta">MAGENTA LASER</span><br>' +
+          '• Press <span class="noobi-key">[6]</span> for <span class="noobi-hl yellow">YELLOW LASER</span><br><br>' +
+          'Collect the dropped crystals to equip all six wavelengths of the light spectrum!',
+        btnText: 'CONTINUE NOOBI-WAN ▶'
+      },
+      {
+        id: 'l1_card10',
+        tag: 'SECRET SURPRISE // 10',
+        tracker: 'CARD 10 / 10',
+        step: 10,
+        totalSteps: 10,
+        title: 'HIT THE BOX TO UNLOCK SURPRISE!',
+        message:
+          'Look ahead! A reinforced armored <b>BLACK BOX</b> (The Black Barrel) has materialized in the chamber!<br><br>' +
+          '<b>HIT THE BOX WITH ALL COLOURS TO UNLOCK A SURPRISE!</b><br><br>' +
+          'Fire <b>one bullet of each of the 6 colors</b> into it:<br>' +
+          '<div class="noobi-color-pips-preview">' +
+            '<span style="color:#FF2A4D;">● RED [1]</span>' +
+            '<span style="color:#22E058;">● GREEN [2]</span>' +
+            '<span style="color:#2A85FF;">● BLUE [3]</span>' +
+            '<span style="color:#00F0FF;">● CYAN [4]</span>' +
+            '<span style="color:#FF2AD4;">● MAGENTA [5]</span>' +
+            '<span style="color:#FFE600;">● YELLOW [6]</span>' +
+          '</div>' +
+          'Watch the 6 illuminated color pips above the box light up. Strike it with all 6 colors to claim your secret surprise power!',
+        btnText: 'UNLOCK THE SURPRISE! 🎁',
+        onDismiss: () => {
+          this.spawnBlackBarrelChallenge();
+        }
+      }
+    ];
+
+    setTimeout(() => {
+      this.game.showTutorialSequence(finalCards, () => {
+        this.spawnBlackBarrelChallenge();
+      });
+    }, 600);
+  }
+
+  spawnBlackBarrelChallenge() {
+    if (this.phase === 'BLACK_BARREL') return;
+    this.phase = 'BLACK_BARREL';
+    this.game.ui.setObjective(
+      "SPECIAL OBJECTIVE — DESTROY THE BLACK BOX!",
+      "Synthesize all 6 colors and hit the box with all colors to unlock the surprise!"
+    );
+
+    const barrelPos = (this.game.arena && this.game.arena.toScreen)
+      ? this.game.arena.toScreen(10.5, 8.5)
+      : { x: 2688, y: 1400 };
+
+    const blackBarrel = new window.LightWars.BlackBarrel(barrelPos.x, barrelPos.y);
+    this.game.barrels.push(blackBarrel);
+
+    if (this.game.particles) {
+      this.game.particles.spawnComicText(barrelPos.x, barrelPos.y - 120, "BLACK BOX SPAWNED!", "#FFE600");
+    }
+  }
+
+  onBlackBarrelDestroyed() {
+    this.cleared = true;
     if (this.game.showStopTutorial) {
       this.game.showStopTutorial(
-        'l1_magenta_intro',
-        'NEW ENEMY: MAGENTA TROOPER!',
-        'Troops in <span class="noobi-hl magenta">MAGENTA</span> headbands have entered the arena!<br><br>' +
-        '• Magenta is complementary to <span class="noobi-hl green">GREEN</span>.<br>' +
-        '• Press <span class="noobi-key">[2]</span> to equip your <span class="noobi-hl green">GREEN LASER</span> and neutralize them!'
+        'l1_dash_unlocked',
+        'SURPRISE UNLOCKED: DASH ABILITY!',
+        'SPLENDID WORK, FLUKE! The Black Box has shattered and released its contained power: <b>THE DASH ABILITY</b>!<br><br>' +
+        '• Press <span class="noobi-key">[SPACE]</span> or <span class="noobi-key">[RMB]</span> to warp through danger at high speed!<br><br>' +
+        'You have mastered the foundations of the chromatic spectrum. Prepare yourself—the war escalates!',
+        {
+          badge: '⚡ ABILITY UNLOCKED',
+          btnText: 'COMPLETE LEVEL 1! 🏆'
+        }
       );
     }
+    setTimeout(() => {
+      this.game.onLevelComplete(1);
+    }, 1800);
   }
 
-  initL1Phase3() {
-    this.phase = 3;
-    this.game.ui.setObjective(
-      "PHASE 3 — YELLOW SQUADRON",
-      "Use BLUE laser [3] to eliminate Yellow troops! Yellow troops drop Blue Orbs."
-    );
-    this.game.spawnEnemy(2046, 2117, 'YELLOW');
-    this.game.spawnEnemy(3556, 2372, 'YELLOW');
-    this.enemiesRemainingInPhase = 2;
-
-    if (this.game.showStopTutorial) {
-      this.game.showStopTutorial(
-        'l1_yellow_intro',
-        'NEW ENEMY: YELLOW TROOPER!',
-        '<span class="noobi-hl yellow">YELLOW</span> troopers are advancing!<br><br>' +
-        '• Yellow is complementary to <span class="noobi-hl blue">BLUE</span>.<br>' +
-        '• Press <span class="noobi-key">[3]</span> to equip your <span class="noobi-hl blue">BLUE LASER</span> and shoot them down!'
-      );
-    }
-  }
-
-  initL1Phase4() {
-    this.phase = 4;
-    this.game.ui.setObjective(
-      "FINAL PHASE — CMY TRIAD ASSAULT!",
-      "Cyan, Magenta & Yellow attack together! Use the RECHARGE STATION to stay armed!"
-    );
-    this.game.spawnEnemy(2741, 1213, 'CYAN');
-    this.game.spawnEnemy(3556, 2372, 'MAGENTA');
-    this.game.spawnEnemy(3015, 2632, 'YELLOW');
-    this.game.spawnEnemy(2469, 2413, 'CYAN');
-    this.game.spawnEnemy(2046, 2117, 'MAGENTA');
-    this.enemiesRemainingInPhase = 5;
-  }
-
-  // ── LEVEL 2 ────────────────────────────────────────────────────────────────
+  // ═════════════════════════════════════════════════════════════════════════════
+  // LEVEL 2: Complement Pairs Progression (Cyan+Red -> Yellow+Blue -> Magenta+Green)
+  // ═════════════════════════════════════════════════════════════════════════════
 
   startLevel2() {
     this.level = 2;
     this.phase = 1;
     this.cleared = false;
     this.stats = { enemiesKilled: 0, orbsCrafted: 0, shotsFired: 0 };
-    // Enable color-changing for Level 2
     this.game.colorChangingEnabled = true;
-    this.initL2Phase1();
+    this.l2PairStep = 0;
+
+    // Start with Noobi-Wan explaining Dash & Complementary pairings
+    if (this.game.showStopTutorial) {
+      setTimeout(() => {
+        this.game.showStopTutorial(
+          'l2_dash_explanation',
+          'MASTER NOOBI-WAN: COMPLEMENTARY PAIRS & DASH',
+          'Welcome to Level 2, Fluke!<br><br>' +
+          '• <b>USING YOUR NEW DASH:</b><br>' +
+          'Press <span class="noobi-key">[SPACE]</span> or <span class="noobi-key">[RIGHT MOUSE BUTTON]</span> to execute a high-speed dash!<br><br>' +
+          '• <b>COMPLEMENTARY PAIR BATTLES:</b><br>' +
+          'Enemies are now attacking in complementary pairs! First: <span class="noobi-hl cyan">CYAN</span> and its complement <span class="noobi-hl red">RED</span>!<br>' +
+          'Eliminate Cyan with Red laser [1] to harvest Red orbs, then synthesize Cyan ammo [4] to eliminate Red!'
+        );
+      }, 200);
+    }
+
+    this.spawnL2Pair1();
   }
 
-  initL2Phase1() {
+  spawnL2Pair1() {
+    this.l2PairStep = 0;
+    this.game.ui.setObjective(
+      "LEVEL 2 — PAIR 1: CYAN & RED",
+      "Defeat Cyan (with Red [1]) and Red (with Cyan [4])!"
+    );
+
+    this.spawnAt(11, 4, 'CYAN');
+    this.spawnAt(13, 3, 'RED');
+    this.enemiesRemainingInPhase = 2;
+  }
+
+  spawnL2Pair2() {
+    this.l2PairStep = 1;
+    this.game.ui.setObjective(
+      "LEVEL 2 — PAIR 2: YELLOW & BLUE",
+      "Defeat Yellow (with Blue [3]) and Blue (with Yellow [6])!"
+    );
+
+    if (this.game.particles) {
+      this.game.particles.spawnComicText(this.game.player.x, this.game.player.y - 80, "YELLOW + BLUE INCOMING!", "#FFE600");
+    }
+
+    this.spawnAt(5, 12, 'YELLOW');
+    this.spawnAt(14, 13, 'BLUE');
+    this.enemiesRemainingInPhase = 2;
+  }
+
+  spawnL2Pair3() {
+    this.l2PairStep = 2;
+    this.game.ui.setObjective(
+      "LEVEL 2 — PAIR 3: MAGENTA & GREEN",
+      "Defeat Magenta (with Green [2]) and Green (with Magenta [5])!"
+    );
+
+    if (this.game.particles) {
+      this.game.particles.spawnComicText(this.game.player.x, this.game.player.y - 80, "MAGENTA + GREEN INCOMING!", "#FF2AD4");
+    }
+
+    this.spawnAt(14, 11, 'MAGENTA');
+    this.spawnAt(4, 13, 'GREEN');
+    this.enemiesRemainingInPhase = 2;
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════════
+  // LEVEL 3: The Black Boss & Alternating 3-Minion Waves (CYM <-> RGB)
+  // ═════════════════════════════════════════════════════════════════════════════
+
+  startLevel3() {
+    this.level = 3;
+    this.phase = 1;
+    this.cleared = false;
+    this.stats = { enemiesKilled: 0, orbsCrafted: 0, shotsFired: 0 };
+    this.game.colorChangingEnabled = true;
+    this.seenInversionExplanation = false;
+    this.seen15sWarning = false;
+    this.l3ReplenishPending = false;
+    this.l3ReplenishTimer = 0;
+    this.l3NextBatch = 'RGB';
+
+    if (this.game.showStopTutorial) {
+      setTimeout(() => {
+        this.game.showStopTutorial(
+          'l3_boss_taunt',
+          'THE BLACK BOSS: "PALE LITTLE INSECT..."',
+          '<div style="color: #FF4D66; font-style: italic; font-size: 15px; border-left: 3px solid #A020F0; padding-left: 10px;">' +
+          '&ldquo;Is this the so-called savior of the light? A pathetic, flickering candle wandering into my infinite abyss?<br><br>' +
+          'You know nothing of true power, Fluke. Your colors are toys. I will devour your little photons and snuff out your soul like an insignificant ember!&rdquo;' +
+          '</div>'
+        );
+
+        setTimeout(() => {
+          this.initL3BossBattle();
+        }, 300);
+      }, 200);
+    } else {
+      this.initL3BossBattle();
+    }
+  }
+
+  initL3BossBattle() {
     this.phase = 1;
     this.game.ui.setObjective(
-      "LEVEL 2 — RED LEGION ARRIVES!",
-      "Use CYAN laser [4] to kill Red troops. Wrong color? They TRANSFORM! Green→Yellow, Blue→Magenta."
+      "LEVEL 3 — THE BLACK BOSS SHOWDOWN",
+      "Defeat the initial CYM triad, synthesize WHITE ammo, and strike the Black Boss!"
     );
-    this.game.spawnEnemy(2350, 1300, 'RED');
-    this.game.spawnEnemy(2400, 1720, 'RED');
-    this.game.spawnEnemy(2800, 1500, 'RED');
+
+    // Initial spawn: CYM trio
+    this.spawnAt(11, 4, 'CYAN');
+    this.spawnAt(13, 5, 'YELLOW');
+    this.spawnAt(14, 11, 'MAGENTA');
+
+    // Spawn the Black Boss at upper center dais
+    const bossPos = (this.game.arena && this.game.arena.toScreen)
+      ? this.game.arena.toScreen(10.5, 6.5)
+      : { x: 2688, y: 1100 };
+    this.bossRef = this.game.spawnBoss(bossPos.x, bossPos.y);
+
     this.enemiesRemainingInPhase = 3;
+    this.l3NextBatch = 'RGB';
+
+    // Noobi-Wan tactical briefing for Black Boss & White Bullet synthesis
+    if (this.game.showStopTutorial) {
+      setTimeout(() => {
+        this.game.showStopTutorial(
+          'l3_noobi_boss_guide',
+          'MASTER NOOBI-WAN: HOW TO DEFEAT THE BLACK BOSS',
+          'Do not let his dark words shake your spirit, Fluke! Here is how to conquer the Void:<br><br>' +
+          '• <b>BLACK BOSS TAKES 3 HITS OF WHITE BULLETS:</b><br>' +
+          'Normal enemies fall in 1 hit, but the Black Boss requires <b>3 hits of pure WHITE LASER</b>.<br><br>' +
+          '• <b>HOW TO CREATE WHITE BULLETS:</b><br>' +
+          'Shoot the <b>COMPLEMENTARY</b> color into an orb!<br>' +
+          '&nbsp;&nbsp;&bull; Shoot <span class="noobi-hl red">RED laser</span> into a <span class="noobi-hl cyan">CYAN orb</span> (or Cyan into Red orb)<br>' +
+          '&nbsp;&nbsp;&bull; Shoot <span class="noobi-hl green">GREEN laser</span> into a <span class="noobi-hl magenta">MAGENTA orb</span> (or Magenta into Green orb)<br>' +
+          '&nbsp;&nbsp;&bull; Shoot <span class="noobi-hl blue">BLUE laser</span> into a <span class="noobi-hl yellow">YELLOW orb</span> (or Yellow into Blue orb)<br>' +
+          'Complementary fusion generates <b>WHITE AMMO [7]</b> crystals!<br><br>' +
+          '• <b>HOMING BLACK BULLETS & REALITY INVERSION:</b><br>' +
+          'The Black Boss fires tracking void bullets (1.5s lifetime) and shifts reality — when inverted, he is <b>completely INVULNERABLE</b>!'
+        );
+      }, 400);
+    }
   }
 
-  initL2Phase2() {
-    this.phase = 2;
-    this.game.ui.setObjective(
-      "PHASE 2 — GREEN CORPS ASSAULT!",
-      "Use MAGENTA laser [5] to kill Green troops. Red→Yellow, Blue→Cyan if wrong!"
-    );
-    this.game.spawnEnemy(2850, 1450, 'GREEN');
-    this.game.spawnEnemy(2950, 1680, 'GREEN');
-    this.game.spawnEnemy(2600, 1550, 'GREEN');
-    this.enemiesRemainingInPhase = 3;
+  scheduleL3Replenish(nextType) {
+    this.l3NextBatch = nextType;
+    this.l3ReplenishTimer = 3.0; // Exact 3-second gap
+    this.l3ReplenishPending = true;
+
+    if (this.game.particles && this.game.player) {
+      this.game.particles.spawnComicText(
+        this.game.player.x,
+        this.game.player.y - 70,
+        `${nextType} INCOMING IN 3s!`,
+        nextType === 'RGB' ? '#FF2A4D' : '#00F0FF'
+      );
+    }
   }
 
-  initL2Phase3() {
-    this.phase = 3;
-    this.game.ui.setObjective(
-      "PHASE 3 — BLUE LEGION ADVANCES!",
-      "Use YELLOW laser [6] to kill Blue troops. Red→Magenta, Green→Cyan if wrong!"
-    );
-    this.game.spawnEnemy(2700, 1400, 'BLUE');
-    this.game.spawnEnemy(3100, 1600, 'BLUE');
-    this.game.spawnEnemy(2900, 1750, 'BLUE');
-    this.enemiesRemainingInPhase = 3;
+  spawnL3MinionSet(setType) {
+    const minionCoords = [
+      { col: 11, row: 4 },
+      { col: 14, row: 11 },
+      { col: 5, row: 12 }
+    ];
+
+    if (setType === 'RGB') {
+      const rgbColors = ['RED', 'GREEN', 'BLUE'];
+      for (let i = 0; i < 3; i++) {
+        const c = minionCoords[i];
+        this.spawnAt(c.col, c.row, rgbColors[i]);
+      }
+      this.enemiesRemainingInPhase = 3;
+      this.game.ui.setObjective(
+        "LEVEL 3 — RGB REINFORCEMENTS",
+        "Counter the 3 RGB troops (Red, Green, Blue)!"
+      );
+      if (this.game.particles) {
+        this.game.particles.spawnComicText(this.game.player.x, this.game.player.y - 80, "RGB LEGION ARRIVED!", "#FF2A4D");
+      }
+    } else {
+      const cymColors = ['CYAN', 'YELLOW', 'MAGENTA'];
+      for (let i = 0; i < 3; i++) {
+        const c = minionCoords[i];
+        this.spawnAt(c.col, c.row, cymColors[i]);
+      }
+      this.enemiesRemainingInPhase = 3;
+      this.game.ui.setObjective(
+        "LEVEL 3 — CYM REINFORCEMENTS",
+        "Eliminate the 3 CYM troops (Cyan, Yellow, Magenta) to harvest complementary orbs!"
+      );
+      if (this.game.particles) {
+        this.game.particles.spawnComicText(this.game.player.x, this.game.player.y - 80, "CYM TROOPS ARRIVED!", "#00F0FF");
+      }
+    }
   }
 
-  initL2Phase4() {
-    this.phase = 4;
-    this.game.ui.setObjective(
-      "FINAL PHASE — FULL CHROMATIC WARFARE!",
-      "All 6 colors! They TRANSFORM when hit wrong. Use all lasers [1-6] & Recharge Station!"
-    );
-    this.game.spawnEnemy(2200, 1310, 'RED');
-    this.game.spawnEnemy(2150, 1750, 'GREEN');
-    this.game.spawnEnemy(2650, 1450, 'BLUE');
-    this.game.spawnEnemy(2700, 1700, 'CYAN');
-    this.game.spawnEnemy(3150, 1550, 'MAGENTA');
-    this.game.spawnEnemy(3300, 1650, 'YELLOW');
-    this.game.spawnEnemy(2500, 1380, 'RED');
-    this.game.spawnEnemy(2900, 1900, 'GREEN');
-    this.enemiesRemainingInPhase = 8;
+  // Update loop called every frame from game.update(dt)
+  update(dt) {
+    if (this.level === 3 && this.l3ReplenishPending) {
+      this.l3ReplenishTimer -= dt;
+      if (this.l3ReplenishTimer <= 0) {
+        this.l3ReplenishPending = false;
+        this.spawnL3MinionSet(this.l3NextBatch);
+      }
+    }
   }
 
-  // ── Shared phase progression ───────────────────────────────────────────────
+  /**
+   * Called by BlackBoss when his high-speed shaking completes and light inversion activates
+   */
+  onBossPhysicsInversionActivated() {
+    if (!this.seenInversionExplanation && this.game.showStopTutorial) {
+      this.seenInversionExplanation = true;
+      this.game.showStopTutorial(
+        'l3_physics_inversion',
+        'WARNING: REALITY DISTORTION ACTIVE!',
+        'Fluke! Look out! The Black Boss shook reality and <b>CHANGED THE PHYSICS OF LIGHT</b> for the next 10 seconds!<br><br>' +
+        '• <b>THE BLACK BOSS IS INVULNERABLE:</b><br>' +
+        'While inverted, he is protected by a chromatic distortion barrier and cannot be harmed!<br><br>' +
+        '• <b>WEAK IS STRONG & STRONG IS WEAK:</b><br>' +
+        'Enemies now die to their <b>SAME COLOR</b>:<br>' +
+        '&nbsp;&nbsp;&bull; <span class="noobi-hl cyan">CYAN</span> dies to <b>CYAN [4]</b>!<br>' +
+        '&nbsp;&nbsp;&bull; <span class="noobi-hl red">RED</span> dies to <b>RED [1]</b>!<br>' +
+        '&nbsp;&nbsp;&bull; <span class="noobi-hl green">GREEN</span> dies to <b>GREEN [2]</b>, <span class="noobi-hl blue">BLUE</span> dies to <b>BLUE [3]</b>, etc.<br><br>' +
+        'Hold your ground until reality stabilizes!'
+      );
+    }
+  }
+
+  /**
+   * Called when Black Boss takes a white bullet hit
+   * Requirement: boss replenishes all missing enemies in set of 3, then executes invert!
+   */
+  onBossHit(remainingHp) {
+    if (remainingHp <= 0) return;
+
+    // Check currently living minions
+    const livingMinions = this.game.enemies.filter(e => e.alive && !e.isBoss);
+    const livingColors = livingMinions.map(e => e.colorId);
+
+    // Replenish minions: determine if currently fighting RGB or CYM, and replenish missing ones
+    const hasRGB = livingColors.some(c => c === 'RED' || c === 'GREEN' || c === 'BLUE');
+    const targetSet = hasRGB ? ['RED', 'GREEN', 'BLUE'] : ['CYAN', 'YELLOW', 'MAGENTA'];
+    const missingColors = targetSet.filter(c => !livingColors.includes(c));
+
+    const minionCoords = [
+      { col: 11, row: 4 },
+      { col: 14, row: 11 },
+      { col: 5, row: 12 }
+    ];
+
+    if (missingColors.length > 0) {
+      for (let i = 0; i < missingColors.length; i++) {
+        const coord = minionCoords[i % minionCoords.length];
+        this.spawnAt(coord.col, coord.row, missingColors[i]);
+      }
+      this.enemiesRemainingInPhase = targetSet.length;
+      if (this.game.particles) {
+        this.game.particles.spawnComicText(
+          this.bossRef ? this.bossRef.x : this.game.player.x,
+          (this.bossRef ? this.bossRef.y : this.game.player.y) - 100,
+          "MINIONS REPLENISHED!",
+          "#A020F0"
+        );
+      }
+    }
+
+    // Immediately trigger Boss Physics Inversion
+    if (this.bossRef && this.bossRef.alive) {
+      this.bossRef.triggerPhysicsInversion();
+    }
+
+    if (remainingHp === 1 && !this.seen15sWarning && this.game.showStopTutorial) {
+      this.seen15sWarning = true;
+      this.game.showStopTutorial(
+        'l3_boss_last_heart',
+        'CRITICAL ALERT: FINAL HEART!',
+        'The Black Boss is enraged! He only has <b>1 HEART REMAINING</b>!<br><br>' +
+        'Wait for his reality distortion shield to drop, synthesize one final WHITE bullet, and defeat him!'
+      );
+    }
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════════
+  // Shared Defeat Handler
+  // ═════════════════════════════════════════════════════════════════════════════
 
   onEnemyDefeated(enemy) {
     this.stats.enemiesKilled++;
-    this.enemiesRemainingInPhase = Math.max(0, this.enemiesRemainingInPhase - 1);
-
-    if (this.enemiesRemainingInPhase > 0) return;
 
     if (this.level === 1) {
-      if (this.phase === 1) setTimeout(() => this.initL1Phase2(), 1000);
-      else if (this.phase === 2) setTimeout(() => this.initL1Phase3(), 1000);
-      else if (this.phase === 3) setTimeout(() => this.initL1Phase4(), 1200);
-      else if (this.phase === 4) {
-        this.cleared = true;
-        this.game.onLevelComplete(1);
+      this.enemiesRemainingInPhase = Math.max(0, this.enemiesRemainingInPhase - 1);
+      if (this.enemiesRemainingInPhase === 0) {
+        if (this.l1Subwave === 'CYAN') {
+          // 2 Cyan troops defeated -> Trigger Card 7 (Repeat for Magenta & Yellow)
+          this.showL1Card7();
+        } else if (this.l1Subwave === 'MAGENTA_YELLOW') {
+          // Magenta & Yellow troops defeated -> Trigger Cards 8, 9, 10
+          this.showL1Cards8to10();
+        }
       }
     } else if (this.level === 2) {
-      if (this.phase === 1) setTimeout(() => this.initL2Phase2(), 1000);
-      else if (this.phase === 2) setTimeout(() => this.initL2Phase3(), 1000);
-      else if (this.phase === 3) setTimeout(() => this.initL2Phase4(), 1200);
-      else if (this.phase === 4) {
+      this.enemiesRemainingInPhase = Math.max(0, this.enemiesRemainingInPhase - 1);
+      if (this.enemiesRemainingInPhase === 0) {
+        if (this.l2PairStep === 0) {
+          // Cyan + Red defeated -> spawn Yellow + Blue
+          setTimeout(() => this.spawnL2Pair2(), 800);
+        } else if (this.l2PairStep === 1) {
+          // Yellow + Blue defeated -> spawn Magenta + Green
+          setTimeout(() => this.spawnL2Pair3(), 800);
+        } else if (this.l2PairStep === 2) {
+          // Magenta + Green defeated -> Level 2 complete!
+          this.cleared = true;
+          this.game.onLevelComplete(2);
+        }
+      }
+    } else if (this.level === 3) {
+      // If boss dies, level 3 is cleared!
+      if (enemy && enemy.isBoss) {
         this.cleared = true;
-        this.game.onLevelComplete(2);
+        this.game.onLevelComplete(3);
+        return;
+      }
+
+      this.enemiesRemainingInPhase = Math.max(0, this.enemiesRemainingInPhase - 1);
+
+      // Check if all non-boss minions are dead
+      const livingMinions = this.game.enemies.filter(e => e.alive && !e.isBoss);
+      if (livingMinions.length === 0 && !this.l3ReplenishPending) {
+        // Check what died: if the last dead was CMY -> schedule RGB in 3 sec; if RGB -> schedule CYM in 3 sec!
+        const deadColor = enemy ? enemy.colorId : '';
+        const isRGB = (deadColor === 'RED' || deadColor === 'GREEN' || deadColor === 'BLUE');
+        const nextBatch = isRGB ? 'CYM' : 'RGB';
+        this.scheduleL3Replenish(nextBatch);
       }
     }
   }
@@ -217,3 +697,4 @@ class WaveDirector {
 
 window.LightWars = window.LightWars || {};
 window.LightWars.WaveDirector = WaveDirector;
+
