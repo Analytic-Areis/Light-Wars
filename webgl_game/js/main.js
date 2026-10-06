@@ -81,6 +81,8 @@ class LightWarsGame {
       localStorage.removeItem("lightwars_level1_cleared");
       localStorage.removeItem("lightwars_level2_cleared");
       localStorage.removeItem("lightwars_black_boss_defeated");
+      localStorage.removeItem("lightwars_level4_cleared");
+      localStorage.removeItem("lightwars_level5_cleared");
       localStorage.removeItem("lightwars_dash_unlocked");
     } catch (e) {
       console.warn("Storage reset on launch:", e);
@@ -1218,25 +1220,40 @@ class LightWarsGame {
     const btnEl = document.getElementById("tutorialDismissBtn");
     const dotsEl = document.getElementById("tutorialDots");
 
-    const isBossCard = !!(
+    // ── Black Boss card: red/dark theme (original) ───────────────────────────
+    const isBlackBossCard = !!(
       (card.speakerImg &&
         (card.speakerImg.includes("Black Boss") ||
           card.speakerImg.includes("Splash") ||
           card.speakerImg.includes("Fallen"))) ||
       (card.id &&
-        (card.id.includes("boss") ||
-          card.id === "l3_card0" ||
+        (card.id === "l3_card0" ||
           card.id === "l3_card4" ||
-          card.id === "l3_card5")) ||
-      card.isBoss
+          card.id === "l3_card5" ||
+          card.id === "l5_card3"))
     );
 
+    // ── White Boss card: platinum/electric-white theme (Level 5) ─────────────
+    const isWhiteBossCard = !!(
+      card.speakerImg &&
+      card.speakerImg.includes("White Boss") &&
+      card.id !== "l5_card8"
+    );
+
+    // ── Victory card: gold triumphant theme (White Boss defeated) ────────────
+    const isVictoryCard = !!(
+      card.id === "l5_card8" ||
+      (card.badge && card.badge.includes("BOSS DEFEATED"))
+    );
+
+    // Keep old isBossCard flag for legacy code paths
+    const isBossCard =
+      isBlackBossCard || isWhiteBossCard || isVictoryCard || !!card.isBoss;
+
     if (modal) {
-      if (isBossCard) {
-        modal.classList.add("is-boss-card");
-      } else {
-        modal.classList.remove("is-boss-card");
-      }
+      modal.classList.toggle("is-boss-card", isBlackBossCard);
+      modal.classList.toggle("is-white-boss-card", isWhiteBossCard);
+      modal.classList.toggle("is-victory-card", isVictoryCard);
     }
 
     if (badgeEl) {
@@ -1247,9 +1264,14 @@ class LightWarsGame {
     if (titleEl) titleEl.innerHTML = card.title || "MISSION BRIEFING";
     if (msgEl) msgEl.innerHTML = card.message || "";
     if (btnEl) {
-      btnEl.innerHTML =
-        card.btnText || (isBossCard ? "RESPOND! ▶" : "CONTINUE NOOBI-WAN ▶");
-      // Stick strictly with the established color: Yellow for Noobi, Red against Black
+      // Default button text per card type
+      let defaultBtnText;
+      if (isWhiteBossCard) defaultBtnText = "FACE THE BOSS ▶";
+      else if (isBlackBossCard) defaultBtnText = "RESPOND! ▶";
+      else if (isVictoryCard) defaultBtnText = "CLAIM VICTORY ▶";
+      else defaultBtnText = "CONTINUE NOOBI-WAN ▶";
+      btnEl.innerHTML = card.btnText || defaultBtnText;
+      // Clear any inline overrides from previous cards
       btnEl.style.background = "";
       btnEl.style.boxShadow = "";
       btnEl.style.color = "";
@@ -1458,14 +1480,26 @@ class LightWarsGame {
           localStorage.removeItem("lightwars_black_boss_defeated");
         }
 
-        if (this.savedProgressBackup.level4 !== null && this.savedProgressBackup.level4 !== undefined) {
-          localStorage.setItem("lightwars_level4_cleared", this.savedProgressBackup.level4);
+        if (
+          this.savedProgressBackup.level4 !== null &&
+          this.savedProgressBackup.level4 !== undefined
+        ) {
+          localStorage.setItem(
+            "lightwars_level4_cleared",
+            this.savedProgressBackup.level4,
+          );
         } else {
           localStorage.removeItem("lightwars_level4_cleared");
         }
 
-        if (this.savedProgressBackup.level5 !== null && this.savedProgressBackup.level5 !== undefined) {
-          localStorage.setItem("lightwars_level5_cleared", this.savedProgressBackup.level5);
+        if (
+          this.savedProgressBackup.level5 !== null &&
+          this.savedProgressBackup.level5 !== undefined
+        ) {
+          localStorage.setItem(
+            "lightwars_level5_cleared",
+            this.savedProgressBackup.level5,
+          );
         } else {
           localStorage.removeItem("lightwars_level5_cleared");
         }
@@ -1501,6 +1535,9 @@ class LightWarsGame {
     const level4Cleared =
       this.devMode ||
       localStorage.getItem("lightwars_level4_cleared") === "true";
+    const level5Cleared =
+      this.devMode ||
+      localStorage.getItem("lightwars_level5_cleared") === "true";
 
     // Mission 1
     const mission1StatusPill = document.getElementById("mission1StatusPill");
@@ -1566,9 +1603,11 @@ class LightWarsGame {
     if (startLevel4Btn) {
       startLevel4Btn.style.display = isBlackBossDefeated ? "" : "none";
       if (level4Cleared) {
-        startLevel4Btn.innerHTML = '<span class="btn-icon">⚡</span> PLAY LEVEL 4 <span class="btn-icon">⚡</span>';
+        startLevel4Btn.innerHTML =
+          '<span class="btn-icon">⚡</span> PLAY LEVEL 4 <span class="btn-icon">⚡</span>';
       } else {
-        startLevel4Btn.innerHTML = '<span class="btn-icon">⚡</span> PLAY LEVEL 4 <span class="btn-icon">⚡</span>';
+        startLevel4Btn.innerHTML =
+          '<span class="btn-icon">⚡</span> PLAY LEVEL 4 <span class="btn-icon">⚡</span>';
       }
     }
     const mission4StatusPill = document.getElementById("mission4StatusPill");
@@ -1592,9 +1631,7 @@ class LightWarsGame {
     }
 
     // Mission 5
-    const level5Cleared =
-      this.devMode ||
-      localStorage.getItem("lightwars_level5_cleared") === "true";
+    // level5Cleared is defined at the top of the function
     const mission5StatusPill = document.getElementById("mission5StatusPill");
     if (mission5StatusPill) {
       if (level5Cleared) {
@@ -1612,9 +1649,11 @@ class LightWarsGame {
     if (startLevel5Btn) {
       startLevel5Btn.style.display = level4Cleared ? "" : "none";
       if (level5Cleared) {
-        startLevel5Btn.innerHTML = '<span class="btn-icon">⚔️</span> BATTLE WHITE BOSS <span class="btn-icon">⚔️</span>';
+        startLevel5Btn.innerHTML =
+          '<span class="btn-icon">⚔️</span> BATTLE WHITE BOSS <span class="btn-icon">⚔️</span>';
       } else {
-        startLevel5Btn.innerHTML = '<span class="btn-icon">⚔️</span> BATTLE WHITE BOSS <span class="btn-icon">⚔️</span>';
+        startLevel5Btn.innerHTML =
+          '<span class="btn-icon">⚔️</span> BATTLE WHITE BOSS <span class="btn-icon">⚔️</span>';
       }
     }
   }
@@ -1622,6 +1661,7 @@ class LightWarsGame {
   updateComicMenuBossState() {
     // Page 2 only unlocks when Black Boss has actually been defeated in progression
     const isBlackBossDefeated =
+      this.devMode ||
       localStorage.getItem("lightwars_black_boss_defeated") === "true";
     const bossRoleBadge = document.getElementById("bossRoleBadge");
     const bossNameTitle = document.getElementById("bossNameTitle");
@@ -1933,22 +1973,21 @@ class LightWarsGame {
     this._resetGameEntities();
     this.physicsInverted = false;
     if (this.player) {
-      this.player.dashUnlocked  = true;
+      this.player.dashUnlocked = true;
       this.player.invertUnlocked = true;
     }
-    this.unlockHelpCapability('dash');
-    this.unlockHelpCapability('orbCrafting');
-    this.unlockHelpCapability('whiteAmmo');
-    this.unlockHelpCapability('inversion');
-    this.state = 'PLAYING'; // Must be set BEFORE waves.startLevel5 which triggers tutorial
+    this.unlockHelpCapability("dash");
+    this.unlockHelpCapability("orbCrafting");
+    this.unlockHelpCapability("whiteAmmo");
+    this.unlockHelpCapability("inversion");
+    this.state = "PLAYING"; // Must be set BEFORE waves.startLevel5 which triggers tutorial
     if (window.LightWars.sound) {
-      window.LightWars.sound.startMusic('BOSS');
+      window.LightWars.sound.startMusic("BOSS");
     }
-    if (this.waves && typeof this.waves.startLevel5 === 'function') {
+    if (this.waves && typeof this.waves.startLevel5 === "function") {
       this.waves.startLevel5();
     }
   }
-
 
   transitionToPage2() {
     if (this._currentComicPage === 2) return;

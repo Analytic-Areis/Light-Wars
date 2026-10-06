@@ -2353,3 +2353,150 @@ body, html {
 }
 
 
+/* ════════════════════════════════════════════════════════════
+   LEVEL 5 — WHITE BOSS CARD OVERLAYS
+   Distinct platinum / electric-white theme.
+   Uses the same portrait scene wrap but repositions text
+   panels to match the White Boss Armoured portrait framing.
+   ════════════════════════════════════════════════════════════ */
+
+/* ── White Boss card: text-panel geometry ─────────────────── */
+#tutorialModal.is-white-boss-card .noobi-box-header {
+  position: absolute;
+  left: 46%;
+  right: 3%;
+  top: 62%;
+  height: 6.5%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+#tutorialModal.is-white-boss-card .noobi-parchment-box {
+  position: absolute;
+  left: 46%;
+  right: 3%;
+  top: 69.5%;
+  bottom: 9%;
+  padding: 8px 14px 4px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+#tutorialModal.is-white-boss-card .noobi-instruction-body {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: clamp(11.5px, 1.1vw, 13.5px);
+  line-height: 1.36;
+  color: #1A1F30;
+  overflow: hidden;
+  max-height: 100%;
+  padding-right: 6px;
+  margin: 3px 0 2px 0;
+}
+
+#tutorialModal.is-white-boss-card .noobi-box-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 3px;
+  padding-top: 2px;
+  flex-shrink: 0;
+}
+
+#tutorialModal.is-white-boss-card .noobi-footer-left {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+#tutorialModal.is-white-boss-card .noobi-key-hint {
+  font-family: 'Bangers', cursive;
+  font-size: 12px;
+  color: #1A1F30;
+  letter-spacing: 0.8px;
+  font-weight: 700;
+}
+
+/* ── White Boss badge: platinum / electric-white styling ───── */
+#tutorialModal.is-white-boss-card .noobi-intel-badge {
+  background: #1A1F30;
+  color: #FFFFFF;
+  border: 1.5px solid #CCDDFF;
+  box-shadow: 2px 2px 0 #000, 0 0 8px rgba(200, 220, 255, 0.55);
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+  animation: whiteBossBadgePulse 2.4s ease-in-out infinite;
+}
+
+@keyframes whiteBossBadgePulse {
+  0%, 100% { box-shadow: 2px 2px 0 #000, 0 0 6px rgba(200, 220, 255, 0.4); }
+  50%       { box-shadow: 2px 2px 0 #000, 0 0 14px rgba(200, 220, 255, 0.85); }
+}
+
+/* ── White Boss title: electric white text ──────────────────── */
+#tutorialModal.is-white-boss-card .noobi-instruction-title {
+  color: #F0F6FF;
+  text-shadow: 2px 2px 0 #000, 0 0 10px rgba(180, 210, 255, 0.7);
+}
+
+/* ── White Boss continue button: platinum → electric white ──── */
+#tutorialModal.is-white-boss-card .noobi-continue-btn {
+  font-family: 'Bangers', cursive;
+  font-size: clamp(13px, 1.15vw, 15px);
+  letter-spacing: 1px;
+  padding: 4px 14px;
+  color: #0A0D18;
+  background: linear-gradient(180deg, #FFFFFF 0%, #D8E8FF 60%, #B0CCFF 100%);
+  border: 2.5px solid #000;
+  box-shadow: 2.5px 2.5px 0 #3A5FAA, 0 0 10px rgba(180, 210, 255, 0.45);
+  text-shadow: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+#tutorialModal.is-white-boss-card .noobi-continue-btn:hover {
+  transform: translate(-1px, -1px);
+  background: linear-gradient(180deg, #FFFFFF 0%, #E8F0FF 60%, #C4D8FF 100%);
+  box-shadow: 3.5px 3.5px 0 #3A5FAA, 0 0 16px rgba(180, 210, 255, 0.7);
+}
+
+#tutorialModal.is-white-boss-card .noobi-continue-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 #3A5FAA;
+}
+
+/* ── Victory card: defeated White Boss — gold/triumphant theme ─ */
+#tutorialModal.is-victory-card .noobi-intel-badge {
+  background: #0A0D18;
+  color: #FFE600;
+  border: 1.5px solid #FFE600;
+  box-shadow: 2px 2px 0 #FF2A4D, 0 0 10px rgba(255, 230, 0, 0.6);
+  text-shadow: 0 0 8px rgba(255, 230, 0, 0.7);
+  animation: victoryBadgePulse 1.8s ease-in-out infinite;
+}
+
+@keyframes victoryBadgePulse {
+  0%, 100% { box-shadow: 2px 2px 0 #FF2A4D, 0 0 8px rgba(255, 230, 0, 0.4); }
+  50%       { box-shadow: 2px 2px 0 #FF2A4D, 0 0 20px rgba(255, 230, 0, 0.9); }
+}
+
+#tutorialModal.is-victory-card .noobi-continue-btn {
+  color: #000;
+  background: linear-gradient(180deg, #FFE600 0%, #FFCC00 100%);
+  border: 2.5px solid #000;
+  box-shadow: 2.5px 2.5px 0 #FF2A4D;
+  text-shadow: none;
+}
+
+#tutorialModal.is-victory-card .noobi-continue-btn:hover {
+  background: linear-gradient(180deg, #FFF033 0%, #FFD900 100%);
+  box-shadow: 3.5px 3.5px 0 #FF2A4D;
+}
+

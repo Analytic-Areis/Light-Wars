@@ -93,19 +93,27 @@ class Level5Director {
     const cards = [
       {
         id: 'l5_card1',
-        badge: '⚠️ BOSS ENCOUNTER',
+        badge: '⚠️ FINAL BOSS ENCOUNTER',
         isBoss: true,
         speakerImg: L5_WHITE_BOSS_IMG,
         title: 'THE WHITE BOSS',
-        message: "I didn't expect you to come this far, Fluke. This will be the end of your journey and some elevation.",
+        message: `You have come further than I ever anticipated, Fluke.<br>
+          <br>
+          This is where your journey ends — and where you ascend<br>
+          into something <b>far greater than you know</b>.`,
+        btnText: 'FACE THE BOSS ▶',
       },
       {
         id: 'l5_card2',
-        badge: '⚠️ BOSS ENCOUNTER',
+        badge: '⚠️ FINAL BOSS ENCOUNTER',
         isBoss: true,
         speakerImg: L5_WHITE_BOSS_IMG,
         title: 'THE WHITE BOSS',
-        message: "I am going to resurrect my strongest slave to deal with you.",
+        message: `I am the convergence of all light — <b>pure, absolute, unstoppable</b>.<br>
+          <br>
+          But first, let me resurrect my most loyal enforcer.<br>
+          He deserves a second chance to finish what he started.`,
+        btnText: 'WITNESS ▶',
       },
     ];
 
@@ -122,39 +130,58 @@ class Level5Director {
     const cards = [
       {
         id: 'l5_card3',
-        badge: '⚠️ RESURRECTED ENEMY',
+        badge: '💀 RESURRECTED — THE BLACK ENFORCER',
         isBoss: true,
         speakerImg: L5_BLACK_BOSS_IMG,
         title: 'THE BLACK BOSS',
-        message: "I am back and this time I won't disappoint my master.",
+        message: `I am <b>back from the void</b>, Fluke.<br>
+          <br>
+          My master showed me mercy I do not deserve.<br>
+          This time — I will <b>not</b> fail him.`,
+        btnText: 'RESPOND! ▶',
       },
       {
         id: 'l5_card4',
         badge: '⚡ MASTER NOOBI-WAN INTEL',
         speakerImg: L5_NOOBI_IMG,
         title: 'MASTER NOOBI-WAN',
-        message: "Don't worry Fluke — since he was resurrected, he doesn't have the inverted frame power (you acquired it from him) and he has only 1/3 of his health as before.",
+        message: `Do not be rattled, Fluke. He was resurrected — which means he no longer holds the
+          <b>Invert Frame power</b> you took from him, and he returns with only
+          <b>2 hearts</b> this time.`,
+        btnText: 'UNDERSTOOD ▶',
       },
       {
         id: 'l5_card5',
         badge: '⚡ MASTER NOOBI-WAN INTEL',
         speakerImg: L5_NOOBI_IMG,
         title: 'MASTER NOOBI-WAN',
-        message: "The White Boss is <b>invincible</b> normally — but if you use your acquired ability, every bot and boss will die with the <b>same colour</b> laser shot.",
+        message: `The <b>White Boss is invincible in Normal Mode</b>.<br>
+          Use your <b>Invert Frame ability [RMB]</b> — in that inverted state,
+          every enemy including the White Boss dies to the <b>same colour laser</b> they normally wield.`,
+        btnText: 'GOT IT ▶',
       },
       {
         id: 'l5_card6',
         badge: '⚡ MASTER NOOBI-WAN INTEL',
         speakerImg: L5_NOOBI_IMG,
         title: 'MASTER NOOBI-WAN',
-        message: "But there is a catch: in Inverted Mode, the Black Boss will die from a black laser shot — which doesn't exist. So he is <b>invincible in Inverted Mode</b>!",
+        message: `Here is the catch: in <b>Inverted Mode</b>, the Black Boss would only
+          die to a black laser — which does not exist.<br>
+          <br>
+          So the <b>Black Boss is invincible while you are inverted!</b>`,
+        btnText: 'UNDERSTOOD ▶',
       },
       {
         id: 'l5_card7',
         badge: '⚡ MASTER NOOBI-WAN INTEL',
         speakerImg: L5_NOOBI_IMG,
         title: 'MASTER NOOBI-WAN',
-        message: "So use the ability wisely!",
+        message: `<b>Strategy:</b><br>
+          &bull; In <b>Normal Mode</b> — shoot <b>WHITE [7]</b> to damage the Black Boss.<br>
+          &bull; In <b>Inverted Mode [RMB]</b> — shoot <b>WHITE [7]</b> to damage the White Boss.<br>
+          <br>
+          Use the ability <b>wisely</b>. May the light be with you, Fluke.`,
+        btnText: 'FIGHT! ▶',
       },
     ];
 
@@ -164,6 +191,7 @@ class Level5Director {
       this._startFight();
     }
   }
+
 
   // ─── Fight phase ──────────────────────────────────────────────────────────
   _startFight() {
@@ -270,18 +298,26 @@ class Level5Director {
     const cards = [
       {
         id: 'l5_card8',
-        badge: '☠️ BOSS DEFEATED',
+        badge: '☠️ WHITE BOSS DEFEATED',
         isBoss: true,
         speakerImg: L5_WHITE_BOSS_IMG,
         title: 'THE WHITE BOSS',
-        message: "I am genuinely surprised. I didn't know you were this good of a warrior.",
+        message: `I am... <b>genuinely surprised</b>.<br>
+          <br>
+          I did not foresee a warrior of your caliber.<br>
+          Perhaps the light belongs to you after all...`,
+        btnText: 'CLAIM VICTORY ▶',
       },
       {
         id: 'l5_card9',
-        badge: '⚡ MASTER NOOBI-WAN INTEL',
+        badge: '🌟 GALAXY SAVED',
         speakerImg: L5_NOOBI_IMG,
         title: 'MASTER NOOBI-WAN',
-        message: "You have successfully eliminated the bad in this galaxy — but there is so much bad out there in other galaxies…",
+        message: `You have successfully eliminated the darkness in this sector, Fluke!<br>
+          <br>
+          You are a true master of the <b>Chromatic Spectrum</b>.<br>
+          But stay vigilant... there is much more out there in other galaxies.`,
+        btnText: 'COMPLETE JOURNEY ▶',
       },
     ];
 
