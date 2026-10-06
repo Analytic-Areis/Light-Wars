@@ -226,7 +226,7 @@ class Level5Director {
 
     let idx = 0;
     colors.forEach(color => {
-      for (let i = 0; i < 2; i++, idx++) {
+      for (let i = 0; i < 1; i++, idx++) {
         const c = coords[idx] || { col: 12 + idx, row: 13 };
         this.waves.spawnAt(c.col, c.row, color);
       }

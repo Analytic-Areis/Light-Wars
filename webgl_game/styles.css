@@ -2482,6 +2482,46 @@ body, html {
 }
 
 /* ── Victory card: defeated White Boss — gold/triumphant theme ─ */
+#tutorialModal.is-victory-card .noobi-box-header {
+  position: absolute;
+  left: 46%;
+  right: 3%;
+  top: 62%;
+  height: 6.5%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+#tutorialModal.is-victory-card .noobi-parchment-box {
+  position: absolute;
+  left: 46%;
+  right: 3%;
+  top: 69.5%;
+  bottom: 9%;
+  padding: 8px 14px 4px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+#tutorialModal.is-victory-card .noobi-instruction-body {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: clamp(11.5px, 1.1vw, 13.5px);
+  line-height: 1.36;
+  color: #1A1F30;
+  overflow: hidden;
+  max-height: 100%;
+  padding-right: 6px;
+  margin: 3px 0 2px 0;
+}
+
 #tutorialModal.is-victory-card .noobi-intel-badge {
   background: #0A0D18;
   color: #FFE600;
