@@ -976,14 +976,14 @@ window.LightWars.LEVEL1_MAP_CONFIG = {
       "silhouette": [
         [
           788,
-          403
+          446
         ],
         [
-          869,
-          449
+          873,
+          500
         ],
         [
-          869,
+          873,
           560
         ],
         [
@@ -991,12 +991,12 @@ window.LightWars.LEVEL1_MAP_CONFIG = {
           620
         ],
         [
-          707,
+          708,
           560
         ],
         [
-          707,
-          449
+          708,
+          500
         ]
       ]
     }
@@ -1979,14 +1979,14 @@ window.LightWars.LEVEL2_MAP_CONFIG = {
       "silhouette": [
         [
           788,
-          403
+          446
         ],
         [
-          869,
-          449
+          873,
+          500
         ],
         [
-          869,
+          873,
           560
         ],
         [
@@ -1994,12 +1994,12 @@ window.LightWars.LEVEL2_MAP_CONFIG = {
           620
         ],
         [
-          707,
+          708,
           560
         ],
         [
-          707,
-          449
+          708,
+          500
         ]
       ]
     }

@@ -109,6 +109,74 @@ class UIManager {
     }
     ctx.restore();
 
+    // 2b. Ability Indicators (Dash [SPACE], Invert Frame [E])
+    if (player.dashUnlocked || player.invertUnlocked) {
+      ctx.save();
+      // Dash badge to left of ammo bar
+      if (player.dashUnlocked) {
+        const dashBoxW = 90;
+        const dashBoxH = 48;
+        const dashX = startX - dashBoxW - 14;
+        const dashY = startY + (ammoBarHeight - dashBoxH) / 2;
+
+        ctx.fillStyle = 'rgba(15, 18, 30, 0.9)';
+        ctx.strokeStyle = player.dashCooldown > 0 ? '#444C65' : '#00F0FF';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(dashX, dashY, dashBoxW, dashBoxH, 8);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#A0B2DE';
+        ctx.font = 'bold 9px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('[SPACE] DASH', dashX + dashBoxW / 2, dashY + 16);
+
+        ctx.fillStyle = player.dashCooldown > 0 ? '#FF4D66' : '#00F0FF';
+        ctx.font = '900 13px sans-serif';
+        ctx.fillText(player.dashCooldown > 0 ? `${player.dashCooldown.toFixed(1)}s` : 'READY', dashX + dashBoxW / 2, dashY + 36);
+      }
+
+      // Invert Frame badge to right of ammo bar
+      if (player.invertUnlocked) {
+        const invBoxW = 100;
+        const invBoxH = 48;
+        const invX = startX + ammoBarWidth + 14;
+        const invY = startY + (ammoBarHeight - invBoxH) / 2;
+
+        const isCooldown = player.invertCooldown > 0;
+        const isActive = player.invertActiveTimer > 0;
+
+        ctx.fillStyle = 'rgba(15, 18, 30, 0.9)';
+        ctx.strokeStyle = isActive ? '#FF2AD4' : (isCooldown ? '#444C65' : '#A020F0');
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(invX, invY, invBoxW, invBoxH, 8);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#A0B2DE';
+        ctx.font = 'bold 9px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('[E] INVERT FRAME', invX + invBoxW / 2, invY + 16);
+
+        let statusText = 'READY';
+        let statusColor = '#00F0FF';
+        if (isActive) {
+          statusText = `ACTIVE ${Math.ceil(player.invertActiveTimer)}s`;
+          statusColor = '#FF2AD4';
+        } else if (isCooldown) {
+          statusText = `${Math.ceil(player.invertCooldown)}s`;
+          statusColor = '#FF4D66';
+        }
+
+        ctx.fillStyle = statusColor;
+        ctx.font = '900 12px sans-serif';
+        ctx.fillText(statusText, invX + invBoxW / 2, invY + 36);
+      }
+      ctx.restore();
+    }
+
     // 3. Current Objective & Wave Banner (Top Center)
     ctx.save();
     ctx.fillStyle = 'rgba(10, 14, 25, 0.9)';

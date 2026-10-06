@@ -51,6 +51,13 @@ class Player {
     this.dashDirY = 0;
     this.dashGhosts = [];
 
+    // Invert Frame ability (Unlocked after defeating the Black Boss in Level 3)
+    this.invertUnlocked = false;
+    this.invertCooldown = 0;
+    this.invertCooldownMax = 25.0; // 25s timeout
+    this.invertActiveTimer = 0;
+    this.invertDuration = 10.0;
+
     // Movement & Animation
     this.vx = 0;
     this.vy = 0;
@@ -231,6 +238,15 @@ class Player {
     if (this.shootCooldown > 0) this.shootCooldown -= dt;
     if (this.shootFaceTimer > 0) this.shootFaceTimer -= dt;
     if (this.dashCooldown > 0) this.dashCooldown -= dt;
+    if (this.invertCooldown > 0) this.invertCooldown = Math.max(0, this.invertCooldown - dt);
+    if (this.invertActiveTimer > 0) {
+      this.invertActiveTimer -= dt;
+      if (this.invertActiveTimer <= 0) {
+        if (window.game && (!window.game.boss || !window.game.boss.alive || !window.game.boss.isInverted())) {
+          window.game.physicsInverted = false;
+        }
+      }
+    }
 
     // 1. Safety check: ensure player is never pushed or stuck inside a wall
     if (arena && arena.pushOutOfWall) {
@@ -419,6 +435,38 @@ class Player {
         this.refillTimer = 0;
       }
     }
+  }
+
+  triggerInvertFrame(game) {
+    if (!this.invertUnlocked) return false;
+
+    if (this.invertCooldown > 0) {
+      if (game && game.particles) {
+        game.particles.spawnComicText(
+          this.x,
+          this.y - 70,
+          `INVERT TIMEOUT (${Math.ceil(this.invertCooldown)}s)`,
+          '#FF2A4D'
+        );
+      }
+      return false;
+    }
+
+    this.invertCooldown = this.invertCooldownMax;
+    this.invertActiveTimer = this.invertDuration;
+
+    if (game) {
+      game.physicsInverted = true;
+      if (game.camera) game.camera.shake(12);
+      if (game.particles) {
+        game.particles.spawnBurst(this.x, this.y - 20, '#A020F0', 36);
+        game.particles.spawnComicText(this.x, this.y - 80, 'INVERT FRAME ACTIVE!', '#A020F0');
+      }
+      if (window.LightWars.sound) {
+        window.LightWars.sound.playTransform();
+      }
+    }
+    return true;
   }
 
   draw(ctx, spriteManager) {

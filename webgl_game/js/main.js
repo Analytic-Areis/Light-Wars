@@ -118,7 +118,11 @@ class LightWarsGame {
         if (this.player) this.player.selectPrevColor();
       }
       if (e.code === 'KeyE') {
-        if (this.player) this.player.selectNextColor();
+        if (this.player && this.player.invertUnlocked && this.state === 'PLAYING') {
+          this.player.triggerInvertFrame(this);
+        } else if (this.player) {
+          this.player.selectNextColor();
+        }
       }
       if (e.code === 'Space' && this.state === 'PLAYING') {
         this.input.dashRequested = true;
@@ -336,7 +340,8 @@ class LightWarsGame {
     if (pauseRestartBtn) {
       pauseRestartBtn.addEventListener('click', () => {
         this.togglePauseMenu(false);
-        if (this._lastLevel === 2) this.startLevel2();
+        if (this._lastLevel === 3) this.startLevel3();
+        else if (this._lastLevel === 2) this.startLevel2();
         else this.startLevel1();
       });
     }
@@ -758,11 +763,11 @@ class LightWarsGame {
         id: 'inversion',
         minLevel: 3,
         icon: '🔄',
-        name: 'REALITY INVERSION COMBAT',
-        key: 'MATCH ENEMY COLOR',
-        desc: 'When the Black Boss distorts reality, light physics inverts for 10s! <b>Same-color lasers destroy enemies</b> (Cyan kills Cyan, Red kills Red).',
+        name: 'INVERT FRAME ABILITY',
+        key: 'KEY [E]',
+        desc: 'Activate Invert Frame using <b>KEY [E]</b> to reverse light physics for 10s (timeout: 25s)! When inverted, bots can only be destroyed by their matching color lasers, and the Black Boss is invincible.',
         unlocked: !!this.unlockedCapabilities.inversion,
-        lockHint: 'Classified: Encountered in Mission 03.'
+        lockHint: 'Defeat the Black Boss in Mission 03 to acquire.'
       }
     ];
 
@@ -1432,6 +1437,9 @@ class LightWarsGame {
       window.LightWars.occlusion.loadLevelWalls(1, this.arena);
     }
     this._resetGameEntities();
+    if ((this.devMode || localStorage.getItem('lightwars_black_boss_defeated') === 'true') && this.player) {
+      this.player.invertUnlocked = true;
+    }
     this.waves.startLevel1();
     this.state = 'PLAYING';
     if (window.LightWars.sound) {
@@ -1450,6 +1458,9 @@ class LightWarsGame {
     // Inherit unlocked dash if already unlocked (or in Dev Mode)
     if ((this.devMode || localStorage.getItem('lightwars_dash_unlocked') === 'true') && this.player) {
       this.player.dashUnlocked = true;
+    }
+    if ((this.devMode || localStorage.getItem('lightwars_black_boss_defeated') === 'true') && this.player) {
+      this.player.invertUnlocked = true;
     }
     this.unlockHelpCapability('dash');
     this.unlockHelpCapability('orbCrafting');
@@ -1471,6 +1482,9 @@ class LightWarsGame {
     // Inherit unlocked dash if already unlocked
     if (this.player) {
       this.player.dashUnlocked = true;
+      if (this.devMode || localStorage.getItem('lightwars_black_boss_defeated') === 'true') {
+        this.player.invertUnlocked = true;
+      }
     }
     this.unlockHelpCapability('dash');
     this.unlockHelpCapability('orbCrafting');
@@ -2199,6 +2213,20 @@ class LightWarsGame {
     this.particles.draw(this.ctx);
 
     this.camera.restore(this.ctx);
+
+    // Invert Frame visual reality distortion vignette
+    if (this.physicsInverted) {
+      this.ctx.save();
+      const grad = this.ctx.createRadialGradient(
+        this.canvas.width / 2, this.canvas.height / 2, Math.min(this.canvas.width, this.canvas.height) * 0.35,
+        this.canvas.width / 2, this.canvas.height / 2, Math.max(this.canvas.width, this.canvas.height) * 0.75
+      );
+      grad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      grad.addColorStop(1, 'rgba(160, 32, 240, 0.28)');
+      this.ctx.fillStyle = grad;
+      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+      this.ctx.restore();
+    }
 
     // 5. Draw Screenspace HUD
     this.ui.drawHUD(this.ctx, this.canvas.width, this.canvas.height, this.player, this.waves);

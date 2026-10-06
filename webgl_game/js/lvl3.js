@@ -1,13 +1,16 @@
 /**
  * Light-Wars: Level 3 Wave & Script Logic
  *
- * LEVEL 3: The Black Boss & Alternating 3-Minion Waves (CYM <-> RGB)
- * - Black Boss dialogue and taunt
- * - Spawns Black Boss + CYM triad
- * - Master Noobi-Wan guide on White Bullets [7] & Black Boss vulnerability (3 White laser hits)
- * - Alternating 3-minion waves with 3-second gap timer
- * - Boss hit reaction: replenishes minions, triggers light physics inversion
- * - Reality Distortion / Light Physics Inversion mechanics and tutorials
+ * LEVEL 3: The Black Boss & Master Noobi-Wan Cards (1-5)
+ * - Card 1: Noobi-wan teaches how to create white crystals ("Shoot some orb with its contrary-color laser to form white crystals")
+ * - Card 2: Noobi-wan teaches how to defeat the Black Boss ("To defeat the black boss, shoot him with his contrary-color laser")
+ * - Spawns Black Boss + CYM triad; alternating minion waves (CYM <-> RGB)
+ * - Boss hit reaction: replenishes minions, triggers Invert Frame ability
+ * - Card 3: Triggered upon Boss Invert Frame activation ("The black boss has a special ability known as invert frame; when it is turned on, bots can be killed only by the lasers of their color, and the black boss is literally invincible in this state")
+ * - Boss defeated reaction:
+ *   - Card 4: ("By defeating the black boss, you gained his ability to invert frame. You can activate the ability using the key E, and it has a timeout of 25s")
+ *   - Card 5: ("Seems like another boss; we have to destroy him too. Let's move further")
+ * - Completes Level 3 and transitions to victory / next boss screen
  */
 
 class Level3Director {
@@ -16,12 +19,13 @@ class Level3Director {
     this.game = waveDirector.game;
 
     this.seenInversionExplanation = false;
-    this.seen15sWarning = false;
     this.bossRef = null;
 
     this.l3ReplenishPending = false;
     this.l3ReplenishTimer = 0;
     this.l3NextBatch = 'RGB'; // 'RGB' or 'CYM'
+    this._lastProcessedHp = null;
+    this.isVictoryInProgress = false;
   }
 
   start() {
@@ -31,39 +35,82 @@ class Level3Director {
     this.waves.stats = { enemiesKilled: 0, orbsCrafted: 0, shotsFired: 0 };
     this.game.colorChangingEnabled = true;
     this.seenInversionExplanation = false;
-    this.seen15sWarning = false;
     this.l3ReplenishPending = false;
     this.l3ReplenishTimer = 0;
     this.l3NextBatch = 'RGB';
+    this._lastProcessedHp = null;
+    this.isVictoryInProgress = false;
 
-    if (this.game.showStopTutorial) {
-      setTimeout(() => {
-        this.game.showStopTutorial(
-          'l3_boss_taunt',
-          'THE BLACK BOSS: "PALE LITTLE INSECT..."',
-          '<div style="color: #FF4D66; font-style: italic; font-size: 15px; border-left: 3px solid #A020F0; padding-left: 10px;">' +
-          '&ldquo;Is this the so-called savior of the light? A pathetic, flickering candle wandering into my infinite abyss?<br><br>' +
-          'You know nothing of true power, Fluke. Your colors are toys. I will devour your little photons and snuff out your soul like an insignificant ember!&rdquo;' +
-          '</div>'
-        );
-
-        setTimeout(() => {
-          this.initL3BossBattle();
-        }, 300);
-      }, 200);
-    } else {
-      this.initL3BossBattle();
+    // Equip Fluke with combat-ready ammo for Level 3
+    if (this.game.player) {
+      this.game.player.ammo.RED = Math.max(this.game.player.ammo.RED || 0, 6);
+      this.game.player.ammo.GREEN = Math.max(this.game.player.ammo.GREEN || 0, 6);
+      this.game.player.ammo.BLUE = Math.max(this.game.player.ammo.BLUE || 0, 6);
+      this.game.player.ammo.CYAN = Math.max(this.game.player.ammo.CYAN || 0, 4);
+      this.game.player.ammo.MAGENTA = Math.max(this.game.player.ammo.MAGENTA || 0, 4);
+      this.game.player.ammo.YELLOW = Math.max(this.game.player.ammo.YELLOW || 0, 4);
     }
+
+    // Sequence of Card 1 and Card 2 at the start of Level 3
+    const startCards = [
+      {
+        id: 'l3_card1',
+        tag: 'SYNTHESIS INTEL // 01',
+        badge: '⚡ MASTER NOOBI-WAN INTEL',
+        tracker: 'CARD 01 / 02',
+        step: 1,
+        totalSteps: 2,
+        title: 'MASTER NOOBI-WAN: WHITE CRYSTALS',
+        message:
+          'Listen closely, Fluke!<br><br>' +
+          '<div style="font-size: 15px; font-weight: bold; color: #00F0FF; border-left: 3px solid #00F0FF; padding: 8px 10px; background: rgba(0, 240, 255, 0.12); border-radius: 4px; margin-bottom: 12px;">' +
+          '&ldquo;Shoot some orb with its contrary-color laser to form white crystals&rdquo;' +
+          '</div>' +
+          '• Shoot <span class="noobi-hl red">RED laser [1]</span> into a <span class="noobi-hl cyan">CYAN orb</span> (or Cyan into Red)<br>' +
+          '• Shoot <span class="noobi-hl green">GREEN laser [2]</span> into a <span class="noobi-hl magenta">MAGENTA orb</span> (or Magenta into Green)<br>' +
+          '• Shoot <span class="noobi-hl blue">BLUE laser [3]</span> into a <span class="noobi-hl yellow">YELLOW orb</span> (or Yellow into Blue)<br><br>' +
+          'Contrary-color reaction crystallizes pure <b>WHITE AMMO [7]</b>!',
+        btnText: 'CONTINUE NOOBI-WAN ▶'
+      },
+      {
+        id: 'l3_card2',
+        tag: 'BOSS COMBAT // 02',
+        badge: '⚡ MASTER NOOBI-WAN INTEL',
+        tracker: 'CARD 02 / 02',
+        step: 2,
+        totalSteps: 2,
+        title: 'MASTER NOOBI-WAN: DEFEATING THE BLACK BOSS',
+        message:
+          'The Black Boss commands the abyssal darkness!<br><br>' +
+          '<div style="font-size: 15px; font-weight: bold; color: #FFE600; border-left: 3px solid #FFE600; padding: 8px 10px; background: rgba(255, 230, 0, 0.12); border-radius: 4px; margin-bottom: 12px;">' +
+          '&ldquo;To defeat the black boss, shoot him with his contrary-color laser&rdquo;' +
+          '</div>' +
+          '• The Black Boss is darkness incarnate — his contrary wavelength is <b>pure WHITE LASER [7]</b>!<br>' +
+          '• Standard RGB &amp; CMY lasers will not scratch his abyssal shield.<br>' +
+          '• Strike him with <b>3 White laser strikes</b> to destroy him once and for all!',
+        btnText: 'ENGAGE THE BLACK BOSS! ⚔️'
+      }
+    ];
+
+    setTimeout(() => {
+      if (this.game.showTutorialSequence) {
+        this.game.showTutorialSequence(startCards, () => {
+          this.initL3BossBattle();
+        });
+      } else {
+        this.initL3BossBattle();
+      }
+    }, 250);
   }
 
   initL3BossBattle() {
     this.waves.phase = 1;
     this.game.ui.setObjective(
       "LEVEL 3 — THE BLACK BOSS SHOWDOWN",
-      "Defeat the initial CYM triad, synthesize WHITE ammo, and strike the Black Boss!"
+      "Defeat minions, synthesize WHITE crystals, and shoot the Black Boss!"
     );
 
-    // Initial spawn: CYM trio
+    // Initial spawn: CYM triad
     this.waves.spawnAt(8, 6, 'CYAN');
     this.waves.spawnAt(24, 11, 'YELLOW');
     this.waves.spawnAt(7, 13, 'MAGENTA');
@@ -76,27 +123,6 @@ class Level3Director {
 
     this.waves.enemiesRemainingInPhase = 3;
     this.l3NextBatch = 'RGB';
-
-    // Noobi-Wan tactical briefing for Black Boss & White Bullet synthesis
-    if (this.game.showStopTutorial) {
-      setTimeout(() => {
-        this.game.showStopTutorial(
-          'l3_noobi_boss_guide',
-          'MASTER NOOBI-WAN: HOW TO DEFEAT THE BLACK BOSS',
-          'Do not let his dark words shake your spirit, Fluke! Here is how to conquer the Void:<br><br>' +
-          '• <b>BLACK BOSS TAKES 3 HITS OF WHITE BULLETS:</b><br>' +
-          'Normal enemies fall in 1 hit, but the Black Boss requires <b>3 hits of pure WHITE LASER</b>.<br><br>' +
-          '• <b>HOW TO CREATE WHITE BULLETS:</b><br>' +
-          'Shoot the <b>COMPLEMENTARY</b> color into an orb!<br>' +
-          '&nbsp;&nbsp;&bull; Shoot <span class="noobi-hl red">RED laser</span> into a <span class="noobi-hl cyan">CYAN orb</span> (or Cyan into Red orb)<br>' +
-          '&nbsp;&nbsp;&bull; Shoot <span class="noobi-hl green">GREEN laser</span> into a <span class="noobi-hl magenta">MAGENTA orb</span> (or Magenta into Green orb)<br>' +
-          '&nbsp;&nbsp;&bull; Shoot <span class="noobi-hl blue">BLUE laser</span> into a <span class="noobi-hl yellow">YELLOW orb</span> (or Yellow into Blue orb)<br>' +
-          'Complementary fusion generates <b>WHITE AMMO [7]</b> crystals!<br><br>' +
-          '• <b>HOMING BLACK BULLETS & REALITY INVERSION:</b><br>' +
-          'The Black Boss fires tracking void bullets (1.5s lifetime) and shifts reality — when inverted, he is <b>completely INVULNERABLE</b>!'
-        );
-      }, 400);
-    }
   }
 
   scheduleL3Replenish(nextType) {
@@ -153,26 +179,41 @@ class Level3Director {
   }
 
   onBossPhysicsInversionActivated() {
-    if (!this.seenInversionExplanation && this.game.showStopTutorial) {
-      this.seenInversionExplanation = true;
-      this.game.showStopTutorial(
-        'l3_physics_inversion',
-        'WARNING: REALITY DISTORTION ACTIVE!',
-        'Fluke! Look out! The Black Boss shook reality and <b>CHANGED THE PHYSICS OF LIGHT</b> for the next 10 seconds!<br><br>' +
-        '• <b>THE BLACK BOSS IS INVULNERABLE:</b><br>' +
-        'While inverted, he is protected by a chromatic distortion barrier and cannot be harmed!<br><br>' +
-        '• <b>WEAK IS STRONG & STRONG IS WEAK:</b><br>' +
-        'Enemies now die to their <b>SAME COLOR</b>:<br>' +
-        '&nbsp;&nbsp;&bull; <span class="noobi-hl cyan">CYAN</span> dies to <b>CYAN [4]</b>!<br>' +
-        '&nbsp;&nbsp;&bull; <span class="noobi-hl red">RED</span> dies to <b>RED [1]</b>!<br>' +
-        '&nbsp;&nbsp;&bull; <span class="noobi-hl green">GREEN</span> dies to <b>GREEN [2]</b>, <span class="noobi-hl blue">BLUE</span> dies to <b>BLUE [3]</b>, etc.<br><br>' +
-        'Hold your ground until reality stabilizes!'
-      );
+    if (this.seenInversionExplanation) return;
+    this.seenInversionExplanation = true;
+
+    // Card 3: After hitting the black boss with a white bullet and the boss uses invert frame
+    const card3 = {
+      id: 'l3_card3',
+      tag: 'BOSS ABILITY UNLEASHED',
+      badge: '⚠️ REALITY DISTORTION ALERT',
+      tracker: 'CARD 03',
+      step: 1,
+      totalSteps: 1,
+      title: 'MASTER NOOBI-WAN: INVERT FRAME ABILITY',
+      message:
+        'Fluke, look out!<br><br>' +
+        '<div style="font-size: 15px; font-weight: bold; color: #FF4D66; border-left: 3px solid #A020F0; padding: 8px 10px; background: rgba(160, 32, 240, 0.15); border-radius: 4px; margin-bottom: 12px;">' +
+        '&ldquo;The black boss has a special ability known as invert frame; when it is turned on, bots can be killed only by the lasers of their color, and the black boss is literally invincible in this state&rdquo;' +
+        '</div>' +
+        '• <b>SAME-COLOR VULNERABILITY:</b><br>' +
+        '&nbsp;&nbsp;&bull; <span class="noobi-hl cyan">CYAN bot</span> dies only to <b>CYAN laser [4]</b><br>' +
+        '&nbsp;&nbsp;&bull; <span class="noobi-hl magenta">MAGENTA bot</span> dies only to <b>MAGENTA laser [5]</b><br>' +
+        '&nbsp;&nbsp;&bull; <span class="noobi-hl yellow">YELLOW bot</span> dies only to <b>YELLOW laser [6]</b><br>' +
+        '&nbsp;&nbsp;&bull; <span class="noobi-hl red">RED bot</span> dies only to <b>RED laser [1]</b> (and Green to Green, Blue to Blue)<br><br>' +
+        '• <b>THE BLACK BOSS IS INVINCIBLE:</b> Hold your ground until his invert frame drops before striking him with White lasers again!',
+      btnText: 'UNDERSTOOD, NOOBI-WAN! ⚔️'
+    };
+
+    if (this.game.showTutorialSequence) {
+      this.game.showTutorialSequence([card3]);
     }
   }
 
   onBossHit(remainingHp) {
     if (remainingHp <= 0) return;
+    if (this._lastProcessedHp === remainingHp) return;
+    this._lastProcessedHp = remainingHp;
 
     // Check currently living minions
     const livingMinions = this.game.enemies.filter(e => e.alive && !e.isBoss);
@@ -209,23 +250,76 @@ class Level3Director {
     if (this.bossRef && this.bossRef.alive) {
       this.bossRef.triggerPhysicsInversion();
     }
-
-    if (remainingHp === 1 && !this.seen15sWarning && this.game.showStopTutorial) {
-      this.seen15sWarning = true;
-      this.game.showStopTutorial(
-        'l3_boss_last_heart',
-        'CRITICAL ALERT: FINAL HEART!',
-        'The Black Boss is enraged! He only has <b>1 HEART REMAINING</b>!<br><br>' +
-        'Wait for his reality distortion shield to drop, synthesize one final WHITE bullet, and defeat him!'
-      );
-    }
   }
 
-  onEnemyDefeated(enemy) {
-    // If boss dies, level 3 is cleared!
+  onEnemyDefeated(enemy, laserColorId) {
+    // If boss dies, trigger Cards 4 & 5 and level completion
     if (enemy && enemy.isBoss) {
-      this.waves.cleared = true;
-      this.game.onLevelComplete(3);
+      if (this.isVictoryInProgress) return;
+      this.isVictoryInProgress = true;
+
+      // Safely neutralize remaining minion projectiles
+      this.game.enemyLasers = [];
+
+      // Unlock Invert Frame on player
+      if (this.game.player) {
+        this.game.player.invertUnlocked = true;
+      }
+      if (this.game.unlockHelpCapability) {
+        this.game.unlockHelpCapability('inversion');
+      }
+      localStorage.setItem('lightwars_black_boss_defeated', 'true');
+
+      // Cards 4 & 5 after defeating the Black Boss
+      const victoryCards = [
+        {
+          id: 'l3_card4',
+          tag: 'LEGENDARY POWER ACQUIRED // 01',
+          badge: '✨ NEW ABILITY UNLOCKED',
+          tracker: 'CARD 04 / 05',
+          step: 1,
+          totalSteps: 2,
+          title: 'MASTER NOOBI-WAN: INVERT FRAME GAINED',
+          message:
+            'Incredible victory, Fluke!<br><br>' +
+            '<div style="font-size: 15px; font-weight: bold; color: #00F0FF; border-left: 3px solid #00F0FF; padding: 8px 10px; background: rgba(0, 240, 255, 0.12); border-radius: 4px; margin-bottom: 12px;">' +
+            '&ldquo;By defeating the black boss, you gained his ability to invert frame. You can activate the ability using the key E, and it has a timeout of 25s&rdquo;' +
+            '</div>' +
+            '• Press <b>KEY [E]</b> during combat to reverse light physics for 10 seconds!<br>' +
+            '• When active, enemies can be destroyed by their own matching color lasers.<br>' +
+            '• Ability timeout cooldown: <b>25 seconds</b>.',
+          btnText: 'CONTINUE NOOBI-WAN ▶'
+        },
+        {
+          id: 'l3_card5',
+          tag: 'GREATER PERIL // 02',
+          badge: '🌌 THE SPECTRUM WAR AHEAD',
+          tracker: 'CARD 05 / 05',
+          step: 2,
+          totalSteps: 2,
+          title: 'MASTER NOOBI-WAN: ANOTHER BOSS AHEAD',
+          message:
+            'Hold on... the chromatic disturbances haven\'t ceased!<br><br>' +
+            '<div style="font-size: 15px; font-weight: bold; color: #FFE600; border-left: 3px solid #FFE600; padding: 8px 10px; background: rgba(255, 230, 0, 0.12); border-radius: 4px; margin-bottom: 12px;">' +
+            '&ldquo;Seems like another boss; we have to destroy him too. Let\'s move further&rdquo;' +
+            '</div>' +
+            'Prepare yourself, Fluke. The battle for the spectrum is far from over!',
+          btnText: 'COMPLETE LEVEL 3! 🏆'
+        }
+      ];
+
+      setTimeout(() => {
+        if (this.game.showTutorialSequence) {
+          this.game.showTutorialSequence(victoryCards, () => {
+            this.waves.cleared = true;
+            this.game.onLevelComplete(3);
+          });
+        } else {
+          this.waves.cleared = true;
+          this.game.onLevelComplete(3);
+        }
+      }, 500);
+
       return;
     }
 
@@ -233,7 +327,7 @@ class Level3Director {
 
     // Check if all non-boss minions are dead
     const livingMinions = this.game.enemies.filter(e => e.alive && !e.isBoss);
-    if (livingMinions.length === 0 && !this.l3ReplenishPending) {
+    if (livingMinions.length === 0 && !this.l3ReplenishPending && !this.isVictoryInProgress) {
       // Check what died: if the last dead was CMY -> schedule RGB in 3 sec; if RGB -> schedule CYM in 3 sec!
       const deadColor = enemy ? enemy.colorId : '';
       const isRGB = (deadColor === 'RED' || deadColor === 'GREEN' || deadColor === 'BLUE');
@@ -243,7 +337,7 @@ class Level3Director {
   }
 
   update(dt) {
-    if (this.l3ReplenishPending) {
+    if (this.l3ReplenishPending && !this.isVictoryInProgress) {
       this.l3ReplenishTimer -= dt;
       if (this.l3ReplenishTimer <= 0) {
         this.l3ReplenishPending = false;
