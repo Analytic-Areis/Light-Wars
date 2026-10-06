@@ -7,15 +7,18 @@
 
 class LightWarsGame {
   constructor() {
-    this.canvas = document.getElementById('gameCanvas');
-    this.ctx = this.canvas.getContext('2d');
+    this.canvas = document.getElementById("gameCanvas");
+    this.ctx = this.canvas.getContext("2d");
 
-    this.state = 'MENU'; // 'MENU' | 'PLAYING' | 'PAUSED' | 'LEVEL_CLEAR' | 'GAME_OVER'
+    this.state = "MENU"; // 'MENU' | 'PLAYING' | 'PAUSED' | 'LEVEL_CLEAR' | 'GAME_OVER'
     this.lastTime = 0;
 
     // Subsystems
     this.config = window.LightWars.GAME_CONFIG;
-    this.arena = new window.LightWars.Arena(this.config.arenaWidth, this.config.arenaHeight);
+    this.arena = new window.LightWars.Arena(
+      this.config.arenaWidth,
+      this.config.arenaHeight,
+    );
     this.camera = new window.LightWars.Camera(1280, 720);
     this.spriteManager = new window.LightWars.SpriteManager();
     this.particles = new window.LightWars.ParticleSystem();
@@ -40,7 +43,7 @@ class LightWarsGame {
       screenMouseY: 360,
       mouseInside: false,
       isMouseDown: false,
-      dashRequested: false
+      dashRequested: false,
     };
 
     // Mobile / Virtual Joystick state
@@ -50,7 +53,7 @@ class LightWarsGame {
       stickStartX: 0,
       stickStartY: 0,
       stickCurrX: 0,
-      stickCurrY: 0
+      stickCurrY: 0,
     };
 
     // Reset progress on fresh launch/restart so game always starts with Levels 2 & 3 locked
@@ -63,7 +66,7 @@ class LightWarsGame {
       orbCrafting: false,
       dash: false,
       whiteAmmo: false,
-      inversion: false
+      inversion: false,
     };
     this._newlyUnlockedCapabilities = new Set();
 
@@ -75,10 +78,10 @@ class LightWarsGame {
 
   resetProgressOnLaunch() {
     try {
-      localStorage.removeItem('lightwars_level1_cleared');
-      localStorage.removeItem('lightwars_level2_cleared');
-      localStorage.removeItem('lightwars_black_boss_defeated');
-      localStorage.removeItem('lightwars_dash_unlocked');
+      localStorage.removeItem("lightwars_level1_cleared");
+      localStorage.removeItem("lightwars_level2_cleared");
+      localStorage.removeItem("lightwars_black_boss_defeated");
+      localStorage.removeItem("lightwars_dash_unlocked");
     } catch (e) {
       console.warn("Storage reset on launch:", e);
     }
@@ -86,8 +89,8 @@ class LightWarsGame {
 
   initWindow() {
     this.resizeCanvas();
-    window.addEventListener('resize', () => this.resizeCanvas());
-    document.addEventListener('fullscreenchange', () => this.resizeCanvas());
+    window.addEventListener("resize", () => this.resizeCanvas());
+    document.addEventListener("fullscreenchange", () => this.resizeCanvas());
   }
 
   resizeCanvas() {
@@ -104,97 +107,107 @@ class LightWarsGame {
   }
 
   bindEvents() {
-    window.addEventListener('keydown', (e) => {
-      if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+    window.addEventListener("keydown", (e) => {
+      if (
+        ["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(
+          e.code,
+        )
+      ) {
         e.preventDefault();
       }
       this.input.keys[e.code] = true;
 
       // Number keys 1-7 for laser ammo selection (including White [7])
-      if (e.key >= '1' && e.key <= '7') {
+      if (e.key >= "1" && e.key <= "7") {
         const idx = parseInt(e.key, 10) - 1;
         if (this.player) this.player.selectColorIndex(idx);
       }
-      if (e.code === 'KeyQ') {
+      if (e.code === "KeyQ") {
         if (this.player) this.player.selectPrevColor();
       }
-      if (e.code === 'KeyE') {
+      if (e.code === "KeyE") {
         if (this.player) {
           this.player.selectNextColor();
         }
       }
-      if (e.code === 'Space' && this.state === 'PLAYING') {
+      if (e.code === "Space" && this.state === "PLAYING") {
         this.input.dashRequested = true;
       }
-      if (e.code === 'KeyM') {
+      if (e.code === "KeyM") {
         window.LightWars.sound.toggleMute();
       }
-      if (e.code === 'KeyF') {
+      if (e.code === "KeyF") {
         if (!document.fullscreenElement) {
           document.documentElement.requestFullscreen().catch(() => {});
         } else {
           document.exitFullscreen().catch(() => {});
         }
       }
-      if (e.code === 'Escape') {
+      if (e.code === "Escape") {
         if (e.repeat) return; // Prevent glitching/toggling when holding down Escape
         if (this.isHelpModalOpen()) {
           this.toggleHelpModal(false);
-        } else if (this.state === 'TUTORIAL') {
+        } else if (this.state === "TUTORIAL") {
           this.dismissTutorial();
-        } else if (this.state === 'PLAYING') {
+        } else if (this.state === "PLAYING") {
           this.togglePauseMenu(true);
-        } else if (this.state === 'PAUSED') {
+        } else if (this.state === "PAUSED") {
           this.togglePauseMenu(false);
         }
       }
-      if ((e.code === 'Enter' || e.code === 'Space') && this.state === 'TUTORIAL') {
+      if (
+        (e.code === "Enter" || e.code === "Space") &&
+        this.state === "TUTORIAL"
+      ) {
         if (this.isHelpModalOpen()) return;
         this.dismissTutorial();
       }
-      if (e.code === 'KeyH') {
+      if (e.code === "KeyH") {
         if (e.repeat) return;
         // When on escape pause menu, pressing H must not display anything!
-        const pauseModal = document.getElementById('escapePauseModal');
-        if (pauseModal && pauseModal.style.display === 'flex') {
+        const pauseModal = document.getElementById("escapePauseModal");
+        if (pauseModal && pauseModal.style.display === "flex") {
           return;
         }
         // When on noobiwan chat, display help tab and pressing H again removes it and continues where you left off
         this.toggleHelpModal();
       }
-      if (e.code === 'KeyI') {
+      if (e.code === "KeyI") {
         if (e.repeat) return;
-        if (this.state === 'TUTORIAL') {
+        if (this.state === "TUTORIAL") {
           this.dismissTutorial();
-        } else if (this.state === 'PLAYING') {
+        } else if (this.state === "PLAYING") {
           this.showInstructionsModal();
         }
       }
-      if (e.code === 'KeyP' && (this.state === 'PLAYING' || this.state === 'PAUSED')) {
+      if (
+        e.code === "KeyP" &&
+        (this.state === "PLAYING" || this.state === "PAUSED")
+      ) {
         if (e.repeat) return;
         if (this.isHelpModalOpen()) {
           this.toggleHelpModal(false);
         } else {
-          this.togglePauseMenu(this.state === 'PLAYING');
+          this.togglePauseMenu(this.state === "PLAYING");
         }
       }
     });
 
-    window.addEventListener('keyup', (e) => {
+    window.addEventListener("keyup", (e) => {
       this.input.keys[e.code] = false;
     });
 
     // Mouse tracking & firing
-    this.canvas.addEventListener('mouseenter', () => {
+    this.canvas.addEventListener("mouseenter", () => {
       this.input.mouseInside = true;
     });
 
-    this.canvas.addEventListener('mouseleave', () => {
+    this.canvas.addEventListener("mouseleave", () => {
       this.input.mouseInside = false;
       this.input.isMouseDown = false;
     });
 
-    this.canvas.addEventListener('mousemove', (e) => {
+    this.canvas.addEventListener("mousemove", (e) => {
       this.input.mouseInside = true;
       const rect = this.canvas.getBoundingClientRect();
       const scaleX = this.canvas.width / rect.width;
@@ -203,60 +216,76 @@ class LightWarsGame {
       this.input.screenMouseX = (e.clientX - rect.left) * scaleX;
       this.input.screenMouseY = (e.clientY - rect.top) * scaleY;
 
-      const worldPos = this.camera.screenToWorld(this.input.screenMouseX, this.input.screenMouseY);
+      const worldPos = this.camera.screenToWorld(
+        this.input.screenMouseX,
+        this.input.screenMouseY,
+      );
       this.input.mouseX = worldPos.x;
       this.input.mouseY = worldPos.y;
     });
 
-    this.canvas.addEventListener('mousedown', (e) => {
+    this.canvas.addEventListener("mousedown", (e) => {
       window.LightWars.sound.resume();
       if (e.button === 0) {
         this.input.isMouseDown = true;
         this.handlePlayerShoot();
       } else if (e.button === 2) {
         e.preventDefault();
-        if (this.player && this.player.invertUnlocked && this.state === 'PLAYING') {
+        if (
+          this.player &&
+          this.player.invertUnlocked &&
+          this.state === "PLAYING"
+        ) {
           this.player.triggerInvertFrame(this);
         }
       }
     });
 
-    window.addEventListener('mouseup', (e) => {
+    window.addEventListener("mouseup", (e) => {
       if (e.button === 0) {
         this.input.isMouseDown = false;
       }
     });
 
-    this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    this.canvas.addEventListener("contextmenu", (e) => e.preventDefault());
 
-    this.canvas.addEventListener('wheel', (e) => {
-      if (!this.player) return;
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault();
-        const delta = e.deltaY < 0 ? 0.15 : -0.15;
-        if (this.camera && this.camera.setZoom) {
-          this.camera.setZoom(this.camera.targetZoom + delta);
+    this.canvas.addEventListener(
+      "wheel",
+      (e) => {
+        if (!this.player) return;
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          const delta = e.deltaY < 0 ? 0.15 : -0.15;
+          if (this.camera && this.camera.setZoom) {
+            this.camera.setZoom(this.camera.targetZoom + delta);
+          }
+        } else {
+          if (e.deltaY > 0) this.player.selectNextColor();
+          else if (e.deltaY < 0) this.player.selectPrevColor();
         }
-      } else {
-        if (e.deltaY > 0) this.player.selectNextColor();
-        else if (e.deltaY < 0) this.player.selectPrevColor();
-      }
-    }, { passive: false });
+      },
+      { passive: false },
+    );
 
     // Ammo HUD click
-    this.canvas.addEventListener('click', (e) => {
-      if (!this.player || this.state !== 'PLAYING') return;
+    this.canvas.addEventListener("click", (e) => {
+      if (!this.player || this.state !== "PLAYING") return;
       const rect = this.canvas.getBoundingClientRect();
       const clickX = (e.clientX - rect.left) * (this.canvas.width / rect.width);
-      const clickY = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+      const clickY =
+        (e.clientY - rect.top) * (this.canvas.height / rect.height);
 
       const ammoBarWidth = 520;
       const ammoBarHeight = 64;
       const startX = (this.canvas.width - ammoBarWidth) / 2;
       const startY = this.canvas.height - ammoBarHeight - 20;
 
-      if (clickX >= startX && clickX <= startX + ammoBarWidth &&
-          clickY >= startY && clickY <= startY + ammoBarHeight) {
+      if (
+        clickX >= startX &&
+        clickX <= startX + ammoBarWidth &&
+        clickY >= startY &&
+        clickY <= startY + ammoBarHeight
+      ) {
         const slotWidth = ammoBarWidth / this.player.colorOrder.length;
         const clickedIdx = Math.floor((clickX - startX) / slotWidth);
         this.player.selectColorIndex(clickedIdx);
@@ -265,164 +294,199 @@ class LightWarsGame {
   }
 
   setupComicMenu() {
-    const devModeCheckbox = document.getElementById('devModeCheckbox');
+    const devModeCheckbox = document.getElementById("devModeCheckbox");
     if (devModeCheckbox) {
       devModeCheckbox.checked = this.devMode;
-      devModeCheckbox.addEventListener('change', (e) => {
+      devModeCheckbox.addEventListener("change", (e) => {
         this.setDevMode(e.target.checked);
       });
     }
 
-    const playBtn = document.getElementById('startLevel1Btn');
+    const playBtn = document.getElementById("startLevel1Btn");
     if (playBtn) {
-      playBtn.addEventListener('click', () => {
+      playBtn.addEventListener("click", () => {
         window.LightWars.sound.resume();
         this.startLevel1();
       });
     }
 
-    const play2Btn = document.getElementById('startLevel2Btn');
+    const play2Btn = document.getElementById("startLevel2Btn");
     if (play2Btn) {
-      play2Btn.addEventListener('click', () => {
+      play2Btn.addEventListener("click", () => {
         window.LightWars.sound.resume();
         this.startLevel2();
       });
     }
 
-    const play3Btn = document.getElementById('startLevel3Btn');
+    const play3Btn = document.getElementById("startLevel3Btn");
     if (play3Btn) {
-      play3Btn.addEventListener('click', () => {
+      play3Btn.addEventListener("click", () => {
         window.LightWars.sound.resume();
         this.startLevel3();
       });
     }
 
     // Direct click-to-play on comic panel rows
-    const comicRow1 = document.getElementById('comicRow1');
+    const comicRow1 = document.getElementById("comicRow1");
     if (comicRow1) {
-      comicRow1.addEventListener('click', (e) => {
-        if (e.target.closest('#startLevel1Btn')) return;
+      comicRow1.addEventListener("click", (e) => {
+        if (e.target.closest("#startLevel1Btn")) return;
         if (playBtn) playBtn.click();
       });
     }
 
-    const comicRow2 = document.getElementById('comicRow2');
+    const comicRow2 = document.getElementById("comicRow2");
     if (comicRow2) {
-      comicRow2.addEventListener('click', (e) => {
-        if (e.target.closest('#startLevel2Btn')) return;
-        const lock = document.getElementById('row2LockOverlay');
-        if (lock && lock.style.display !== 'none') return;
+      comicRow2.addEventListener("click", (e) => {
+        if (e.target.closest("#startLevel2Btn")) return;
+        const lock = document.getElementById("row2LockOverlay");
+        if (lock && lock.style.display !== "none") return;
         if (play2Btn) play2Btn.click();
       });
     }
 
-    const comicRow3 = document.getElementById('comicRow3');
+    const comicRow3 = document.getElementById("comicRow3");
     if (comicRow3) {
-      comicRow3.addEventListener('click', (e) => {
-        if (e.target.closest('#startLevel3Btn')) return;
-        const lock = document.getElementById('row3LockOverlay');
-        if (lock && lock.style.display !== 'none') return;
-        if (play3Btn && play3Btn.style.display !== 'none') play3Btn.click();
+      comicRow3.addEventListener("click", (e) => {
+        if (e.target.closest("#startLevel3Btn")) return;
+        const lock = document.getElementById("row3LockOverlay");
+        if (lock && lock.style.display !== "none") return;
+        if (play3Btn && play3Btn.style.display !== "none") play3Btn.click();
       });
     }
 
-    const play4Btn = document.getElementById('startLevel4Btn');
+    const play4Btn = document.getElementById("startLevel4Btn");
     if (play4Btn) {
-      play4Btn.addEventListener('click', () => {
+      play4Btn.addEventListener("click", () => {
         window.LightWars.sound.resume();
         this.startLevel4();
       });
     }
 
-    const restartBtn = document.getElementById('restartBtn');
+    const comicRow4 = document.getElementById("comicRow4");
+    if (comicRow4) {
+      comicRow4.addEventListener("click", (e) => {
+        if (e.target.closest("#startLevel4Btn")) return;
+        const lock = document.getElementById("row4LockOverlay");
+        if (lock && lock.style.display !== "none") return;
+        if (play4Btn && play4Btn.style.display !== "none") play4Btn.click();
+      });
+    }
+
+    const comicRow5 = document.getElementById("comicRow5");
+    if (comicRow5) {
+      comicRow5.addEventListener("click", (e) => {
+        if (e.target.closest("#startLevel5Btn")) return;
+        const lock = document.getElementById("row5LockOverlay");
+        if (lock && lock.style.display !== "none") return;
+        const p5btn = document.getElementById("startLevel5Btn");
+        if (p5btn && p5btn.style.display !== "none") p5btn.click();
+      });
+    }
+
+    const play5Btn = document.getElementById("startLevel5Btn");
+    if (play5Btn) {
+      play5Btn.addEventListener("click", () => {
+        window.LightWars.sound.resume();
+        this.startLevel5();
+      });
+    }
+    const restartBtn = document.getElementById("restartBtn");
     if (restartBtn) {
-      restartBtn.addEventListener('click', () => {
-        if (this._lastLevel === 4) this.startLevel4();
+      restartBtn.addEventListener("click", () => {
+        if (this._lastLevel === 5) this.startLevel5();
+        else if (this._lastLevel === 5) this.startLevel5();
+        else if (this._lastLevel === 4) this.startLevel4();
         else if (this._lastLevel === 3) this.startLevel3();
         else if (this._lastLevel === 2) this.startLevel2();
         else this.startLevel1();
       });
     }
 
-    const playAgainBtn = document.getElementById('playAgainBtn');
+    const playAgainBtn = document.getElementById("playAgainBtn");
     if (playAgainBtn) {
-      playAgainBtn.addEventListener('click', () => {
-        if (this._lastLevel === 4) this.startLevel4();
+      playAgainBtn.addEventListener("click", () => {
+        if (this._lastLevel === 5) this.startLevel5();
+        else if (this._lastLevel === 5) this.startLevel5();
+        else if (this._lastLevel === 4) this.startLevel4();
         else if (this._lastLevel === 3) this.startLevel3();
         else if (this._lastLevel === 2) this.startLevel2();
         else this.startLevel1();
       });
     }
 
-
-    const menuReturnBtn = document.getElementById('menuReturnBtn');
+    const menuReturnBtn = document.getElementById("menuReturnBtn");
     if (menuReturnBtn) {
-      menuReturnBtn.addEventListener('click', () => {
+      menuReturnBtn.addEventListener("click", () => {
         this.showMenu();
       });
     }
 
-    const page2Btn = document.getElementById('goToPage2Btn');
+    const page2Btn = document.getElementById("goToPage2Btn");
     if (page2Btn) {
-      page2Btn.addEventListener('click', () => {
+      page2Btn.addEventListener("click", () => {
         this.transitionToPage2();
       });
     }
 
-    const backToPage1Btn = document.getElementById('backToPage1Btn');
+    const backToPage1Btn = document.getElementById("backToPage1Btn");
     if (backToPage1Btn) {
-      backToPage1Btn.addEventListener('click', () => {
-        this.transitionToPage1();
-      });
-    }
-    
-    const page1Badge = document.getElementById('page1Badge');
-    if (page1Badge) {
-      page1Badge.addEventListener('click', () => {
+      backToPage1Btn.addEventListener("click", () => {
         this.transitionToPage1();
       });
     }
 
-    const page2Badge = document.getElementById('page2TeaserBadge');
+    const page1Badge = document.getElementById("page1Badge");
+    if (page1Badge) {
+      page1Badge.addEventListener("click", () => {
+        this.transitionToPage1();
+      });
+    }
+
+    const page2Badge = document.getElementById("page2TeaserBadge");
     if (page2Badge) {
-      page2Badge.addEventListener('click', () => {
-        if (this.devMode || localStorage.getItem('lightwars_black_boss_defeated') === 'true') {
+      page2Badge.addEventListener("click", () => {
+        if (
+          this.devMode ||
+          localStorage.getItem("lightwars_black_boss_defeated") === "true"
+        ) {
           this.transitionToPage2();
         }
       });
     }
 
     // Escape Pause Menu controls
-    const pauseResumeBtn = document.getElementById('pauseResumeBtn');
+    const pauseResumeBtn = document.getElementById("pauseResumeBtn");
     if (pauseResumeBtn) {
-      pauseResumeBtn.addEventListener('click', () => {
+      pauseResumeBtn.addEventListener("click", () => {
         this.togglePauseMenu(false);
       });
     }
 
-    const pauseRestartBtn = document.getElementById('pauseRestartBtn');
+    const pauseRestartBtn = document.getElementById("pauseRestartBtn");
     if (pauseRestartBtn) {
-      pauseRestartBtn.addEventListener('click', () => {
+      pauseRestartBtn.addEventListener("click", () => {
         this.togglePauseMenu(false);
-        if (this._lastLevel === 4) this.startLevel4();
+        if (this._lastLevel === 5) this.startLevel5();
+        else if (this._lastLevel === 5) this.startLevel5();
+        else if (this._lastLevel === 4) this.startLevel4();
         else if (this._lastLevel === 3) this.startLevel3();
         else if (this._lastLevel === 2) this.startLevel2();
         else this.startLevel1();
       });
     }
 
-
-    const pauseMenuBtn = document.getElementById('pauseMenuBtn');
+    const pauseMenuBtn = document.getElementById("pauseMenuBtn");
     if (pauseMenuBtn) {
-      pauseMenuBtn.addEventListener('click', () => {
+      pauseMenuBtn.addEventListener("click", () => {
         this.togglePauseMenu(false);
         this.showMenu();
       });
     }
 
     // Volume sliders
-    const sfxSlider = document.getElementById('sfxVolumeSlider');
-    const sfxVal = document.getElementById('sfxVolumeVal');
+    const sfxSlider = document.getElementById("sfxVolumeSlider");
+    const sfxVal = document.getElementById("sfxVolumeVal");
     if (sfxSlider && sfxVal) {
       const updateSfx = (e) => {
         const val = parseFloat(e.target.value);
@@ -432,19 +496,19 @@ class LightWarsGame {
           window.LightWars.sound.setSfxVolume(val);
         }
       };
-      sfxSlider.addEventListener('input', updateSfx);
-      sfxSlider.addEventListener('change', (e) => {
+      sfxSlider.addEventListener("input", updateSfx);
+      sfxSlider.addEventListener("change", (e) => {
         updateSfx(e);
         if (window.LightWars.sound && window.LightWars.sound.sfxVolume > 0) {
-          window.LightWars.sound.playLaser('RED');
+          window.LightWars.sound.playLaser("RED");
         }
       });
     }
 
-    const musicSlider = document.getElementById('musicVolumeSlider');
-    const musicVal = document.getElementById('musicVolumeVal');
+    const musicSlider = document.getElementById("musicVolumeSlider");
+    const musicVal = document.getElementById("musicVolumeVal");
     if (musicSlider && musicVal) {
-      musicSlider.addEventListener('input', (e) => {
+      musicSlider.addEventListener("input", (e) => {
         const val = parseFloat(e.target.value);
         musicVal.textContent = `${Math.round(val * 100)}%`;
         if (window.LightWars.sound) {
@@ -455,65 +519,68 @@ class LightWarsGame {
     }
 
     // Stop Tutorial / Noobi-Wan Instruction Modal dismiss
-    const tutorialDismissBtn = document.getElementById('tutorialDismissBtn');
+    const tutorialDismissBtn = document.getElementById("tutorialDismissBtn");
     if (tutorialDismissBtn) {
-      tutorialDismissBtn.addEventListener('click', (e) => {
+      tutorialDismissBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         this.dismissTutorial();
       });
     }
 
-    const tutorialModal = document.getElementById('tutorialModal');
+    const tutorialModal = document.getElementById("tutorialModal");
     if (tutorialModal) {
-      tutorialModal.addEventListener('click', (e) => {
-        if (e.target === tutorialModal || e.target.classList.contains('noobi-art-img')) {
+      tutorialModal.addEventListener("click", (e) => {
+        if (
+          e.target === tutorialModal ||
+          e.target.classList.contains("noobi-art-img")
+        ) {
           this.dismissTutorial();
         }
       });
     }
 
     // In-Game HUD Action Buttons (Pause & Help)
-    const inGamePauseBtn = document.getElementById('inGamePauseBtn');
+    const inGamePauseBtn = document.getElementById("inGamePauseBtn");
     if (inGamePauseBtn) {
-      inGamePauseBtn.addEventListener('click', (e) => {
+      inGamePauseBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         if (this.isHelpModalOpen()) {
           this.toggleHelpModal(false);
         }
-        if (this.state === 'PLAYING') {
+        if (this.state === "PLAYING") {
           this.togglePauseMenu(true);
-        } else if (this.state === 'PAUSED') {
+        } else if (this.state === "PAUSED") {
           this.togglePauseMenu(false);
         }
       });
     }
 
-    const inGameHelpBtn = document.getElementById('inGameHelpBtn');
+    const inGameHelpBtn = document.getElementById("inGameHelpBtn");
     if (inGameHelpBtn) {
-      inGameHelpBtn.addEventListener('click', (e) => {
+      inGameHelpBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         this.toggleHelpModal(true);
       });
     }
 
     // Help Modal Close / Resume Buttons
-    const helpResumeBtn = document.getElementById('helpResumeBtn');
+    const helpResumeBtn = document.getElementById("helpResumeBtn");
     if (helpResumeBtn) {
-      helpResumeBtn.addEventListener('click', () => {
+      helpResumeBtn.addEventListener("click", () => {
         this.toggleHelpModal(false);
       });
     }
 
-    const helpCloseX = document.getElementById('helpModalCloseX');
+    const helpCloseX = document.getElementById("helpModalCloseX");
     if (helpCloseX) {
-      helpCloseX.addEventListener('click', () => {
+      helpCloseX.addEventListener("click", () => {
         this.toggleHelpModal(false);
       });
     }
 
-    const helpModal = document.getElementById('helpVennModal');
+    const helpModal = document.getElementById("helpVennModal");
     if (helpModal) {
-      helpModal.addEventListener('click', (e) => {
+      helpModal.addEventListener("click", (e) => {
         if (e.target === helpModal) {
           this.toggleHelpModal(false);
         }
@@ -528,65 +595,69 @@ class LightWarsGame {
 
     // Start Main Menu music on first user interaction anywhere (complies with browser AudioContext autoplay policy)
     const startMenuMusicOnFirstGesture = () => {
-      if (this.state === 'MENU' && window.LightWars.sound) {
+      if (this.state === "MENU" && window.LightWars.sound) {
         window.LightWars.sound.resume();
-        window.LightWars.sound.startMusic('MENU');
+        window.LightWars.sound.startMusic("MENU");
       }
-      window.removeEventListener('pointerdown', startMenuMusicOnFirstGesture);
-      window.removeEventListener('keydown', startMenuMusicOnFirstGesture);
+      window.removeEventListener("pointerdown", startMenuMusicOnFirstGesture);
+      window.removeEventListener("keydown", startMenuMusicOnFirstGesture);
     };
-    window.addEventListener('pointerdown', startMenuMusicOnFirstGesture, { once: true });
-    window.addEventListener('keydown', startMenuMusicOnFirstGesture, { once: true });
+    window.addEventListener("pointerdown", startMenuMusicOnFirstGesture, {
+      once: true,
+    });
+    window.addEventListener("keydown", startMenuMusicOnFirstGesture, {
+      once: true,
+    });
   }
 
   togglePauseMenu(show) {
-    const pauseModal = document.getElementById('escapePauseModal');
+    const pauseModal = document.getElementById("escapePauseModal");
     if (!pauseModal) return;
 
     if (show) {
-      this.state = 'PAUSED';
-      pauseModal.style.display = 'flex';
+      this.state = "PAUSED";
+      pauseModal.style.display = "flex";
     } else {
-      pauseModal.style.display = 'none';
-      if (this.state === 'PAUSED') {
-        this.state = 'PLAYING';
+      pauseModal.style.display = "none";
+      if (this.state === "PAUSED") {
+        this.state = "PLAYING";
       }
     }
   }
 
   isHelpModalOpen() {
-    const modal = document.getElementById('helpVennModal');
-    return modal && modal.classList.contains('visible');
+    const modal = document.getElementById("helpVennModal");
+    return modal && modal.classList.contains("visible");
   }
 
   toggleHelpModal(show) {
-    const modal = document.getElementById('helpVennModal');
+    const modal = document.getElementById("helpVennModal");
     if (!modal) return;
 
     // Strict requirement: "take care that pressing H when on escape shouldnt display anything"
-    const pauseModal = document.getElementById('escapePauseModal');
-    if (pauseModal && pauseModal.style.display === 'flex') {
+    const pauseModal = document.getElementById("escapePauseModal");
+    if (pauseModal && pauseModal.style.display === "flex") {
       return; // Do nothing when escape pause menu is open!
     }
 
-    const isCurrentlyOpen = modal.classList.contains('visible');
-    const shouldOpen = (show !== undefined) ? show : !isCurrentlyOpen;
+    const isCurrentlyOpen = modal.classList.contains("visible");
+    const shouldOpen = show !== undefined ? show : !isCurrentlyOpen;
 
     if (shouldOpen) {
       if (isCurrentlyOpen) return;
 
       // Remember pre-help state to restore upon closing (e.g. 'PLAYING' or 'TUTORIAL')
-      this._savedPreHelpState = this.state || 'PLAYING';
+      this._savedPreHelpState = this.state || "PLAYING";
 
       // Immediately PAUSE the game simulation
-      this.state = 'PAUSED';
+      this.state = "PAUSED";
       this.input.isMouseDown = false;
       this.input.keys = {};
 
       // Clear any pending newly unlocked badge on HUD button
-      const helpBtn = document.getElementById('inGameHelpBtn');
+      const helpBtn = document.getElementById("inGameHelpBtn");
       if (helpBtn) {
-        helpBtn.classList.remove('has-new-unlock');
+        helpBtn.classList.remove("has-new-unlock");
       }
       if (this._newlyUnlockedCapabilities) {
         this._newlyUnlockedCapabilities.clear();
@@ -598,41 +669,51 @@ class LightWarsGame {
       // Re-render capability list so all unlocks are fresh
       this.renderHelpCapabilities();
 
-      if (window.LightWars.sound && window.LightWars.sound.playDialogueAdvance) {
+      if (
+        window.LightWars.sound &&
+        window.LightWars.sound.playDialogueAdvance
+      ) {
         window.LightWars.sound.playDialogueAdvance();
       }
 
       // Smooth opening animation sequence
-      modal.style.display = 'flex';
+      modal.style.display = "flex";
       void modal.offsetWidth; // Force layout reflow so CSS transition begins smoothly from 0
       requestAnimationFrame(() => {
-        modal.classList.add('visible');
+        modal.classList.add("visible");
       });
     } else {
       if (!isCurrentlyOpen) return;
 
       // Smooth closing sequence
-      modal.classList.remove('visible');
+      modal.classList.remove("visible");
 
-      if (window.LightWars.sound && window.LightWars.sound.playDialogueAdvance) {
+      if (
+        window.LightWars.sound &&
+        window.LightWars.sound.playDialogueAdvance
+      ) {
         window.LightWars.sound.playDialogueAdvance();
       }
 
       // Wait for CSS transition (280ms) before hiding display
       setTimeout(() => {
-        modal.style.display = 'none';
+        modal.style.display = "none";
 
         // Requirement: "and when on noobiwan chat it should display that help tab and pressing H again should remove it and continue where u left off"
-        this.state = this._savedPreHelpState || 'PLAYING';
+        this.state = this._savedPreHelpState || "PLAYING";
       }, 280);
     }
   }
 
   getCurrentMissionLevel() {
-    if (this.waves && typeof this.waves.level === 'number' && this.waves.level > 0) {
+    if (
+      this.waves &&
+      typeof this.waves.level === "number" &&
+      this.waves.level > 0
+    ) {
       return this.waves.level;
     }
-    if (typeof this._lastLevel === 'number' && this._lastLevel > 0) {
+    if (typeof this._lastLevel === "number" && this._lastLevel > 0) {
       return this._lastLevel;
     }
     return 1;
@@ -643,58 +724,61 @@ class LightWarsGame {
 
     // Stage-gate Right Column sections
     // Requirement: "dont show mission 2,3 in Help in 1, first show 1 in m1 then 2 in m2 then 3 in m3"
-    const sec1 = document.getElementById('sectionMission1');
-    const sec2 = document.getElementById('sectionMission2');
-    const sec3 = document.getElementById('sectionMission3');
-    const badge = document.getElementById('helpMissionBadge');
-    const subtitle = document.getElementById('helpModalSubtitle');
+    const sec1 = document.getElementById("sectionMission1");
+    const sec2 = document.getElementById("sectionMission2");
+    const sec3 = document.getElementById("sectionMission3");
+    const badge = document.getElementById("helpMissionBadge");
+    const subtitle = document.getElementById("helpModalSubtitle");
 
-    if (sec1) sec1.style.display = 'block'; // Always visible in all missions
-    if (sec2) sec2.style.display = (lvl >= 2) ? 'block' : 'none'; // Only in Mission 2 & 3
-    if (sec3) sec3.style.display = (lvl >= 3) ? 'block' : 'none'; // Only in Mission 3
+    if (sec1) sec1.style.display = "block"; // Always visible in all missions
+    if (sec2) sec2.style.display = lvl >= 2 ? "block" : "none"; // Only in Mission 2 & 3
+    if (sec3) sec3.style.display = lvl >= 3 ? "block" : "none"; // Only in Mission 3
 
     // Update Header Badge & Subtitle
     if (badge) {
       if (lvl === 1) {
-        badge.textContent = '⚡ MISSION 01 INTEL';
+        badge.textContent = "⚡ MISSION 01 INTEL";
       } else if (lvl === 2) {
-        badge.textContent = '⚡ MISSION 02 INTEL';
+        badge.textContent = "⚡ MISSION 02 INTEL";
       } else {
-        badge.textContent = '⚡ MISSION 03 INTEL';
+        badge.textContent = "⚡ MISSION 03 INTEL";
       }
     }
 
     if (subtitle) {
       if (lvl === 1) {
-        subtitle.textContent = 'MISSION 01: ADDITIVE SPECTRUM & CMY TROOP COUNTERS';
+        subtitle.textContent =
+          "MISSION 01: ADDITIVE SPECTRUM & CMY TROOP COUNTERS";
       } else if (lvl === 2) {
-        subtitle.textContent = 'MISSION 02: ADVANCED RGB TROOPS & COMBAT SYNTHESIS';
+        subtitle.textContent =
+          "MISSION 02: ADVANCED RGB TROOPS & COMBAT SYNTHESIS";
       } else {
-        subtitle.textContent = 'MISSION 03: VOID OVERLORD & WHITE LIGHT CONVERGENCE';
+        subtitle.textContent =
+          "MISSION 03: VOID OVERLORD & WHITE LIGHT CONVERGENCE";
       }
     }
 
     // Stage-gate SVG Venn diagram elements
     // In Level 1 and 2, hide Black Boss node in SVG
-    const nodeBoss = document.getElementById('nodeBlackBoss');
+    const nodeBoss = document.getElementById("nodeBlackBoss");
     if (nodeBoss) {
-      nodeBoss.style.display = (lvl >= 3) ? 'inline' : 'none';
+      nodeBoss.style.display = lvl >= 3 ? "inline" : "none";
     }
 
     // Center white node text in SVG: in Level 1 & 2 show SANCTUARY, in Level 3 show [7] WHITE
-    const nodeWhite = document.getElementById('nodeWhite');
+    const nodeWhite = document.getElementById("nodeWhite");
     if (nodeWhite) {
-      const keyTxt = nodeWhite.querySelector('.node-key-txt');
-      const nameTxt = nodeWhite.querySelector('.node-name-txt');
-      const subTxt = nodeWhite.querySelector('.node-sub-txt');
+      const keyTxt = nodeWhite.querySelector(".node-key-txt");
+      const nameTxt = nodeWhite.querySelector(".node-name-txt");
+      const subTxt = nodeWhite.querySelector(".node-sub-txt");
       if (lvl < 3) {
-        if (keyTxt) keyTxt.textContent = '⚪';
-        if (nameTxt) nameTxt.textContent = 'SANCTUARY';
-        if (subTxt) subTxt.textContent = 'RECHARGE';
+        if (keyTxt) keyTxt.textContent = "⚪";
+        if (nameTxt) nameTxt.textContent = "SANCTUARY";
+        if (subTxt) subTxt.textContent = "RECHARGE";
       } else {
-        if (keyTxt) keyTxt.textContent = '[7]';
-        if (nameTxt) nameTxt.textContent = 'WHITE';
-        if (subTxt) subTxt.textContent = 'R+G+B';
+        if (keyTxt) keyTxt.textContent = "[7]";
+        if (nameTxt) nameTxt.textContent = "WHITE";
+        if (subTxt) subTxt.textContent = "R+G+B";
       }
     }
   }
@@ -706,42 +790,48 @@ class LightWarsGame {
         orbCrafting: false,
         dash: false,
         whiteAmmo: false,
-        inversion: false
+        inversion: false,
       };
       this._newlyUnlockedCapabilities = new Set();
     }
 
     if (!this.unlockedCapabilities[key]) {
       this.unlockedCapabilities[key] = true;
-      if (!this._newlyUnlockedCapabilities) this._newlyUnlockedCapabilities = new Set();
+      if (!this._newlyUnlockedCapabilities)
+        this._newlyUnlockedCapabilities = new Set();
       this._newlyUnlockedCapabilities.add(key);
 
       // Re-render capability list in Help modal immediately
       this.renderHelpCapabilities();
 
       // Trigger notification badge & pulse on in-game [H] Help button
-      const helpBtn = document.getElementById('inGameHelpBtn');
+      const helpBtn = document.getElementById("inGameHelpBtn");
       if (helpBtn) {
-        helpBtn.classList.add('has-new-unlock');
-        helpBtn.title = 'New Combat Intel Unlocked! Press [H] to view.';
+        helpBtn.classList.add("has-new-unlock");
+        helpBtn.title = "New Combat Intel Unlocked! Press [H] to view.";
       }
 
       // Spawn celebratory in-game comic text if game is currently playing
-      if (this.state === 'PLAYING' && this.particles && this.player) {
+      if (this.state === "PLAYING" && this.particles && this.player) {
         const labels = {
-          dash: 'DASH UNLOCKED! [H]',
-          orbCrafting: 'ORB CRAFTING UNLOCKED! [H]',
-          whiteAmmo: 'WHITE AMMO UNLOCKED! [H]',
-          inversion: 'INVERSION INTEL ADDED! [H]'
+          dash: "DASH UNLOCKED! [H]",
+          orbCrafting: "ORB CRAFTING UNLOCKED! [H]",
+          whiteAmmo: "WHITE AMMO UNLOCKED! [H]",
+          inversion: "INVERSION INTEL ADDED! [H]",
         };
-        const text = labels[key] || 'NEW INTEL UNLOCKED! [H]';
-        this.particles.spawnComicText(this.player.x, this.player.y - 80, text, '#00F0FF');
+        const text = labels[key] || "NEW INTEL UNLOCKED! [H]";
+        this.particles.spawnComicText(
+          this.player.x,
+          this.player.y - 80,
+          text,
+          "#00F0FF",
+        );
       }
     }
   }
 
   renderHelpCapabilities() {
-    const container = document.getElementById('helpCapabilitiesList');
+    const container = document.getElementById("helpCapabilitiesList");
     if (!container) return;
 
     if (!this.unlockedCapabilities) {
@@ -750,7 +840,7 @@ class LightWarsGame {
         orbCrafting: false,
         dash: false,
         whiteAmmo: false,
-        inversion: false
+        inversion: false,
       };
       this._newlyUnlockedCapabilities = new Set();
     }
@@ -761,7 +851,10 @@ class LightWarsGame {
     if (this.player && this.player.dashUnlocked) {
       this.unlockedCapabilities.dash = true;
     }
-    if (localStorage.getItem('lightwars_dash_unlocked') === 'true' || this.devMode) {
+    if (
+      localStorage.getItem("lightwars_dash_unlocked") === "true" ||
+      this.devMode
+    ) {
       this.unlockedCapabilities.dash = true;
     }
     if (currentLvl >= 2) {
@@ -778,79 +871,83 @@ class LightWarsGame {
 
     const allItems = [
       {
-        id: 'recharge',
+        id: "recharge",
         minLevel: 1,
-        icon: '⚪',
-        name: 'WHITE LIGHT RECHARGE SANCTUARY',
-        key: 'TOP-CENTER SANCTUARY',
-        desc: 'Step into the glowing white circle at the top of the map to <b>instantly reload all ammo</b> and regenerate shields.',
+        icon: "⚪",
+        name: "WHITE LIGHT RECHARGE SANCTUARY",
+        key: "TOP-CENTER SANCTUARY",
+        desc: "Step into the glowing white circle at the top of the map to <b>instantly reload all ammo</b> and regenerate shields.",
         unlocked: true,
-        lockHint: ''
+        lockHint: "",
       },
       {
-        id: 'orbCrafting',
+        id: "orbCrafting",
         minLevel: 1,
-        icon: '💎',
-        name: 'ORB AMMO SYNTHESIS (HITTING ORBS)',
-        key: 'SHOOT WITH COMPLEMENTARY LASER',
-        desc: 'Shoot dropped enemy energy orbs with <b>complementary lasers</b> to synthesize high-tier <b>Ammo Crystals</b>! Walk over crystals to collect ammo.',
+        icon: "💎",
+        name: "ORB AMMO SYNTHESIS (HITTING ORBS)",
+        key: "SHOOT WITH COMPLEMENTARY LASER",
+        desc: "Shoot dropped enemy energy orbs with <b>complementary lasers</b> to synthesize high-tier <b>Ammo Crystals</b>! Walk over crystals to collect ammo.",
         unlocked: !!this.unlockedCapabilities.orbCrafting,
-        lockHint: 'Defeat troops to drop orbs and discover synthesis.'
+        lockHint: "Defeat troops to drop orbs and discover synthesis.",
       },
       {
-        id: 'dash',
+        id: "dash",
         minLevel: 1,
-        icon: '⚡',
-        name: 'HIGH-SPEED DASH WARP',
-        key: 'SPACE / RMB',
-        desc: 'Warp at high velocity to <b>dodge enemy lasers</b>, slip through crossfire, and evade dangerous barrel concussions!',
+        icon: "⚡",
+        name: "HIGH-SPEED DASH WARP",
+        key: "SPACE / RMB",
+        desc: "Warp at high velocity to <b>dodge enemy lasers</b>, slip through crossfire, and evade dangerous barrel concussions!",
         unlocked: !!this.unlockedCapabilities.dash,
-        lockHint: 'Destroy the Black Orb in Level 1 to unlock Dash.'
+        lockHint: "Destroy the Black Orb in Level 1 to unlock Dash.",
       },
       {
-        id: 'whiteAmmo',
+        id: "whiteAmmo",
         minLevel: 3,
-        icon: '✨',
-        name: 'WHITE LASER CONVERGENCE [7]',
-        key: 'SYNTHESIZE IN ORB (L3)',
-        desc: 'Shoot complementary lasers into an orb (Red into Cyan orb) to synthesize <b>White Ammo [7]</b>. The Black Boss requires <b>3 White laser strikes</b> to defeat.',
+        icon: "✨",
+        name: "WHITE LASER CONVERGENCE [7]",
+        key: "SYNTHESIZE IN ORB (L3)",
+        desc: "Shoot complementary lasers into an orb (Red into Cyan orb) to synthesize <b>White Ammo [7]</b>. The Black Boss requires <b>3 White laser strikes</b> to defeat.",
         unlocked: !!this.unlockedCapabilities.whiteAmmo,
-        lockHint: 'Classified: Unlocked in Mission 03 Boss fight.'
+        lockHint: "Classified: Unlocked in Mission 03 Boss fight.",
       },
       {
-        id: 'inversion',
+        id: "inversion",
         minLevel: 3,
-        icon: '🔄',
-        name: 'INVERT FRAME ABILITY',
-        key: 'KEY [E]',
-        desc: 'Activate Invert Frame using <b>KEY [E]</b> to reverse light physics for 10s! Cooldown scales with damage: <b>25s</b> at full health, <b>7s</b> after 1 heart lost, <b>5s</b> after 2 hearts lost. When inverted, bots can only be destroyed by their matching color lasers, and the Black Boss is invincible.',
+        icon: "🔄",
+        name: "INVERT FRAME ABILITY",
+        key: "KEY [E]",
+        desc: "Activate Invert Frame using <b>KEY [E]</b> to reverse light physics for 10s! Cooldown scales with damage: <b>25s</b> at full health, <b>7s</b> after 1 heart lost, <b>5s</b> after 2 hearts lost. When inverted, bots can only be destroyed by their matching color lasers, and the Black Boss is invincible.",
         unlocked: !!this.unlockedCapabilities.inversion,
-        lockHint: 'Defeat the Black Boss in Mission 03 to acquire.'
-      }
+        lockHint: "Defeat the Black Boss in Mission 03 to acquire.",
+      },
     ];
 
     // Filter capabilities based on mission level so future mission spoilers are not shown early
-    const items = allItems.filter(item => currentLvl >= item.minLevel);
+    const items = allItems.filter((item) => currentLvl >= item.minLevel);
 
-    container.innerHTML = items.map(item => {
-      const isNew = this._newlyUnlockedCapabilities && this._newlyUnlockedCapabilities.has(item.id);
-      const entryClass = item.unlocked 
-        ? `capability-entry is-unlocked ${isNew ? 'is-newly-unlocked' : ''}`
-        : 'capability-entry is-locked';
+    container.innerHTML = items
+      .map((item) => {
+        const isNew =
+          this._newlyUnlockedCapabilities &&
+          this._newlyUnlockedCapabilities.has(item.id);
+        const entryClass = item.unlocked
+          ? `capability-entry is-unlocked ${isNew ? "is-newly-unlocked" : ""}`
+          : "capability-entry is-locked";
 
-      const statusTag = isNew
-        ? `<span class="capability-status-tag new-tag">★ NEW UNLOCK!</span>`
-        : (item.unlocked 
-            ? `<span class="capability-status-tag unlocked">&#x2714; UNLOCKED</span>` 
-            : `<span class="capability-status-tag locked">&#x1F512; LOCKED</span>`);
+        const statusTag = isNew
+          ? `<span class="capability-status-tag new-tag">★ NEW UNLOCK!</span>`
+          : item.unlocked
+            ? `<span class="capability-status-tag unlocked">&#x2714; UNLOCKED</span>`
+            : `<span class="capability-status-tag locked">&#x1F512; LOCKED</span>`;
 
-      const keyPill = item.unlocked && item.key
-        ? `<span class="capability-key-pill">[${item.key}]</span>`
-        : '';
+        const keyPill =
+          item.unlocked && item.key
+            ? `<span class="capability-key-pill">[${item.key}]</span>`
+            : "";
 
-      const descText = item.unlocked ? item.desc : `<i>${item.lockHint}</i>`;
+        const descText = item.unlocked ? item.desc : `<i>${item.lockHint}</i>`;
 
-      return `
+        return `
         <div class="${entryClass}">
           <div class="capability-header">
             <div class="capability-title-wrap">
@@ -864,71 +961,73 @@ class LightWarsGame {
           </div>
         </div>
       `;
-    }).join('');
+      })
+      .join("");
   }
 
   setupVennDiagramInteractions() {
     const pairs = {
-      'CYAN': {
-        enemy: 'CYAN',
-        weapon: 'RED',
-        beamId: 'beamRedCyan',
-        nodeIds: ['nodeCyan', 'nodeRed'],
-        cardId: 'cardCyan',
-        text: '🎯 <b>CYAN TROOPS</b> (Green + Blue) &rarr; Shoot <b>RED LASER [1]</b>! (Red is directly opposite Cyan across the Venn diagram).'
+      CYAN: {
+        enemy: "CYAN",
+        weapon: "RED",
+        beamId: "beamRedCyan",
+        nodeIds: ["nodeCyan", "nodeRed"],
+        cardId: "cardCyan",
+        text: "🎯 <b>CYAN TROOPS</b> (Green + Blue) &rarr; Shoot <b>RED LASER [1]</b>! (Red is directly opposite Cyan across the Venn diagram).",
       },
-      'MAGENTA': {
-        enemy: 'MAGENTA',
-        weapon: 'GREEN',
-        beamId: 'beamGreenMagenta',
-        nodeIds: ['nodeMagenta', 'nodeGreen'],
-        cardId: 'cardMagenta',
-        text: '🎯 <b>MAGENTA TROOPS</b> (Red + Blue) &rarr; Shoot <b>GREEN LASER [2]</b>! (Green is directly opposite Magenta across the Venn diagram).'
+      MAGENTA: {
+        enemy: "MAGENTA",
+        weapon: "GREEN",
+        beamId: "beamGreenMagenta",
+        nodeIds: ["nodeMagenta", "nodeGreen"],
+        cardId: "cardMagenta",
+        text: "🎯 <b>MAGENTA TROOPS</b> (Red + Blue) &rarr; Shoot <b>GREEN LASER [2]</b>! (Green is directly opposite Magenta across the Venn diagram).",
       },
-      'YELLOW': {
-        enemy: 'YELLOW',
-        weapon: 'BLUE',
-        beamId: 'beamBlueYellow',
-        nodeIds: ['nodeYellow', 'nodeBlue'],
-        cardId: 'cardYellow',
-        text: '🎯 <b>YELLOW TROOPS</b> (Red + Green) &rarr; Shoot <b>BLUE LASER [3]</b>! (Blue is directly opposite Yellow across the Venn diagram).'
+      YELLOW: {
+        enemy: "YELLOW",
+        weapon: "BLUE",
+        beamId: "beamBlueYellow",
+        nodeIds: ["nodeYellow", "nodeBlue"],
+        cardId: "cardYellow",
+        text: "🎯 <b>YELLOW TROOPS</b> (Red + Green) &rarr; Shoot <b>BLUE LASER [3]</b>! (Blue is directly opposite Yellow across the Venn diagram).",
       },
-      'RED': {
-        enemy: 'RED',
-        weapon: 'CYAN',
-        beamId: 'beamRedCyan',
-        nodeIds: ['nodeRed', 'nodeCyan'],
-        cardId: 'cardRed',
-        text: '🎯 <b>RED TROOPS</b> &rarr; Shoot <b>CYAN LASER [4]</b>! (Cyan is Green + Blue, directly opposite Red).'
+      RED: {
+        enemy: "RED",
+        weapon: "CYAN",
+        beamId: "beamRedCyan",
+        nodeIds: ["nodeRed", "nodeCyan"],
+        cardId: "cardRed",
+        text: "🎯 <b>RED TROOPS</b> &rarr; Shoot <b>CYAN LASER [4]</b>! (Cyan is Green + Blue, directly opposite Red).",
       },
-      'GREEN': {
-        enemy: 'GREEN',
-        weapon: 'MAGENTA',
-        beamId: 'beamGreenMagenta',
-        nodeIds: ['nodeGreen', 'nodeMagenta'],
-        cardId: 'cardGreen',
-        text: '🎯 <b>GREEN TROOPS</b> &rarr; Shoot <b>MAGENTA LASER [5]</b>! (Magenta is Red + Blue, directly opposite Green).'
+      GREEN: {
+        enemy: "GREEN",
+        weapon: "MAGENTA",
+        beamId: "beamGreenMagenta",
+        nodeIds: ["nodeGreen", "nodeMagenta"],
+        cardId: "cardGreen",
+        text: "🎯 <b>GREEN TROOPS</b> &rarr; Shoot <b>MAGENTA LASER [5]</b>! (Magenta is Red + Blue, directly opposite Green).",
       },
-      'BLUE': {
-        enemy: 'BLUE',
-        weapon: 'YELLOW',
-        beamId: 'beamBlueYellow',
-        nodeIds: ['nodeBlue', 'nodeYellow'],
-        cardId: 'cardBlue',
-        text: '🎯 <b>BLUE TROOPS</b> &rarr; Shoot <b>YELLOW LASER [6]</b>! (Yellow is Red + Green, directly opposite Blue).'
+      BLUE: {
+        enemy: "BLUE",
+        weapon: "YELLOW",
+        beamId: "beamBlueYellow",
+        nodeIds: ["nodeBlue", "nodeYellow"],
+        cardId: "cardBlue",
+        text: "🎯 <b>BLUE TROOPS</b> &rarr; Shoot <b>YELLOW LASER [6]</b>! (Yellow is Red + Green, directly opposite Blue).",
       },
-      'WHITE': {
-        enemy: 'BLACK',
-        weapon: 'WHITE',
+      WHITE: {
+        enemy: "BLACK",
+        weapon: "WHITE",
         beamId: null,
-        nodeIds: ['nodeWhite', 'nodeBlackBoss'],
-        cardId: 'cardBoss',
-        text: '🌑 <b>THE BLACK BOSS</b> devours all standard wavelengths! Only <b>WHITE LASER [7]</b> (R+G+B convergence) can damage his void core!'
-      }
+        nodeIds: ["nodeWhite", "nodeBlackBoss"],
+        cardId: "cardBoss",
+        text: "🌑 <b>THE BLACK BOSS</b> devours all standard wavelengths! Only <b>WHITE LASER [7]</b> (R+G+B convergence) can damage his void core!",
+      },
     };
 
-    const calloutEl = document.getElementById('tacticalCalloutText');
-    const defaultText = '<b>THE OPPOSITE RULE:</b> Shoot the laser directly <u>opposite</u> across the Venn diagram to destroy target enemies!';
+    const calloutEl = document.getElementById("tacticalCalloutText");
+    const defaultText =
+      "<b>THE OPPOSITE RULE:</b> Shoot the laser directly <u>opposite</u> across the Venn diagram to destroy target enemies!";
 
     const activatePair = (key) => {
       const data = pairs[key];
@@ -936,29 +1035,40 @@ class LightWarsGame {
 
       const card = document.getElementById(data.cardId);
       // If card belongs to a hidden mission section, don't activate or spoil it
-      if (card && card.closest('.matrix-card-section') && card.closest('.matrix-card-section').style.display === 'none') {
+      if (
+        card &&
+        card.closest(".matrix-card-section") &&
+        card.closest(".matrix-card-section").style.display === "none"
+      ) {
         return;
       }
-      if (key === 'WHITE' && this.getCurrentMissionLevel() < 3) {
+      if (key === "WHITE" && this.getCurrentMissionLevel() < 3) {
         return;
       }
 
       // Highlight card
-      document.querySelectorAll('.counter-card').forEach(c => c.classList.remove('is-highlighted'));
-      if (card) card.classList.add('is-highlighted');
+      document
+        .querySelectorAll(".counter-card")
+        .forEach((c) => c.classList.remove("is-highlighted"));
+      if (card) card.classList.add("is-highlighted");
 
       // Highlight SVG nodes
-      document.querySelectorAll('.venn-node, .venn-boss-node').forEach(n => n.classList.remove('is-active-node'));
-      data.nodeIds.forEach(id => {
+      document
+        .querySelectorAll(".venn-node, .venn-boss-node")
+        .forEach((n) => n.classList.remove("is-active-node"));
+      data.nodeIds.forEach((id) => {
         const el = document.getElementById(id);
-        if (el && el.style.display !== 'none') el.classList.add('is-active-node');
+        if (el && el.style.display !== "none")
+          el.classList.add("is-active-node");
       });
 
       // Highlight beam
-      document.querySelectorAll('.counter-beam-line').forEach(b => b.classList.remove('is-active-beam'));
+      document
+        .querySelectorAll(".counter-beam-line")
+        .forEach((b) => b.classList.remove("is-active-beam"));
       if (data.beamId) {
         const beam = document.getElementById(data.beamId);
-        if (beam) beam.classList.add('is-active-beam');
+        if (beam) beam.classList.add("is-active-beam");
       }
 
       // Update callout text
@@ -966,56 +1076,66 @@ class LightWarsGame {
     };
 
     const deactivateAll = () => {
-      document.querySelectorAll('.counter-card').forEach(c => c.classList.remove('is-highlighted'));
-      document.querySelectorAll('.venn-node, .venn-boss-node').forEach(n => n.classList.remove('is-active-node'));
-      document.querySelectorAll('.counter-beam-line').forEach(b => b.classList.remove('is-active-beam'));
+      document
+        .querySelectorAll(".counter-card")
+        .forEach((c) => c.classList.remove("is-highlighted"));
+      document
+        .querySelectorAll(".venn-node, .venn-boss-node")
+        .forEach((n) => n.classList.remove("is-active-node"));
+      document
+        .querySelectorAll(".counter-beam-line")
+        .forEach((b) => b.classList.remove("is-active-beam"));
       if (calloutEl) calloutEl.innerHTML = defaultText;
     };
 
     // Attach to cards
-    Object.keys(pairs).forEach(key => {
+    Object.keys(pairs).forEach((key) => {
       const card = document.getElementById(pairs[key].cardId);
       if (card) {
-        card.addEventListener('mouseenter', () => activatePair(key));
-        card.addEventListener('mouseleave', deactivateAll);
-        card.addEventListener('click', () => activatePair(key));
+        card.addEventListener("mouseenter", () => activatePair(key));
+        card.addEventListener("mouseleave", deactivateAll);
+        card.addEventListener("click", () => activatePair(key));
       }
     });
 
     // Attach to Venn SVG nodes
     const nodeToKey = {
-      'nodeCyan': 'CYAN',
-      'nodeMagenta': 'MAGENTA',
-      'nodeYellow': 'YELLOW',
-      'nodeRed': 'RED',
-      'nodeGreen': 'GREEN',
-      'nodeBlue': 'BLUE',
-      'nodeWhite': 'WHITE',
-      'nodeBlackBoss': 'WHITE'
+      nodeCyan: "CYAN",
+      nodeMagenta: "MAGENTA",
+      nodeYellow: "YELLOW",
+      nodeRed: "RED",
+      nodeGreen: "GREEN",
+      nodeBlue: "BLUE",
+      nodeWhite: "WHITE",
+      nodeBlackBoss: "WHITE",
     };
 
-    Object.keys(nodeToKey).forEach(nodeId => {
+    Object.keys(nodeToKey).forEach((nodeId) => {
       const el = document.getElementById(nodeId);
       if (el) {
-        el.addEventListener('mouseenter', () => activatePair(nodeToKey[nodeId]));
-        el.addEventListener('mouseleave', deactivateAll);
-        el.addEventListener('click', () => activatePair(nodeToKey[nodeId]));
+        el.addEventListener("mouseenter", () =>
+          activatePair(nodeToKey[nodeId]),
+        );
+        el.addEventListener("mouseleave", deactivateAll);
+        el.addEventListener("click", () => activatePair(nodeToKey[nodeId]));
       }
     });
 
     // Beams hover
     const beamToKey = {
-      'beamRedCyan': 'CYAN',
-      'beamGreenMagenta': 'MAGENTA',
-      'beamBlueYellow': 'YELLOW'
+      beamRedCyan: "CYAN",
+      beamGreenMagenta: "MAGENTA",
+      beamBlueYellow: "YELLOW",
     };
-    Object.keys(beamToKey).forEach(beamId => {
+    Object.keys(beamToKey).forEach((beamId) => {
       const el = document.getElementById(beamId);
       if (el) {
-        el.style.cursor = 'pointer';
-        el.addEventListener('mouseenter', () => activatePair(beamToKey[beamId]));
-        el.addEventListener('mouseleave', deactivateAll);
-        el.addEventListener('click', () => activatePair(beamToKey[beamId]));
+        el.style.cursor = "pointer";
+        el.addEventListener("mouseenter", () =>
+          activatePair(beamToKey[beamId]),
+        );
+        el.addEventListener("mouseleave", deactivateAll);
+        el.addEventListener("click", () => activatePair(beamToKey[beamId]));
       }
     });
   }
@@ -1029,10 +1149,10 @@ class LightWarsGame {
     this._tutorialSequenceOnComplete = onComplete || null;
     this._tutorialQueue = [...cards];
 
-    if (this.state !== 'TUTORIAL') {
+    if (this.state !== "TUTORIAL") {
       this._savedPreTutorialState = this.state;
     }
-    this.state = 'TUTORIAL';
+    this.state = "TUTORIAL";
 
     const firstCard = this._tutorialQueue.shift();
     this._displayTutorialModal(firstCard);
@@ -1040,7 +1160,8 @@ class LightWarsGame {
 
   showStopTutorial(id, title, message, options = {}) {
     const isRepeatable = options.repeatable || options.force || !id;
-    if (!isRepeatable && id && this._tutorialsSeen && this._tutorialsSeen[id]) return;
+    if (!isRepeatable && id && this._tutorialsSeen && this._tutorialsSeen[id])
+      return;
     if (id && !isRepeatable) {
       if (!this._tutorialsSeen) this._tutorialsSeen = {};
       this._tutorialsSeen[id] = true;
@@ -1050,38 +1171,38 @@ class LightWarsGame {
       id,
       title,
       message,
-      badge: options.badge || '⚡ JEDI MASTER INTEL',
-      tracker: options.tracker || '',
+      badge: options.badge || "⚡ JEDI MASTER INTEL",
+      tracker: options.tracker || "",
       step: options.step || 1,
       totalSteps: options.totalSteps || 1,
-      btnText: options.btnText || 'CONTINUE MISSION ▶',
-      onDismiss: options.onDismiss || null
+      btnText: options.btnText || "CONTINUE MISSION ▶",
+      onDismiss: options.onDismiss || null,
     };
 
-    if (this.state === 'TUTORIAL') {
+    if (this.state === "TUTORIAL") {
       if (!this._tutorialQueue) this._tutorialQueue = [];
       this._tutorialQueue.push(card);
       return;
     }
 
-    if (this.state !== 'TUTORIAL') {
+    if (this.state !== "TUTORIAL") {
       this._savedPreTutorialState = this.state;
     }
-    this.state = 'TUTORIAL';
+    this.state = "TUTORIAL";
     this._displayTutorialModal(card);
   }
 
   _displayTutorialModal(cardOrTitle, message) {
     let card;
-    if (typeof cardOrTitle === 'string') {
+    if (typeof cardOrTitle === "string") {
       card = {
         title: cardOrTitle,
         message: message,
-        badge: '⚡ JEDI MASTER INTEL',
-        tracker: '',
+        badge: "⚡ JEDI MASTER INTEL",
+        tracker: "",
         step: 1,
         totalSteps: 1,
-        btnText: 'CONTINUE NOOBI-WAN ▶'
+        btnText: "CONTINUE NOOBI-WAN ▶",
       };
     } else {
       card = cardOrTitle;
@@ -1089,85 +1210,97 @@ class LightWarsGame {
 
     this._currentCard = card;
 
-    const modal = document.getElementById('tutorialModal');
-    const badgeEl = document.getElementById('tutorialBadge');
-    const trackerEl = document.getElementById('tutorialCardTracker');
-    const titleEl = document.getElementById('tutorialTitle');
-    const msgEl = document.getElementById('tutorialMessage');
-    const btnEl = document.getElementById('tutorialDismissBtn');
-    const dotsEl = document.getElementById('tutorialDots');
+    const modal = document.getElementById("tutorialModal");
+    const badgeEl = document.getElementById("tutorialBadge");
+    const trackerEl = document.getElementById("tutorialCardTracker");
+    const titleEl = document.getElementById("tutorialTitle");
+    const msgEl = document.getElementById("tutorialMessage");
+    const btnEl = document.getElementById("tutorialDismissBtn");
+    const dotsEl = document.getElementById("tutorialDots");
 
     const isBossCard = !!(
-      (card.speakerImg && (card.speakerImg.includes('Black Boss') || card.speakerImg.includes('Splash') || card.speakerImg.includes('Fallen'))) ||
-      (card.id && (card.id.includes('boss') || card.id === 'l3_card0' || card.id === 'l3_card4' || card.id === 'l3_card5')) ||
+      (card.speakerImg &&
+        (card.speakerImg.includes("Black Boss") ||
+          card.speakerImg.includes("Splash") ||
+          card.speakerImg.includes("Fallen"))) ||
+      (card.id &&
+        (card.id.includes("boss") ||
+          card.id === "l3_card0" ||
+          card.id === "l3_card4" ||
+          card.id === "l3_card5")) ||
       card.isBoss
     );
 
     if (modal) {
       if (isBossCard) {
-        modal.classList.add('is-boss-card');
+        modal.classList.add("is-boss-card");
       } else {
-        modal.classList.remove('is-boss-card');
+        modal.classList.remove("is-boss-card");
       }
     }
 
     if (badgeEl) {
-      badgeEl.innerHTML = card.badge || card.tag || '⚡ JEDI MASTER INTEL';
-      badgeEl.style.background = '';
-      badgeEl.style.borderColor = '';
+      badgeEl.innerHTML = card.badge || card.tag || "⚡ JEDI MASTER INTEL";
+      badgeEl.style.background = "";
+      badgeEl.style.borderColor = "";
     }
-    if (titleEl) titleEl.innerHTML = card.title || 'MISSION BRIEFING';
-    if (msgEl) msgEl.innerHTML = card.message || '';
+    if (titleEl) titleEl.innerHTML = card.title || "MISSION BRIEFING";
+    if (msgEl) msgEl.innerHTML = card.message || "";
     if (btnEl) {
-      btnEl.innerHTML = card.btnText || (isBossCard ? 'RESPOND! ▶' : 'CONTINUE NOOBI-WAN ▶');
+      btnEl.innerHTML =
+        card.btnText || (isBossCard ? "RESPOND! ▶" : "CONTINUE NOOBI-WAN ▶");
       // Stick strictly with the established color: Yellow for Noobi, Red against Black
-      btnEl.style.background = '';
-      btnEl.style.boxShadow = '';
-      btnEl.style.color = '';
+      btnEl.style.background = "";
+      btnEl.style.boxShadow = "";
+      btnEl.style.color = "";
     }
 
     // Swap speaker portrait — Black Boss cards supply speakerImg; default is Noobi-Wan
-    const artImg = document.getElementById('noobiArtImg');
+    const artImg = document.getElementById("noobiArtImg");
     if (artImg) {
-      const NOOBI_DEFAULT = 'assets/noobi/noobi_wan_instructions.png';
+      const NOOBI_DEFAULT = "assets/noobi/noobi_wan_instructions.png";
       artImg.src = card.speakerImg || NOOBI_DEFAULT;
-      artImg.alt = card.speakerAlt || 'Master Noobi-Wan Instructions';
+      artImg.alt = card.speakerAlt || "Master Noobi-Wan Instructions";
     }
 
     // Tracker badge (e.g. CARD 01 / 06)
     if (trackerEl) {
-      const trackerText = card.tracker || ((card.totalSteps && card.totalSteps > 1) ? `CARD ${String(card.step).padStart(2, '0')} / ${String(card.totalSteps).padStart(2, '0')}` : '');
+      const trackerText =
+        card.tracker ||
+        (card.totalSteps && card.totalSteps > 1
+          ? `CARD ${String(card.step).padStart(2, "0")} / ${String(card.totalSteps).padStart(2, "0")}`
+          : "");
       if (trackerText) {
         trackerEl.innerHTML = trackerText;
-        trackerEl.style.background = '';
-        trackerEl.style.borderColor = '';
-        trackerEl.style.boxShadow = '';
-        trackerEl.style.display = 'inline-block';
+        trackerEl.style.background = "";
+        trackerEl.style.borderColor = "";
+        trackerEl.style.boxShadow = "";
+        trackerEl.style.display = "inline-block";
       } else {
-        trackerEl.style.display = 'none';
+        trackerEl.style.display = "none";
       }
     }
 
     // Dots indicator
     if (dotsEl) {
-      dotsEl.innerHTML = '';
+      dotsEl.innerHTML = "";
       if (card.totalSteps && card.totalSteps > 1) {
-        dotsEl.style.display = 'flex';
+        dotsEl.style.display = "flex";
         for (let i = 1; i <= card.totalSteps; i++) {
-          const dot = document.createElement('div');
-          dot.className = 'noobi-dot' + (i === card.step ? ' active' : '');
+          const dot = document.createElement("div");
+          dot.className = "noobi-dot" + (i === card.step ? " active" : "");
           dotsEl.appendChild(dot);
         }
       } else {
-        dotsEl.style.display = 'none';
+        dotsEl.style.display = "none";
       }
     }
 
     if (modal) {
-      modal.style.display = 'flex';
+      modal.style.display = "flex";
       void modal.offsetWidth;
       requestAnimationFrame(() => {
-        modal.classList.add('visible');
+        modal.classList.add("visible");
       });
     }
   }
@@ -1179,7 +1312,10 @@ class LightWarsGame {
 
     // If another instruction is queued, transition smoothly to it
     if (this._tutorialQueue && this._tutorialQueue.length > 0) {
-      if (this._currentCard && typeof this._currentCard.onDismiss === 'function') {
+      if (
+        this._currentCard &&
+        typeof this._currentCard.onDismiss === "function"
+      ) {
         try {
           this._currentCard.onDismiss();
         } catch (err) {
@@ -1188,8 +1324,8 @@ class LightWarsGame {
       }
 
       const next = this._tutorialQueue.shift();
-      const modal = document.getElementById('tutorialModal');
-      if (modal) modal.classList.remove('visible');
+      const modal = document.getElementById("tutorialModal");
+      if (modal) modal.classList.remove("visible");
 
       setTimeout(() => {
         this._displayTutorialModal(next);
@@ -1198,9 +1334,9 @@ class LightWarsGame {
     }
 
     // No more cards: close modal
-    const modal = document.getElementById('tutorialModal');
+    const modal = document.getElementById("tutorialModal");
     if (modal) {
-      modal.classList.remove('visible');
+      modal.classList.remove("visible");
     }
 
     const onComplete = this._tutorialSequenceOnComplete;
@@ -1209,20 +1345,21 @@ class LightWarsGame {
     this._currentCard = null;
 
     setTimeout(() => {
-      if (this.state !== 'TUTORIAL') {
-        if (modal) modal.style.display = 'none';
+      if (this.state !== "TUTORIAL") {
+        if (modal) modal.style.display = "none";
       }
     }, 320);
 
     // Restore game state BEFORE calling onDismiss/onComplete so that any state
     // transition inside those callbacks (e.g. onLevelComplete → 'LEVEL_CLEAR') is
     // not overwritten back to 'PLAYING' afterwards.
-    this.state = (this._savedPreTutorialState && this._savedPreTutorialState !== 'TUTORIAL') 
-      ? this._savedPreTutorialState 
-      : 'PLAYING';
-    this._savedPreTutorialState = 'PLAYING';
+    this.state =
+      this._savedPreTutorialState && this._savedPreTutorialState !== "TUTORIAL"
+        ? this._savedPreTutorialState
+        : "PLAYING";
+    this._savedPreTutorialState = "PLAYING";
 
-    if (currentCard && typeof currentCard.onDismiss === 'function') {
+    if (currentCard && typeof currentCard.onDismiss === "function") {
       try {
         currentCard.onDismiss();
       } catch (err) {
@@ -1230,7 +1367,7 @@ class LightWarsGame {
       }
     }
 
-    if (typeof onComplete === 'function') {
+    if (typeof onComplete === "function") {
       onComplete();
     }
   }
@@ -1240,30 +1377,30 @@ class LightWarsGame {
     let title, message;
     if (lvl === 1) {
       title = "FIELD GUIDE: LEVEL 1 TACTICS";
-      message = 
+      message =
         "Listen closely, Fluke. Here is your tactical briefing for Level 1:<br><br>" +
-        "• <b>CONTROLS:</b> Move with <span class=\"noobi-key\">[W][A][S][D]</span> | Aim & Shoot: <span class=\"noobi-key\">[MOUSE]</span>.<br>" +
+        '• <b>CONTROLS:</b> Move with <span class="noobi-key">[W][A][S][D]</span> | Aim & Shoot: <span class="noobi-key">[MOUSE]</span>.<br>' +
         "• <b>COUNTER WEAKNESSES:</b><br>" +
-        "&nbsp;&nbsp;&bull; <span class=\"noobi-hl cyan\">CYAN TROOP</span> &rarr; Kill with <span class=\"noobi-hl red\">RED LASER [1]</span><br>" +
-        "&nbsp;&nbsp;&bull; <span class=\"noobi-hl magenta\">MAGENTA TROOP</span> &rarr; Kill with <span class=\"noobi-hl green\">GREEN LASER [2]</span><br>" +
-        "&nbsp;&nbsp;&bull; <span class=\"noobi-hl yellow\">YELLOW TROOP</span> &rarr; Kill with <span class=\"noobi-hl blue\">BLUE LASER [3]</span><br>" +
+        '&nbsp;&nbsp;&bull; <span class="noobi-hl cyan">CYAN TROOP</span> &rarr; Kill with <span class="noobi-hl red">RED LASER [1]</span><br>' +
+        '&nbsp;&nbsp;&bull; <span class="noobi-hl magenta">MAGENTA TROOP</span> &rarr; Kill with <span class="noobi-hl green">GREEN LASER [2]</span><br>' +
+        '&nbsp;&nbsp;&bull; <span class="noobi-hl yellow">YELLOW TROOP</span> &rarr; Kill with <span class="noobi-hl blue">BLUE LASER [3]</span><br>' +
         "• <b>BLACK ORB:</b> Shoot with 1 bullet of each type (Red, Green, Blue, Cyan, Magenta, Yellow) to unlock the DASH reward!<br>" +
         "• <b>RECHARGE:</b> Step onto the white glowing sanctuary circle to reload your RGB blasters and heal HP.";
     } else if (lvl === 2) {
       title = "FIELD GUIDE: LEVEL 2 TACTICS";
-      message = 
+      message =
         "Welcome to Level 2, Fluke. The chromatic battlefield expands:<br><br>" +
-        "• <b>DASH:</b> Press <span class=\"noobi-key\">[SPACE]</span> or <span class=\"noobi-key\">[RMB]</span> to dash and avoid enemy lasers!<br>" +
+        '• <b>DASH:</b> Press <span class="noobi-key">[SPACE]</span> or <span class="noobi-key">[RMB]</span> to dash and avoid enemy lasers!<br>' +
         "• <b>COUNTER MATRIX:</b><br>" +
-        "&nbsp;&nbsp;&bull; <span class=\"noobi-hl red\">RED</span> dies to <span class=\"noobi-hl cyan\">CYAN [4]</span> | <span class=\"noobi-hl green\">GREEN</span> dies to <span class=\"noobi-hl magenta\">MAGENTA [5]</span> | <span class=\"noobi-hl blue\">BLUE</span> dies to <span class=\"noobi-hl yellow\">YELLOW [6]</span><br>" +
+        '&nbsp;&nbsp;&bull; <span class="noobi-hl red">RED</span> dies to <span class="noobi-hl cyan">CYAN [4]</span> | <span class="noobi-hl green">GREEN</span> dies to <span class="noobi-hl magenta">MAGENTA [5]</span> | <span class="noobi-hl blue">BLUE</span> dies to <span class="noobi-hl yellow">YELLOW [6]</span><br>' +
         "• Fuse orbs with your blasters to synthesize high-spectrum Ammo Crystals!";
     } else {
       title = "FIELD GUIDE: LEVEL 3 BOSS TACTICS";
-      message = 
+      message =
         "Tactical guide against the Black Boss, Fluke:<br><br>" +
         "• <b>WHITE BULLETS:</b> Black Boss requires <b>3 hits of WHITE LASER [7]</b>. Normal enemies take 1 hit.<br>" +
         "• <b>SYNTHESIZING WHITE AMMO:</b> Shoot a complementary wavelength into an orb (e.g. Red into Cyan orb, or Cyan into Red orb)!<br>" +
-        "• <b>HOMING BULLETS:</b> Use your DASH <span class=\"noobi-key\">[SPACE / RMB]</span> and distance to dodge tracking black lasers!<br>" +
+        '• <b>HOMING BULLETS:</b> Use your DASH <span class="noobi-key">[SPACE / RMB]</span> and distance to dodge tracking black lasers!<br>' +
         "• <b>LIGHT INVERSION:</b> When the boss shakes rapidly, physics inverts for 10s: weak is strong and strong is weak (e.g. Cyan dies to Cyan)!";
     }
     this.showStopTutorial(null, title, message);
@@ -1276,7 +1413,7 @@ class LightWarsGame {
     window.LightWars = window.LightWars || {};
     window.LightWars.devMode = enabled;
 
-    const devModeCheckbox = document.getElementById('devModeCheckbox');
+    const devModeCheckbox = document.getElementById("devModeCheckbox");
     if (devModeCheckbox && devModeCheckbox.checked !== enabled) {
       devModeCheckbox.checked = enabled;
     }
@@ -1284,36 +1421,62 @@ class LightWarsGame {
     if (enabled) {
       // Backup true state before enabling dev mode
       this.savedProgressBackup = {
-        level1: localStorage.getItem('lightwars_level1_cleared'),
-        level2: localStorage.getItem('lightwars_level2_cleared'),
-        blackBoss: localStorage.getItem('lightwars_black_boss_defeated'),
-        dash: localStorage.getItem('lightwars_dash_unlocked')
+        level1: localStorage.getItem("lightwars_level1_cleared"),
+        level2: localStorage.getItem("lightwars_level2_cleared"),
+        blackBoss: localStorage.getItem("lightwars_black_boss_defeated"),
+        level4: localStorage.getItem("lightwars_level4_cleared"),
+        level5: localStorage.getItem("lightwars_level5_cleared"),
+        dash: localStorage.getItem("lightwars_dash_unlocked"),
       };
     } else {
       // Restore true state when dev mode is turned off
       if (this.savedProgressBackup) {
         if (this.savedProgressBackup.level1 !== null) {
-          localStorage.setItem('lightwars_level1_cleared', this.savedProgressBackup.level1);
+          localStorage.setItem(
+            "lightwars_level1_cleared",
+            this.savedProgressBackup.level1,
+          );
         } else {
-          localStorage.removeItem('lightwars_level1_cleared');
+          localStorage.removeItem("lightwars_level1_cleared");
         }
 
         if (this.savedProgressBackup.level2 !== null) {
-          localStorage.setItem('lightwars_level2_cleared', this.savedProgressBackup.level2);
+          localStorage.setItem(
+            "lightwars_level2_cleared",
+            this.savedProgressBackup.level2,
+          );
         } else {
-          localStorage.removeItem('lightwars_level2_cleared');
+          localStorage.removeItem("lightwars_level2_cleared");
         }
 
         if (this.savedProgressBackup.blackBoss !== null) {
-          localStorage.setItem('lightwars_black_boss_defeated', this.savedProgressBackup.blackBoss);
+          localStorage.setItem(
+            "lightwars_black_boss_defeated",
+            this.savedProgressBackup.blackBoss,
+          );
         } else {
-          localStorage.removeItem('lightwars_black_boss_defeated');
+          localStorage.removeItem("lightwars_black_boss_defeated");
+        }
+
+        if (this.savedProgressBackup.level4 !== null && this.savedProgressBackup.level4 !== undefined) {
+          localStorage.setItem("lightwars_level4_cleared", this.savedProgressBackup.level4);
+        } else {
+          localStorage.removeItem("lightwars_level4_cleared");
+        }
+
+        if (this.savedProgressBackup.level5 !== null && this.savedProgressBackup.level5 !== undefined) {
+          localStorage.setItem("lightwars_level5_cleared", this.savedProgressBackup.level5);
+        } else {
+          localStorage.removeItem("lightwars_level5_cleared");
         }
 
         if (this.savedProgressBackup.dash !== null) {
-          localStorage.setItem('lightwars_dash_unlocked', this.savedProgressBackup.dash);
+          localStorage.setItem(
+            "lightwars_dash_unlocked",
+            this.savedProgressBackup.dash,
+          );
         } else {
-          localStorage.removeItem('lightwars_dash_unlocked');
+          localStorage.removeItem("lightwars_dash_unlocked");
         }
 
         this.savedProgressBackup = null;
@@ -1326,257 +1489,311 @@ class LightWarsGame {
 
   /** Show/hide row lock overlays based on progress flags */
   updateComicMenuLockState() {
-    const level1Cleared = this.devMode || (localStorage.getItem('lightwars_level1_cleared') === 'true');
-    const level2Cleared = this.devMode || (localStorage.getItem('lightwars_level2_cleared') === 'true');
-    const isBlackBossDefeated = this.devMode || (localStorage.getItem('lightwars_black_boss_defeated') === 'true');
-    const level4Cleared = this.devMode || (localStorage.getItem('lightwars_level4_cleared') === 'true');
+    const level1Cleared =
+      this.devMode ||
+      localStorage.getItem("lightwars_level1_cleared") === "true";
+    const level2Cleared =
+      this.devMode ||
+      localStorage.getItem("lightwars_level2_cleared") === "true";
+    const isBlackBossDefeated =
+      this.devMode ||
+      localStorage.getItem("lightwars_black_boss_defeated") === "true";
+    const level4Cleared =
+      this.devMode ||
+      localStorage.getItem("lightwars_level4_cleared") === "true";
 
     // Mission 1
-    const mission1StatusPill = document.getElementById('mission1StatusPill');
+    const mission1StatusPill = document.getElementById("mission1StatusPill");
     if (mission1StatusPill) {
       if (level1Cleared) {
-        mission1StatusPill.textContent = 'CLEARED ★';
-        mission1StatusPill.className = 'comic-status-pill cleared';
+        mission1StatusPill.textContent = "CLEARED ★";
+        mission1StatusPill.className = "comic-status-pill cleared";
       } else {
-        mission1StatusPill.textContent = 'READY';
-        mission1StatusPill.className = 'comic-status-pill ready';
+        mission1StatusPill.textContent = "READY";
+        mission1StatusPill.className = "comic-status-pill ready";
       }
     }
 
     // Row 2 lock
-    const row2Overlay = document.getElementById('row2LockOverlay');
-    if (row2Overlay) row2Overlay.style.display = level1Cleared ? 'none' : 'flex';
+    const row2Overlay = document.getElementById("row2LockOverlay");
+    if (row2Overlay)
+      row2Overlay.style.display = level1Cleared ? "none" : "flex";
 
     // Mission 2
-    const mission2LockedContent = document.getElementById('mission2LockedContent');
-    const mission2Briefing = document.getElementById('mission2Briefing');
-    const mission2StatusPill = document.getElementById('mission2StatusPill');
-    const startLevel2Btn = document.getElementById('startLevel2Btn');
-    
+    const mission2LockedContent = document.getElementById(
+      "mission2LockedContent",
+    );
+    const mission2Briefing = document.getElementById("mission2Briefing");
+    const mission2StatusPill = document.getElementById("mission2StatusPill");
+    const startLevel2Btn = document.getElementById("startLevel2Btn");
+
     if (level1Cleared) {
-      if (mission2LockedContent) mission2LockedContent.style.display = 'none';
-      if (mission2Briefing) mission2Briefing.style.display = 'block';
-      if (startLevel2Btn) startLevel2Btn.style.display = '';
+      if (mission2LockedContent) mission2LockedContent.style.display = "none";
+      if (mission2Briefing) mission2Briefing.style.display = "block";
+      if (startLevel2Btn) startLevel2Btn.style.display = "";
       if (mission2StatusPill) {
         if (level2Cleared) {
-          mission2StatusPill.textContent = 'CLEARED ★';
-          mission2StatusPill.className = 'comic-status-pill cleared';
+          mission2StatusPill.textContent = "CLEARED ★";
+          mission2StatusPill.className = "comic-status-pill cleared";
         } else {
-          mission2StatusPill.textContent = 'READY';
-          mission2StatusPill.className = 'comic-status-pill ready';
+          mission2StatusPill.textContent = "READY";
+          mission2StatusPill.className = "comic-status-pill ready";
         }
       }
     } else {
-      if (mission2LockedContent) mission2LockedContent.style.display = '';
-      if (mission2Briefing) mission2Briefing.style.display = 'none';
-      if (startLevel2Btn) startLevel2Btn.style.display = 'none';
+      if (mission2LockedContent) mission2LockedContent.style.display = "";
+      if (mission2Briefing) mission2Briefing.style.display = "none";
+      if (startLevel2Btn) startLevel2Btn.style.display = "none";
       if (mission2StatusPill) {
-        mission2StatusPill.textContent = 'LOCKED';
-        mission2StatusPill.className = 'comic-status-pill locked';
+        mission2StatusPill.textContent = "LOCKED";
+        mission2StatusPill.className = "comic-status-pill locked";
       }
     }
 
     // Row 3 lock
-    const row3Overlay = document.getElementById('row3LockOverlay');
-    if (row3Overlay) row3Overlay.style.display = level2Cleared ? 'none' : 'flex';
+    const row3Overlay = document.getElementById("row3LockOverlay");
+    if (row3Overlay)
+      row3Overlay.style.display = level2Cleared ? "none" : "flex";
+
+    // Row 4 lock (Level 4 locked if Level 3 Black Boss not defeated)
+    const row4Overlay = document.getElementById("row4LockOverlay");
+    if (row4Overlay) {
+      row4Overlay.style.display = isBlackBossDefeated ? "none" : "flex";
+    }
 
     // Page 2: Mission 4
-    const mission4StatusPill = document.getElementById('mission4StatusPill');
+    const startLevel4Btn = document.getElementById("startLevel4Btn");
+    if (startLevel4Btn) {
+      startLevel4Btn.style.display = isBlackBossDefeated ? "" : "none";
+      if (level4Cleared) {
+        startLevel4Btn.innerHTML = '<span class="btn-icon">⚡</span> PLAY LEVEL 4 <span class="btn-icon">⚡</span>';
+      } else {
+        startLevel4Btn.innerHTML = '<span class="btn-icon">⚡</span> PLAY LEVEL 4 <span class="btn-icon">⚡</span>';
+      }
+    }
+    const mission4StatusPill = document.getElementById("mission4StatusPill");
     if (mission4StatusPill) {
       if (level4Cleared) {
-        mission4StatusPill.textContent = 'CLEARED ★';
-        mission4StatusPill.className = 'comic-status-pill cleared';
+        mission4StatusPill.textContent = "CLEARED ★";
+        mission4StatusPill.className = "comic-status-pill cleared";
       } else if (isBlackBossDefeated) {
-        mission4StatusPill.textContent = 'READY';
-        mission4StatusPill.className = 'comic-status-pill ready';
+        mission4StatusPill.textContent = "READY";
+        mission4StatusPill.className = "comic-status-pill ready";
       } else {
-        mission4StatusPill.textContent = 'LOCKED';
-        mission4StatusPill.className = 'comic-status-pill locked';
+        mission4StatusPill.textContent = "LOCKED";
+        mission4StatusPill.className = "comic-status-pill locked";
       }
     }
 
-    // Row 5 lock overlay (Level 5 locked)
-    const row5LockOverlay = document.getElementById('row5LockOverlay');
+    // Row 5 lock overlay (Level 5 locked until Level 4 cleared)
+    const row5LockOverlay = document.getElementById("row5LockOverlay");
     if (row5LockOverlay) {
-      row5LockOverlay.style.display = level4Cleared ? 'none' : 'flex';
+      row5LockOverlay.style.display = level4Cleared ? "none" : "flex";
     }
-    
+
     // Mission 5
-    const mission5StatusPill = document.getElementById('mission5StatusPill');
+    const level5Cleared =
+      this.devMode ||
+      localStorage.getItem("lightwars_level5_cleared") === "true";
+    const mission5StatusPill = document.getElementById("mission5StatusPill");
     if (mission5StatusPill) {
-      if (level4Cleared) {
-        mission5StatusPill.textContent = 'READY';
-        mission5StatusPill.className = 'comic-status-pill ready';
+      if (level5Cleared) {
+        mission5StatusPill.textContent = "CLEARED ★";
+        mission5StatusPill.className = "comic-status-pill cleared";
+      } else if (level4Cleared) {
+        mission5StatusPill.textContent = "READY";
+        mission5StatusPill.className = "comic-status-pill ready";
       } else {
-        mission5StatusPill.textContent = 'LOCKED';
-        mission5StatusPill.className = 'comic-status-pill locked';
+        mission5StatusPill.textContent = "LOCKED";
+        mission5StatusPill.className = "comic-status-pill locked";
+      }
+    }
+    const startLevel5Btn = document.getElementById("startLevel5Btn");
+    if (startLevel5Btn) {
+      startLevel5Btn.style.display = level4Cleared ? "" : "none";
+      if (level5Cleared) {
+        startLevel5Btn.innerHTML = '<span class="btn-icon">⚔️</span> BATTLE WHITE BOSS <span class="btn-icon">⚔️</span>';
+      } else {
+        startLevel5Btn.innerHTML = '<span class="btn-icon">⚔️</span> BATTLE WHITE BOSS <span class="btn-icon">⚔️</span>';
       }
     }
   }
 
-
   updateComicMenuBossState() {
     // Page 2 only unlocks when Black Boss has actually been defeated in progression
-    const isBlackBossDefeated = localStorage.getItem('lightwars_black_boss_defeated') === 'true';
-    const bossRoleBadge = document.getElementById('bossRoleBadge');
-    const bossNameTitle = document.getElementById('bossNameTitle');
-    const bossEncounterStatus = document.getElementById('bossEncounterStatus');
-    const bossPlotTwistReveal = document.getElementById('bossPlotTwistReveal');
-    const page2TeaserBadge = document.getElementById('page2TeaserBadge');
-    const bossLoreCaption = document.querySelector('.boss-lore-caption');
+    const isBlackBossDefeated =
+      localStorage.getItem("lightwars_black_boss_defeated") === "true";
+    const bossRoleBadge = document.getElementById("bossRoleBadge");
+    const bossNameTitle = document.getElementById("bossNameTitle");
+    const bossEncounterStatus = document.getElementById("bossEncounterStatus");
+    const bossPlotTwistReveal = document.getElementById("bossPlotTwistReveal");
+    const page2TeaserBadge = document.getElementById("page2TeaserBadge");
+    const bossLoreCaption = document.querySelector(".boss-lore-caption");
 
-    const level2Cleared = this.devMode || (localStorage.getItem('lightwars_level2_cleared') === 'true');
-    const startLevel3Btn = document.getElementById('startLevel3Btn');
-    const bossStampLocked = document.getElementById('bossStampLocked');
+    const level2Cleared =
+      this.devMode ||
+      localStorage.getItem("lightwars_level2_cleared") === "true";
+    const startLevel3Btn = document.getElementById("startLevel3Btn");
+    const bossStampLocked = document.getElementById("bossStampLocked");
 
     if (isBlackBossDefeated) {
       if (bossRoleBadge) {
-        bossRoleBadge.innerText = '⚔️ MINI BOSS ⚔️';
-        bossRoleBadge.classList.add('mini-boss-mode');
+        bossRoleBadge.innerText = "⚔️ MINI BOSS ⚔️";
+        bossRoleBadge.classList.add("mini-boss-mode");
       }
       if (bossNameTitle) {
-        bossNameTitle.innerText = 'THE BLACK BOSS • SHADOW APPRENTICE';
+        bossNameTitle.innerText = "THE BLACK BOSS • SHADOW APPRENTICE";
       }
       if (bossEncounterStatus) {
-        bossEncounterStatus.style.display = 'block';
+        bossEncounterStatus.style.display = "block";
       }
       if (bossStampLocked) {
-        bossStampLocked.style.display = 'none';
+        bossStampLocked.style.display = "none";
       }
       if (startLevel3Btn) {
-        startLevel3Btn.style.display = 'inline-block';
-        startLevel3Btn.innerText = 'REPLAY BLACK BOSS';
+        startLevel3Btn.style.display = "inline-block";
+        startLevel3Btn.innerText = "BATTLE BLACK BOSS";
       }
       if (bossLoreCaption) {
-        bossLoreCaption.style.display = 'none';
+        bossLoreCaption.style.display = "none";
       }
       if (bossPlotTwistReveal) {
-        bossPlotTwistReveal.style.display = 'block';
+        bossPlotTwistReveal.style.display = "block";
       }
-      
-      const mission3StatusPill = document.getElementById('mission3StatusPill');
+
+      const mission3StatusPill = document.getElementById("mission3StatusPill");
       if (mission3StatusPill) {
-        mission3StatusPill.textContent = 'CLEARED ★';
-        mission3StatusPill.className = 'comic-status-pill cleared';
+        mission3StatusPill.textContent = "CLEARED ★";
+        mission3StatusPill.className = "comic-status-pill cleared";
       }
-      
+
       if (page2TeaserBadge) {
-        page2TeaserBadge.style.display = 'inline-block';
-        page2TeaserBadge.innerText = 'PAGE 02';
-        
+        page2TeaserBadge.style.display = "inline-block";
+        page2TeaserBadge.innerText = "PAGE 02";
+
         // Don't overwrite if it's currently active (user is on page 2)
-        if (!page2TeaserBadge.classList.contains('current')) {
-          page2TeaserBadge.className = 'page-badge inactive';
+        if (!page2TeaserBadge.classList.contains("current")) {
+          page2TeaserBadge.className = "page-badge inactive";
         }
       }
     } else {
       if (bossRoleBadge) {
-        bossRoleBadge.innerText = '★ FINAL BOSS ★';
-        bossRoleBadge.classList.remove('mini-boss-mode');
+        bossRoleBadge.innerText = "★ FINAL BOSS ★";
+        bossRoleBadge.classList.remove("mini-boss-mode");
       }
       if (bossNameTitle) {
-        bossNameTitle.innerText = 'THE BLACK BOSS • VOID OVERLORD';
+        bossNameTitle.innerText = "THE BLACK BOSS • VOID OVERLORD";
       }
       if (bossLoreCaption) {
-        bossLoreCaption.style.display = 'block';
+        bossLoreCaption.style.display = "block";
       }
       if (bossEncounterStatus) {
-        bossEncounterStatus.style.display = 'block';
+        bossEncounterStatus.style.display = "block";
       }
-      const mission3StatusPill = document.getElementById('mission3StatusPill');
-      
+      const mission3StatusPill = document.getElementById("mission3StatusPill");
+
       if (level2Cleared) {
-        if (bossStampLocked) bossStampLocked.style.display = 'none';
-        if (startLevel3Btn) startLevel3Btn.style.display = 'inline-block';
+        if (bossStampLocked) bossStampLocked.style.display = "none";
+        if (startLevel3Btn) startLevel3Btn.style.display = "inline-block";
         if (mission3StatusPill) {
-          mission3StatusPill.textContent = 'READY';
-          mission3StatusPill.className = 'comic-status-pill ready';
+          mission3StatusPill.textContent = "READY";
+          mission3StatusPill.className = "comic-status-pill ready";
         }
       } else {
-        if (bossStampLocked) bossStampLocked.style.display = 'block';
-        if (startLevel3Btn) startLevel3Btn.style.display = 'none';
+        if (bossStampLocked) bossStampLocked.style.display = "block";
+        if (startLevel3Btn) startLevel3Btn.style.display = "none";
         if (mission3StatusPill) {
-          mission3StatusPill.textContent = 'LOCKED';
-          mission3StatusPill.className = 'comic-status-pill locked';
+          mission3StatusPill.textContent = "LOCKED";
+          mission3StatusPill.className = "comic-status-pill locked";
         }
       }
       if (bossPlotTwistReveal) {
-        bossPlotTwistReveal.style.display = 'none';
+        bossPlotTwistReveal.style.display = "none";
       }
       if (page2TeaserBadge) {
         if (this.devMode) {
-          page2TeaserBadge.style.display = 'inline-block';
-          page2TeaserBadge.innerText = 'PAGE 02 (DEV)';
-          if (!page2TeaserBadge.classList.contains('current')) {
-            page2TeaserBadge.className = 'page-badge inactive';
+          page2TeaserBadge.style.display = "inline-block";
+          page2TeaserBadge.innerText = "PAGE 02 (DEV)";
+          if (!page2TeaserBadge.classList.contains("current")) {
+            page2TeaserBadge.className = "page-badge inactive";
           }
         } else {
           // Page 2 removed from initial view; only shown after defeating Black Boss
-          page2TeaserBadge.style.display = 'none';
+          page2TeaserBadge.style.display = "none";
         }
       }
     }
   }
 
   showMenu() {
-    this.state = 'MENU';
+    this.state = "MENU";
     if (window.LightWars.sound) {
-      window.LightWars.sound.startMusic('MENU');
+      window.LightWars.sound.startMusic("MENU");
     }
     this.updateComicMenuLockState();
     this.updateComicMenuBossState();
-    document.getElementById('comicMenu').style.display = 'flex';
+    document.getElementById("comicMenu").style.display = "flex";
 
     // If coming back from Level 4, show Page 2; otherwise default to Page 1
-    const page1 = document.getElementById('comicPage1');
-    const page2 = document.getElementById('comicPage2');
-    
+    const page1 = document.getElementById("comicPage1");
+    const page2 = document.getElementById("comicPage2");
+
     if (this._justClearedBossAndUnlockedPage2 && page2) {
       this._justClearedBossAndUnlockedPage2 = false;
       if (page1) {
-        page1.style.display = 'flex';
-        page1.style.opacity = '1';
-        page1.style.transform = 'none';
+        page1.style.display = "flex";
+        page1.style.opacity = "1";
+        page1.style.transform = "none";
       }
-      if (page2) page2.style.display = 'none';
-      
+      if (page2) page2.style.display = "none";
+
       // Auto-trigger page turn animation
       setTimeout(() => {
         this.transitionToPage2();
       }, 800);
-    } else if (this._lastLevel === 4 && page2) {
-      if (page1) page1.style.display = 'none';
-      page2.style.display = 'flex';
-      page2.style.opacity = '1';
-      page2.style.transform = 'none';
+    } else if ((this._lastLevel === 4 || this._lastLevel === 5) && page2) {
+      if (page1) page1.style.display = "none";
+      page2.style.display = "flex";
+      page2.style.opacity = "1";
+      page2.style.transform = "none";
     } else {
       if (page1) {
-        page1.style.display = 'flex';
-        page1.style.opacity = '1';
-        page1.style.transform = 'none';
+        page1.style.display = "flex";
+        page1.style.opacity = "1";
+        page1.style.transform = "none";
       }
-      if (page2) page2.style.display = 'none';
+      if (page2) page2.style.display = "none";
     }
 
-    document.getElementById('levelClearModal').style.display = 'none';
-    document.getElementById('gameOverModal').style.display = 'none';
-    const topHud = document.getElementById('inGameTopHud');
-    if (topHud) topHud.style.display = 'none';
-    const helpBtn = document.getElementById('inGameHelpBtn');
-    if (helpBtn) helpBtn.style.display = 'none';
+    document.getElementById("levelClearModal").style.display = "none";
+    document.getElementById("gameOverModal").style.display = "none";
+    const topHud = document.getElementById("inGameTopHud");
+    if (topHud) topHud.style.display = "none";
+    const helpBtn = document.getElementById("inGameHelpBtn");
+    if (helpBtn) helpBtn.style.display = "none";
   }
 
   _resetGameEntities() {
-    document.getElementById('comicMenu').style.display = 'none';
-    document.getElementById('levelClearModal').style.display = 'none';
-    document.getElementById('gameOverModal').style.display = 'none';
-    const topHud = document.getElementById('inGameTopHud');
-    if (topHud) topHud.style.display = 'flex';
-    const helpBtn = document.getElementById('inGameHelpBtn');
-    if (helpBtn) helpBtn.style.display = 'inline-flex';
+    document.getElementById("comicMenu").style.display = "none";
+    document.getElementById("levelClearModal").style.display = "none";
+    document.getElementById("gameOverModal").style.display = "none";
+    const topHud = document.getElementById("inGameTopHud");
+    if (topHud) topHud.style.display = "flex";
+    const helpBtn = document.getElementById("inGameHelpBtn");
+    if (helpBtn) helpBtn.style.display = "inline-flex";
 
-    const spawnX = (this.arena.spawn && this.arena.spawn.x !== undefined) ? this.arena.spawn.x : (this.arena.whiteLight ? this.arena.whiteLight.x : 2920);
-    const spawnY = (this.arena.spawn && this.arena.spawn.y !== undefined) ? this.arena.spawn.y : (this.arena.whiteLight ? this.arena.whiteLight.y : 1640);
+    const spawnX =
+      this.arena.spawn && this.arena.spawn.x !== undefined
+        ? this.arena.spawn.x
+        : this.arena.whiteLight
+          ? this.arena.whiteLight.x
+          : 2920;
+    const spawnY =
+      this.arena.spawn && this.arena.spawn.y !== undefined
+        ? this.arena.spawn.y
+        : this.arena.whiteLight
+          ? this.arena.whiteLight.y
+          : 1640;
     this.player = new window.LightWars.Player(spawnX, spawnY);
     this.camera.x = this.player.x;
     this.camera.y = this.player.y;
@@ -1601,13 +1818,17 @@ class LightWarsGame {
       window.LightWars.occlusion.loadLevelWalls(1, this.arena);
     }
     this._resetGameEntities();
-    if ((this.devMode || localStorage.getItem('lightwars_black_boss_defeated') === 'true') && this.player) {
+    if (
+      (this.devMode ||
+        localStorage.getItem("lightwars_black_boss_defeated") === "true") &&
+      this.player
+    ) {
       this.player.invertUnlocked = true;
     }
     this.waves.startLevel1();
-    this.state = 'PLAYING';
+    this.state = "PLAYING";
     if (window.LightWars.sound) {
-      window.LightWars.sound.startMusic('EXPLORATION');
+      window.LightWars.sound.startMusic("EXPLORATION");
     }
   }
 
@@ -1620,18 +1841,26 @@ class LightWarsGame {
     }
     this._resetGameEntities();
     // Inherit unlocked dash if already unlocked (or in Dev Mode)
-    if ((this.devMode || localStorage.getItem('lightwars_dash_unlocked') === 'true') && this.player) {
+    if (
+      (this.devMode ||
+        localStorage.getItem("lightwars_dash_unlocked") === "true") &&
+      this.player
+    ) {
       this.player.dashUnlocked = true;
     }
-    if ((this.devMode || localStorage.getItem('lightwars_black_boss_defeated') === 'true') && this.player) {
+    if (
+      (this.devMode ||
+        localStorage.getItem("lightwars_black_boss_defeated") === "true") &&
+      this.player
+    ) {
       this.player.invertUnlocked = true;
     }
-    this.unlockHelpCapability('dash');
-    this.unlockHelpCapability('orbCrafting');
+    this.unlockHelpCapability("dash");
+    this.unlockHelpCapability("orbCrafting");
     this.waves.startLevel2();
-    this.state = 'PLAYING';
+    this.state = "PLAYING";
     if (window.LightWars.sound) {
-      window.LightWars.sound.startMusic('COMBAT');
+      window.LightWars.sound.startMusic("COMBAT");
     }
   }
 
@@ -1646,22 +1875,25 @@ class LightWarsGame {
     // Inherit unlocked dash if already unlocked
     if (this.player) {
       this.player.dashUnlocked = true;
-      if (this.devMode || localStorage.getItem('lightwars_black_boss_defeated') === 'true') {
+      if (
+        this.devMode ||
+        localStorage.getItem("lightwars_black_boss_defeated") === "true"
+      ) {
         this.player.invertUnlocked = true;
       }
       // Developer mode: start Level 3 with 1 WHITE bullet (infinite via consumeAmmo patch)
       if (this.devMode) {
-        this.player.ammo['WHITE'] = 1;
+        this.player.ammo["WHITE"] = 1;
       }
     }
-    this.unlockHelpCapability('dash');
-    this.unlockHelpCapability('orbCrafting');
-    this.unlockHelpCapability('whiteAmmo');
-    this.unlockHelpCapability('inversion');
+    this.unlockHelpCapability("dash");
+    this.unlockHelpCapability("orbCrafting");
+    this.unlockHelpCapability("whiteAmmo");
+    this.unlockHelpCapability("inversion");
     this.waves.startLevel3();
-    this.state = 'PLAYING';
+    this.state = "PLAYING";
     if (window.LightWars.sound) {
-      window.LightWars.sound.startMusic('BOSS');
+      window.LightWars.sound.startMusic("BOSS");
     }
   }
 
@@ -1669,21 +1901,21 @@ class LightWarsGame {
     this._lastLevel = 4;
     this.arena.loadLevel(4);
     if (window.LightWars.occlusion) {
-      window.LightWars.occlusion.loadLevelWalls(4, this.arena);
+      window.LightWars.occlusion.clear();
     }
     this._resetGameEntities();
     if (this.player) {
       this.player.dashUnlocked = true;
       this.player.invertUnlocked = true;
     }
-    this.unlockHelpCapability('dash');
-    this.unlockHelpCapability('orbCrafting');
-    this.unlockHelpCapability('whiteAmmo');
-    this.unlockHelpCapability('inversion');
+    this.unlockHelpCapability("dash");
+    this.unlockHelpCapability("orbCrafting");
+    this.unlockHelpCapability("whiteAmmo");
+    this.unlockHelpCapability("inversion");
     this.waves.startLevel4();
-    this.state = 'PLAYING';
+    this.state = "PLAYING";
     if (window.LightWars.sound) {
-      window.LightWars.sound.startMusic('BOSS');
+      window.LightWars.sound.startMusic("BOSS");
     }
   }
 
@@ -1691,52 +1923,72 @@ class LightWarsGame {
    * Animated page flip transition from Page 1 → Page 2 of the comic strip.
    * Creates a fullscreen flash effect then swaps the visible comic page.
    */
+
+  startLevel5() {
+    this._lastLevel = 5;
+    this.arena.loadLevel(4); // Use map 4/5
+    if (window.LightWars.occlusion) {
+      window.LightWars.occlusion.loadLevelWalls(4, this.arena);
+    }
+    this._resetGameEntities();
+    this.physicsInverted = false;
+    if (this.waves && typeof this.waves.startLevel5 === "function") {
+      this.waves.startLevel5();
+    }
+  }
   transitionToPage2() {
     if (this._currentComicPage === 2) return;
     this._currentComicPage = 2;
 
-    const page1 = document.getElementById('comicPage1');
-    const page2 = document.getElementById('comicPage2');
+    const page1 = document.getElementById("comicPage1");
+    const page2 = document.getElementById("comicPage2");
 
     if (!page2) return;
 
     // Update page badges
-    const page1Badge = document.querySelector('.sw-comic-page-tracker span:first-child');
-    const page2Badge = document.getElementById('page2TeaserBadge');
-    
+    const page1Badge = document.querySelector(
+      ".sw-comic-page-tracker span:first-child",
+    );
+    const page2Badge = document.getElementById("page2TeaserBadge");
+
     if (page1Badge) {
-      page1Badge.className = 'page-badge inactive';
+      page1Badge.className = "page-badge inactive";
     }
     if (page2Badge) {
-      page2Badge.className = 'page-badge current';
+      page2Badge.className = "page-badge current";
     }
 
     if (page1) {
       // Better page turn out
-      page1.style.transformOrigin = 'left center';
-      page1.style.transition = 'transform 0.5s cubic-bezier(0.3, 0.0, 0.2, 1), opacity 0.3s ease-in 0.1s';
-      page1.style.transform = 'perspective(1500px) rotateY(-90deg) scale(0.95)';
-      page1.style.opacity = '0';
-      
+      page1.style.transformOrigin = "left center";
+      page1.style.transition =
+        "transform 0.5s cubic-bezier(0.3, 0.0, 0.2, 1), opacity 0.3s ease-in 0.1s";
+      page1.style.transform = "perspective(1500px) rotateY(-90deg) scale(0.95)";
+      page1.style.opacity = "0";
+
       setTimeout(() => {
-        page1.style.display = 'none';
-        
-        page2.style.display = 'flex';
+        page1.style.display = "none";
+
+        page2.style.display = "flex";
         // Better page turn in
-        page2.style.transformOrigin = 'right center';
-        page2.style.transform = 'perspective(1500px) rotateY(90deg) scale(0.95)';
-        page2.style.opacity = '0';
-        
+        page2.style.transformOrigin = "right center";
+        page2.style.transform =
+          "perspective(1500px) rotateY(90deg) scale(0.95)";
+        page2.style.opacity = "0";
+
         // Force reflow
         void page2.offsetWidth;
-        
-        page2.style.transition = 'transform 0.6s cubic-bezier(0.1, 0.8, 0.2, 1), opacity 0.4s ease-out';
-        page2.style.transform = 'perspective(1500px) rotateY(0deg) scale(1)';
-        page2.style.opacity = '1';
+
+        page2.style.transition =
+          "transform 0.6s cubic-bezier(0.1, 0.8, 0.2, 1), opacity 0.4s ease-out";
+        page2.style.transform = "perspective(1500px) rotateY(0deg) scale(1)";
+        page2.style.opacity = "1";
 
         // Update issue badge
-        const issueBox = document.querySelector('.sw-comic-corner-box .corner-issue');
-        if (issueBox) issueBox.textContent = '#2';
+        const issueBox = document.querySelector(
+          ".sw-comic-corner-box .corner-issue",
+        );
+        if (issueBox) issueBox.textContent = "#2";
       }, 500);
     }
   }
@@ -1748,49 +2000,56 @@ class LightWarsGame {
     if (this._currentComicPage === 1) return;
     this._currentComicPage = 1;
 
-    const page1 = document.getElementById('comicPage1');
-    const page2 = document.getElementById('comicPage2');
+    const page1 = document.getElementById("comicPage1");
+    const page2 = document.getElementById("comicPage2");
 
     if (!page1) return;
 
     if (page2) {
       // Better page turn out
-      page2.style.transformOrigin = 'right center';
-      page2.style.transition = 'transform 0.5s cubic-bezier(0.3, 0.0, 0.2, 1), opacity 0.3s ease-in 0.1s';
-      page2.style.transform = 'perspective(1500px) rotateY(90deg) scale(0.95)';
-      page2.style.opacity = '0';
-      
+      page2.style.transformOrigin = "right center";
+      page2.style.transition =
+        "transform 0.5s cubic-bezier(0.3, 0.0, 0.2, 1), opacity 0.3s ease-in 0.1s";
+      page2.style.transform = "perspective(1500px) rotateY(90deg) scale(0.95)";
+      page2.style.opacity = "0";
+
       setTimeout(() => {
-        page2.style.display = 'none';
-        
+        page2.style.display = "none";
+
         if (page1) {
-          page1.style.display = 'flex';
+          page1.style.display = "flex";
           // Better page turn in
-          page1.style.transformOrigin = 'left center';
-          page1.style.transform = 'perspective(1500px) rotateY(-90deg) scale(0.95)';
-          page1.style.opacity = '0';
-          
+          page1.style.transformOrigin = "left center";
+          page1.style.transform =
+            "perspective(1500px) rotateY(-90deg) scale(0.95)";
+          page1.style.opacity = "0";
+
           // Force reflow
           void page1.offsetWidth;
-          
-          page1.style.transition = 'transform 0.6s cubic-bezier(0.1, 0.8, 0.2, 1), opacity 0.4s ease-out';
-          page1.style.transform = 'perspective(1500px) rotateY(0deg) scale(1)';
-          page1.style.opacity = '1';
+
+          page1.style.transition =
+            "transform 0.6s cubic-bezier(0.1, 0.8, 0.2, 1), opacity 0.4s ease-out";
+          page1.style.transform = "perspective(1500px) rotateY(0deg) scale(1)";
+          page1.style.opacity = "1";
         }
 
         // Update page badges
-        const page1Badge = document.querySelector('.sw-comic-page-tracker span:first-child');
-        const page2Badge = document.getElementById('page2TeaserBadge');
-        
+        const page1Badge = document.querySelector(
+          ".sw-comic-page-tracker span:first-child",
+        );
+        const page2Badge = document.getElementById("page2TeaserBadge");
+
         if (page1Badge) {
-          page1Badge.className = 'page-badge current';
+          page1Badge.className = "page-badge current";
         }
         if (page2Badge) {
-          page2Badge.className = 'page-badge inactive';
+          page2Badge.className = "page-badge inactive";
         }
 
-        const issueBox = document.querySelector('.sw-comic-corner-box .corner-issue');
-        if (issueBox) issueBox.textContent = '#1';
+        const issueBox = document.querySelector(
+          ".sw-comic-corner-box .corner-issue",
+        );
+        if (issueBox) issueBox.textContent = "#1";
       }, 500);
     }
   }
@@ -1812,10 +2071,11 @@ class LightWarsGame {
     const minTileDist = 4.0; // Strictly spawn enemies at least 4 tiles away from player
 
     if (this.arena.ignoreBoundaries) {
-      const angle = Math.atan2(targetY - this.player.y, targetX - this.player.x) || 0;
+      const angle =
+        Math.atan2(targetY - this.player.y, targetX - this.player.x) || 0;
       return {
         x: this.player.x + Math.cos(angle) * (minTileDist * 50),
-        y: this.player.y + Math.sin(angle) * (minTileDist * 50)
+        y: this.player.y + Math.sin(angle) * (minTileDist * 50),
       };
     }
 
@@ -1827,14 +2087,24 @@ class LightWarsGame {
     const targetTx = Math.floor(sGrid.gx);
     const targetTy = Math.floor(sGrid.gy);
 
-    if (targetDist >= minTileDist && this.arena.isWalkableTile(targetTx, targetTy)) {
+    if (
+      targetDist >= minTileDist &&
+      this.arena.isWalkableTile(targetTx, targetTy)
+    ) {
       let candPos = { x: targetX, y: targetY };
       if (this.arena.pushOutOfWall) {
         candPos = this.arena.pushOutOfWall(candPos.x, candPos.y);
       }
       const candGrid = this.arena.toGrid(candPos.x, candPos.y);
-      const candDist = Math.hypot(candGrid.gx - pGrid.gx, candGrid.gy - pGrid.gy);
-      if (candDist >= minTileDist && !this.arena.isPointBlocked(candPos.x, candPos.y) && !isTooCloseToOtherEnemy(candPos.x, candPos.y)) {
+      const candDist = Math.hypot(
+        candGrid.gx - pGrid.gx,
+        candGrid.gy - pGrid.gy,
+      );
+      if (
+        candDist >= minTileDist &&
+        !this.arena.isPointBlocked(candPos.x, candPos.y) &&
+        !isTooCloseToOtherEnemy(candPos.x, candPos.y)
+      ) {
         return candPos;
       }
     }
@@ -1852,20 +2122,30 @@ class LightWarsGame {
 
         const tileCenterGx = c + 0.5;
         const tileCenterGy = r + 0.5;
-        const distTiles = Math.hypot(tileCenterGx - pGrid.gx, tileCenterGy - pGrid.gy);
+        const distTiles = Math.hypot(
+          tileCenterGx - pGrid.gx,
+          tileCenterGy - pGrid.gy,
+        );
 
         // Enforce strictly at least 4.0 tiles away from player
         if (distTiles < minTileDist) continue;
 
         const screenPos = this.arena.toScreen(tileCenterGx, tileCenterGy);
         if (this.arena.isPointBlocked(screenPos.x, screenPos.y)) continue;
-        if (this.arena.isBodyBlocked && this.arena.isBodyBlocked(screenPos.x, screenPos.y, 20)) continue;
+        if (
+          this.arena.isBodyBlocked &&
+          this.arena.isBodyBlocked(screenPos.x, screenPos.y, 20)
+        )
+          continue;
 
         const crowded = isTooCloseToOtherEnemy(screenPos.x, screenPos.y);
         const crowdedPenalty = crowded ? 5000 : 0;
 
         // Angle and proximity score: prioritize tiles close to 4.0–4.5 tiles in target direction
-        const ang = Math.atan2(tileCenterGy - pGrid.gy, tileCenterGx - pGrid.gx);
+        const ang = Math.atan2(
+          tileCenterGy - pGrid.gy,
+          tileCenterGx - pGrid.gx,
+        );
         let angDiff = Math.abs(ang - targetAngle);
         if (angDiff > Math.PI) angDiff = Math.PI * 2 - angDiff;
 
@@ -1874,7 +2154,7 @@ class LightWarsGame {
 
         validCandidates.push({
           pos: screenPos,
-          score
+          score,
         });
       }
     }
@@ -1897,7 +2177,11 @@ class LightWarsGame {
         const distTiles = Math.hypot(c + 0.5 - pGrid.gx, r + 0.5 - pGrid.gy);
         if (distTiles < minTileDist) continue;
         const pos = this.arena.toScreen(c + 0.5, r + 0.5);
-        if (this.arena.isBodyBlocked && this.arena.isBodyBlocked(pos.x, pos.y, 20)) continue;
+        if (
+          this.arena.isBodyBlocked &&
+          this.arena.isBodyBlocked(pos.x, pos.y, 20)
+        )
+          continue;
         const d = Math.hypot(pos.x - targetX, pos.y - targetY);
         if (d < bestDist) {
           bestDist = d;
@@ -1923,7 +2207,7 @@ class LightWarsGame {
     const safePos = this.getSafeEnemySpawnPos(x, y);
     const boss = new window.LightWars.BlackBoss(safePos.x, safePos.y);
     this.enemies.push(boss);
-    this.particles.spawnBurst(safePos.x, safePos.y, '#A020F0', 32);
+    this.particles.spawnBurst(safePos.x, safePos.y, "#A020F0", 32);
     return boss;
   }
 
@@ -1942,17 +2226,24 @@ class LightWarsGame {
         this.waves.stats.enemiesKilled++;
       }
       if (this.particles) {
-        const hex = (window.LightWars.COLORS[e.colorId] && window.LightWars.COLORS[e.colorId].hex) || '#FFFFFF';
+        const hex =
+          (window.LightWars.COLORS[e.colorId] &&
+            window.LightWars.COLORS[e.colorId].hex) ||
+          "#FFFFFF";
         this.particles.spawnBurst(e.x, e.y - 50, hex, 28);
         const deathWord = window.LightWars.COMIC_DEATH_WORDS
-          ? window.LightWars.COMIC_DEATH_WORDS[Math.floor(Math.random() * window.LightWars.COMIC_DEATH_WORDS.length)]
-          : 'KABOOM!';
+          ? window.LightWars.COMIC_DEATH_WORDS[
+              Math.floor(
+                Math.random() * window.LightWars.COMIC_DEATH_WORDS.length,
+              )
+            ]
+          : "KABOOM!";
         this.particles.spawnComicText(e.x, e.y - 70, deathWord, hex);
       }
     }
     this.enemies = [];
     if (this.lasers) {
-      this.lasers = this.lasers.filter(l => l.isPlayer);
+      this.lasers = this.lasers.filter((l) => l.isPlayer);
     }
     if (killedAny && window.LightWars.sound) {
       window.LightWars.sound.playKaboom();
@@ -1963,17 +2254,17 @@ class LightWarsGame {
     const orb = new window.LightWars.Orb(x, y, colorId);
     this.orbs.push(orb);
     window.LightWars.sound.playOrbSpawn();
-    this.unlockHelpCapability('orbCrafting');
+    this.unlockHelpCapability("orbCrafting");
 
     // Stop Tutorial: First Orb dropped
     if (this._lastLevel === 1) {
       this.showStopTutorial(
-        'l1_orb_drop',
-        'CHROMATIC ORB DETECTED!',
-        'Defeated troops leave behind energy <b>ORBS</b>!<br><br>' +
-        '• Shoot this orb with its <b>complementary laser</b> to convert it into Ammo Crystals!<br>' +
-        '• Or walk over it to absorb basic spectral charge.<br><br>' +
-        'Experiment with your lasers to craft ammo!'
+        "l1_orb_drop",
+        "CHROMATIC ORB DETECTED!",
+        "Defeated troops leave behind energy <b>ORBS</b>!<br><br>" +
+          "• Shoot this orb with its <b>complementary laser</b> to convert it into Ammo Crystals!<br>" +
+          "• Or walk over it to absorb basic spectral charge.<br><br>" +
+          "Experiment with your lasers to craft ammo!",
       );
     }
   }
@@ -1982,8 +2273,8 @@ class LightWarsGame {
     if (this.player) {
       this.player.dashUnlocked = true;
     }
-    localStorage.setItem('lightwars_dash_unlocked', 'true');
-    this.unlockHelpCapability('dash');
+    localStorage.setItem("lightwars_dash_unlocked", "true");
+    this.unlockHelpCapability("dash");
 
     if (window.LightWars.sound) {
       if (window.LightWars.sound.playPowerupPickup) {
@@ -1994,9 +2285,9 @@ class LightWarsGame {
     }
 
     if (this.particles) {
-      this.particles.spawnBurst(x, y, '#00F0FF', 36);
-      this.particles.spawnBurst(x, y, '#FFE600', 24);
-      this.particles.spawnComicText(x, y - 40, 'DASH ACQUIRED!', '#00F0FF');
+      this.particles.spawnBurst(x, y, "#00F0FF", 36);
+      this.particles.spawnBurst(x, y, "#FFE600", 24);
+      this.particles.spawnComicText(x, y - 40, "DASH ACQUIRED!", "#00F0FF");
     }
 
     if (this.waves && this.waves.onDashPowerupCollected) {
@@ -2008,8 +2299,8 @@ class LightWarsGame {
     if (this.player) {
       this.player.invertUnlocked = true;
     }
-    localStorage.setItem('lightwars_black_boss_defeated', 'true');
-    this.unlockHelpCapability('inversion');
+    localStorage.setItem("lightwars_black_boss_defeated", "true");
+    this.unlockHelpCapability("inversion");
 
     if (window.LightWars.sound) {
       if (window.LightWars.sound.playPowerupPickup) {
@@ -2020,9 +2311,14 @@ class LightWarsGame {
     }
 
     if (this.particles) {
-      this.particles.spawnBurst(x, y, '#FF2A4D', 36);
-      this.particles.spawnBurst(x, y, '#FFFFFF', 24);
-      this.particles.spawnComicText(x, y - 40, 'INVERT FRAME UNLOCKED!', '#FF2A4D');
+      this.particles.spawnBurst(x, y, "#FF2A4D", 36);
+      this.particles.spawnBurst(x, y, "#FFFFFF", 24);
+      this.particles.spawnComicText(
+        x,
+        y - 40,
+        "INVERT FRAME UNLOCKED!",
+        "#FF2A4D",
+      );
     }
 
     if (this.waves && this.waves.onInvertPowerupCollected) {
@@ -2030,11 +2326,13 @@ class LightWarsGame {
     }
   }
 
-
   handlePlayerShoot() {
-    if (this.state !== 'PLAYING' || !this.player || !this.player.alive) return;
+    if (this.state !== "PLAYING" || !this.player || !this.player.alive) return;
 
-    const worldPos = this.camera.screenToWorld(this.input.screenMouseX, this.input.screenMouseY);
+    const worldPos = this.camera.screenToWorld(
+      this.input.screenMouseX,
+      this.input.screenMouseY,
+    );
     this.input.mouseX = worldPos.x;
     this.input.mouseY = worldPos.y;
 
@@ -2043,52 +2341,68 @@ class LightWarsGame {
       this.lasers.push(result);
       this.waves.stats.shotsFired++;
       if (this.particles && this.particles.spawnMuzzleFlash) {
-        this.particles.spawnMuzzleFlash(result.originX, result.originY, result.angle, result.colorData.hex);
+        this.particles.spawnMuzzleFlash(
+          result.originX,
+          result.originY,
+          result.angle,
+          result.colorData.hex,
+        );
       }
     }
   }
 
   onLevelComplete(levelNum) {
-    this.state = 'LEVEL_CLEAR';
+    this.state = "LEVEL_CLEAR";
     window.LightWars.sound.playVictory();
 
     const lvl = levelNum || this._lastLevel || 1;
 
     // Save progress to localStorage
     if (lvl === 1) {
-      localStorage.setItem('lightwars_level1_cleared', 'true');
+      localStorage.setItem("lightwars_level1_cleared", "true");
     } else if (lvl === 2) {
-      localStorage.setItem('lightwars_level2_cleared', 'true');
+      localStorage.setItem("lightwars_level2_cleared", "true");
     } else if (lvl === 3) {
-      localStorage.setItem('lightwars_black_boss_defeated', 'true');
+      localStorage.setItem("lightwars_black_boss_defeated", "true");
       this._justClearedBossAndUnlockedPage2 = true;
     } else if (lvl === 4) {
-      localStorage.setItem('lightwars_level4_cleared', 'true');
+      localStorage.setItem("lightwars_level4_cleared", "true");
+    } else if (lvl === 5) {
+      localStorage.setItem("lightwars_level5_cleared", "true");
     }
 
     // Update modal text
-    const titleEl = document.getElementById('levelClearTitle');
-    const msgEl = document.getElementById('levelClearMsg');
+    const titleEl = document.getElementById("levelClearTitle");
+    const msgEl = document.getElementById("levelClearMsg");
     if (titleEl) titleEl.textContent = `LEVEL ${lvl} CLEARED!`;
     if (msgEl) {
       if (lvl === 1) {
-        msgEl.textContent = 'You eliminated the CMY invasion force and unlocked the DASH ability! The Spectrum War continues...';
+        msgEl.textContent =
+          "You eliminated the CMY invasion force and unlocked the DASH ability! The Spectrum War continues...";
       } else if (lvl === 2) {
-        msgEl.textContent = 'You conquered the CMY and RGB legions! The Black Void Overlord awaits your challenge...';
+        msgEl.textContent =
+          "You conquered the CMY and RGB legions! The Black Void Overlord awaits your challenge...";
       } else if (lvl === 3) {
-        msgEl.textContent = 'THE BLACK BOSS HAS FALLEN! You shattered the void using synthesized White light!';
+        msgEl.textContent =
+          "THE BLACK BOSS HAS FALLEN! You shattered the void using synthesized White light!";
       } else if (lvl === 4) {
-        msgEl.textContent = 'INVERTED FRAME MASTERED! You conquered the chromatic legions with reverse spectrum mastery!';
+        msgEl.textContent =
+          "INVERTED FRAME MASTERED! You conquered the chromatic legions with reverse spectrum mastery!";
+      } else if (lvl === 5) {
+        msgEl.textContent =
+          "THE WHITE BOSS IS DEAD! You have saved the universe from the true mastermind!";
       }
     }
 
-    document.getElementById('clearKills').innerText = this.waves.stats.enemiesKilled;
-    document.getElementById('clearOrbs').innerText = this.waves.stats.orbsCrafted;
-    document.getElementById('levelClearModal').style.display = 'flex';
-    const topHud = document.getElementById('inGameTopHud');
-    if (topHud) topHud.style.display = 'none';
-    const helpBtn = document.getElementById('inGameHelpBtn');
-    if (helpBtn) helpBtn.style.display = 'none';
+    document.getElementById("clearKills").innerText =
+      this.waves.stats.enemiesKilled;
+    document.getElementById("clearOrbs").innerText =
+      this.waves.stats.orbsCrafted;
+    document.getElementById("levelClearModal").style.display = "flex";
+    const topHud = document.getElementById("inGameTopHud");
+    if (topHud) topHud.style.display = "none";
+    const helpBtn = document.getElementById("inGameHelpBtn");
+    if (helpBtn) helpBtn.style.display = "none";
     if (window.LightWars.sound) {
       window.LightWars.sound.stopMusic();
       window.LightWars.sound.playVictory();
@@ -2096,12 +2410,12 @@ class LightWarsGame {
   }
 
   onGameOver() {
-    this.state = 'GAME_OVER';
-    document.getElementById('gameOverModal').style.display = 'flex';
-    const topHud = document.getElementById('inGameTopHud');
-    if (topHud) topHud.style.display = 'none';
-    const helpBtn = document.getElementById('inGameHelpBtn');
-    if (helpBtn) helpBtn.style.display = 'none';
+    this.state = "GAME_OVER";
+    document.getElementById("gameOverModal").style.display = "flex";
+    const topHud = document.getElementById("inGameTopHud");
+    if (topHud) topHud.style.display = "none";
+    const helpBtn = document.getElementById("inGameHelpBtn");
+    if (helpBtn) helpBtn.style.display = "none";
     if (window.LightWars.sound) {
       window.LightWars.sound.stopMusic();
       window.LightWars.sound.playPlayerDeath();
@@ -2109,7 +2423,7 @@ class LightWarsGame {
   }
 
   update(dt) {
-    if (this.state !== 'PLAYING') return;
+    if (this.state !== "PLAYING") return;
 
     if (this.input.isMouseDown) {
       this.handlePlayerShoot();
@@ -2126,14 +2440,17 @@ class LightWarsGame {
 
       // Check for low ammo stop tutorial in Level 1
       if (this._lastLevel === 1) {
-        const totalAmmo = Object.values(this.player.ammo).reduce((a, b) => a + b, 0);
+        const totalAmmo = Object.values(this.player.ammo).reduce(
+          (a, b) => a + b,
+          0,
+        );
         if (totalAmmo <= 3) {
           this.showStopTutorial(
-            'l1_low_ammo',
-            'LOW CHROMATIC AMMO ALERT!',
-            'Your laser energy is running low!<br><br>' +
-            'Head directly to the <b>WHITE LIGHT RECHARGE SANCTUARY</b> at the top of the chamber.<br>' +
-            'Stepping into the white glow will recharge all your weapons!'
+            "l1_low_ammo",
+            "LOW CHROMATIC AMMO ALERT!",
+            "Your laser energy is running low!<br><br>" +
+              "Head directly to the <b>WHITE LIGHT RECHARGE SANCTUARY</b> at the top of the chamber.<br>" +
+              "Stepping into the white glow will recharge all your weapons!",
           );
         }
       }
@@ -2143,7 +2460,7 @@ class LightWarsGame {
     for (const b of this.barrels) {
       b.update(dt);
     }
-    this.barrels = this.barrels.filter(b => b.alive);
+    this.barrels = this.barrels.filter((b) => b.alive);
 
     // Update Ammo Crystals & Player Collection
     for (const c of this.crystals) {
@@ -2158,7 +2475,7 @@ class LightWarsGame {
         }
       }
     }
-    this.crystals = this.crystals.filter(c => c.alive);
+    this.crystals = this.crystals.filter((c) => c.alive);
 
     // Update Ground Powerups (e.g. Dash Powerup) & Player Collection
     for (const p of this.powerups) {
@@ -2170,12 +2487,21 @@ class LightWarsGame {
         }
       }
     }
-    this.powerups = this.powerups.filter(p => p.alive);
+    this.powerups = this.powerups.filter((p) => p.alive);
 
     // Update Camera (tracks player and focuses on the active region)
     if (this.player) {
-      this.camera.update(dt, this.player.x, this.player.y, this.arena.width, this.arena.height);
-      const worldPos = this.camera.screenToWorld(this.input.screenMouseX, this.input.screenMouseY);
+      this.camera.update(
+        dt,
+        this.player.x,
+        this.player.y,
+        this.arena.width,
+        this.arena.height,
+      );
+      const worldPos = this.camera.screenToWorld(
+        this.input.screenMouseX,
+        this.input.screenMouseY,
+      );
       this.input.mouseX = worldPos.x;
       this.input.mouseY = worldPos.y;
     }
@@ -2193,7 +2519,12 @@ class LightWarsGame {
       }
 
       // Despawn lasers that travel far outside the map
-      if (laser.x < -400 || laser.y < -400 || laser.x > this.arena.width + 400 || laser.y > this.arena.height + 400) {
+      if (
+        laser.x < -400 ||
+        laser.y < -400 ||
+        laser.x > this.arena.width + 400 ||
+        laser.y > this.arena.height + 400
+      ) {
         laser.alive = false;
         this.lasers.splice(i, 1);
         continue;
@@ -2202,11 +2533,11 @@ class LightWarsGame {
       // 1. Entity Collision Handling (Check targets FIRST before background boundary walls!)
       if (laser.isPlayer) {
         // [only for 1st level] orbs must be uninteractable till all the enemies die **NOTE only 1st level**
-        const isLevel1 = (this.waves && this.waves.level === 1);
-        const l1EnemiesStillAlive = isLevel1 && (
-          this.enemies.some(e => e.alive) ||
-          (this.waves && this.waves.l1Subwave !== 'MAGENTA_YELLOW')
-        );
+        const isLevel1 = this.waves && this.waves.level === 1;
+        const l1EnemiesStillAlive =
+          isLevel1 &&
+          (this.enemies.some((e) => e.alive) ||
+            (this.waves && this.waves.l1Subwave !== "MAGENTA_YELLOW"));
 
         // Player Laser: Check collision with Orbs -> Spawn 2 Ammo Crystals!
         let laserConsumed = false;
@@ -2214,15 +2545,18 @@ class LightWarsGame {
           for (let j = this.orbs.length - 1; j >= 0; j--) {
             const orb = this.orbs[j];
             if (!orb.alive) continue;
-            const clampedOrbY = Math.max(orb.y - 45, Math.min(orb.y + 10, laser.y));
+            const clampedOrbY = Math.max(
+              orb.y - 45,
+              Math.min(orb.y + 10, laser.y),
+            );
             const d = Math.hypot(laser.x - orb.x, laser.y - clampedOrbY);
             if (d < (orb.hitRadius || 36)) {
               const res = orb.hitByLaser(laser.colorId);
               if (res.success) {
                 // Double safety: In levels 1 & 2, white bullet creation should be stopped (only in Level 3+)
                 const currentLevel = (this.waves && this.waves.level) || 0;
-                if (currentLevel <= 2 && res.resultColor === 'WHITE') {
-                  this.particles.spawnBurst(laser.x, laser.y, '#FFFFFF', 6);
+                if (currentLevel <= 2 && res.resultColor === "WHITE") {
+                  this.particles.spawnBurst(laser.x, laser.y, "#FFFFFF", 6);
                   laser.alive = false;
                   laserConsumed = true;
                   break;
@@ -2230,26 +2564,52 @@ class LightWarsGame {
 
                 laser.alive = false;
                 laserConsumed = true;
-                this.unlockHelpCapability('orbCrafting');
-                if (res.resultColor === 'WHITE') {
-                  this.unlockHelpCapability('whiteAmmo');
+                this.unlockHelpCapability("orbCrafting");
+                if (res.resultColor === "WHITE") {
+                  this.unlockHelpCapability("whiteAmmo");
                 }
 
                 // Audio & comic banner
-                if (window.LightWars.sound) window.LightWars.sound.playOrbConvert();
-                const resultColorHex = window.LightWars.COLORS[res.resultColor] ? window.LightWars.COLORS[res.resultColor].hex : '#FFFFFF';
+                if (window.LightWars.sound)
+                  window.LightWars.sound.playOrbConvert();
+                const resultColorHex = window.LightWars.COLORS[res.resultColor]
+                  ? window.LightWars.COLORS[res.resultColor].hex
+                  : "#FFFFFF";
                 this.particles.spawnBurst(orb.x, orb.y, resultColorHex, 24);
-                this.particles.spawnComicText(orb.x, orb.y, 'CRAFTED!', resultColorHex);
+                this.particles.spawnComicText(
+                  orb.x,
+                  orb.y,
+                  "CRAFTED!",
+                  resultColorHex,
+                );
 
                 // Spawn 2 crystals in the place of the orb for player to collect!
-                this.crystals.push(new window.LightWars.AmmoCrystal(orb.x, orb.y, res.resultColor, Math.PI));
-                this.crystals.push(new window.LightWars.AmmoCrystal(orb.x, orb.y, res.resultColor, 0));
+                this.crystals.push(
+                  new window.LightWars.AmmoCrystal(
+                    orb.x,
+                    orb.y,
+                    res.resultColor,
+                    Math.PI,
+                  ),
+                );
+                this.crystals.push(
+                  new window.LightWars.AmmoCrystal(
+                    orb.x,
+                    orb.y,
+                    res.resultColor,
+                    0,
+                  ),
+                );
 
-                this.waves.onOrbCrafted(orb.colorId, laser.colorId, res.resultColor);
+                this.waves.onOrbCrafted(
+                  orb.colorId,
+                  laser.colorId,
+                  res.resultColor,
+                );
                 break;
               } else {
                 // Deflected off incompatible orb
-                this.particles.spawnBurst(laser.x, laser.y, '#FFFFFF', 6);
+                this.particles.spawnBurst(laser.x, laser.y, "#FFFFFF", 6);
                 laser.alive = false;
                 laserConsumed = true;
                 break;
@@ -2270,18 +2630,36 @@ class LightWarsGame {
           if (!enemy.alive) continue;
           if (enemy.checkLaserHit(laser)) {
             hitEnemy = true;
-            const hitAngle = Math.atan2((enemy.y - 50) - laser.y, enemy.x - laser.x);
+            const hitAngle = Math.atan2(
+              enemy.y - 50 - laser.y,
+              enemy.x - laser.x,
+            );
             const outcome = enemy.takeLaserHit(laser.colorId, hitAngle);
 
             laser.alive = false;
 
-            if (outcome.action === 'KILL') {
+            if (outcome.action === "KILL") {
               window.LightWars.sound.playKaboom();
               this.camera.shake(9);
 
-              this.particles.spawnBurst(enemy.x, enemy.y - 50, window.LightWars.COLORS[enemy.colorId].hex, 28);
-              const deathWord = window.LightWars.COMIC_DEATH_WORDS[Math.floor(Math.random() * window.LightWars.COMIC_DEATH_WORDS.length)];
-              this.particles.spawnComicText(enemy.x, enemy.y - 70, deathWord, window.LightWars.COLORS[enemy.colorId].hex);
+              this.particles.spawnBurst(
+                enemy.x,
+                enemy.y - 50,
+                window.LightWars.COLORS[enemy.colorId].hex,
+                28,
+              );
+              const deathWord =
+                window.LightWars.COMIC_DEATH_WORDS[
+                  Math.floor(
+                    Math.random() * window.LightWars.COMIC_DEATH_WORDS.length,
+                  )
+                ];
+              this.particles.spawnComicText(
+                enemy.x,
+                enemy.y - 70,
+                deathWord,
+                window.LightWars.COLORS[enemy.colorId].hex,
+              );
 
               // Drop orb: Cyan -> Red, Magenta -> Green, Yellow -> Blue; RGB troops drop nothing!
               const dropColor = enemy.getOrbDrop();
@@ -2295,28 +2673,56 @@ class LightWarsGame {
               if (enemy.isBoss) {
                 this.killRemainingMinions(enemy);
               }
-            } else if (outcome.action === 'BOSS_HIT') {
+            } else if (outcome.action === "BOSS_HIT") {
               // Boss took 1 white bullet hit
               this.camera.shake(12);
-              this.particles.spawnBurst(enemy.x, enemy.y - 70, '#FFFFFF', 32);
-              this.particles.spawnComicText(enemy.x, enemy.y - 90, `HIT! (${outcome.remainingHealth} HP)`, '#00F0FF');
+              this.particles.spawnBurst(enemy.x, enemy.y - 70, "#FFFFFF", 32);
+              this.particles.spawnComicText(
+                enemy.x,
+                enemy.y - 90,
+                `HIT! (${outcome.remainingHealth} HP)`,
+                "#00F0FF",
+              );
               if (this.waves && this.waves.onBossHit) {
                 this.waves.onBossHit(outcome.remainingHealth);
               }
-            } else if (outcome.action === 'TRANSFORM' && this.colorChangingEnabled) {
+            } else if (
+              outcome.action === "TRANSFORM" &&
+              this.colorChangingEnabled
+            ) {
               // TRANSFORM active
               window.LightWars.sound.playTransform();
-              this.particles.spawnBurst(enemy.x, enemy.y - 50, window.LightWars.COLORS[outcome.target].hex, 20);
-              this.particles.spawnComicText(enemy.x, enemy.y - 70, `➔ ${outcome.target}!`, window.LightWars.COLORS[outcome.target].hex);
+              this.particles.spawnBurst(
+                enemy.x,
+                enemy.y - 50,
+                window.LightWars.COLORS[outcome.target].hex,
+                20,
+              );
+              this.particles.spawnComicText(
+                enemy.x,
+                enemy.y - 70,
+                `➔ ${outcome.target}!`,
+                window.LightWars.COLORS[outcome.target].hex,
+              );
               const prevColor = enemy.colorId;
               enemy.setColor(outcome.target);
               if (this.waves && this.waves.onEnemyTransform) {
-                this.waves.onEnemyTransform(enemy, prevColor, outcome.target, laser.colorId);
+                this.waves.onEnemyTransform(
+                  enemy,
+                  prevColor,
+                  outcome.target,
+                  laser.colorId,
+                );
               }
             } else {
               // 'NONE' OR transform disabled in Level 1 — no effect
-              this.particles.spawnBurst(laser.x, laser.y, '#AAAAAA', 8);
-              this.particles.spawnComicText(enemy.x, enemy.y - 70, 'NO EFFECT!', '#888888');
+              this.particles.spawnBurst(laser.x, laser.y, "#AAAAAA", 8);
+              this.particles.spawnComicText(
+                enemy.x,
+                enemy.y - 70,
+                "NO EFFECT!",
+                "#888888",
+              );
             }
 
             break;
@@ -2329,12 +2735,32 @@ class LightWarsGame {
         }
       } else {
         // Enemy Laser: Check collision with Player (Whole-body hitbox!)
-        if (this.player && this.player.alive && this.player.checkLaserHit(laser)) {
+        if (
+          this.player &&
+          this.player.alive &&
+          this.player.checkLaserHit(laser)
+        ) {
           laser.alive = false;
-          this.player.takeDamage(1, laser.x, laser.y, true, laser.angle);
+          // Black homing bullets deal more damage than normal colored enemy lasers
+          const cfg = window.LightWars.GAME_CONFIG;
+          const dmg =
+            laser.colorId === "BLACK"
+              ? cfg.blackBulletDamage || 15
+              : cfg.normalBulletDamage || 10;
+          this.player.takeDamage(dmg, laser.x, laser.y, true, laser.angle);
           this.camera.shake(5);
-          this.particles.spawnBurst(laser.x, laser.y, window.LightWars.COLORS[laser.colorId].hex, 16);
-          this.particles.spawnComicText(this.player.x, this.player.y - 70, 'ZAP!', '#FF2A4D');
+          this.particles.spawnBurst(
+            laser.x,
+            laser.y,
+            window.LightWars.COLORS[laser.colorId].hex,
+            16,
+          );
+          this.particles.spawnComicText(
+            this.player.x,
+            this.player.y - 70,
+            `ZAP! -${dmg}HP`,
+            "#FF2A4D",
+          );
           if (window.LightWars.sound) {
             window.LightWars.sound.playPlayerHurt();
           }
@@ -2347,15 +2773,25 @@ class LightWarsGame {
       let hitBarrel = false;
       for (const b of this.barrels) {
         if (!b.alive) continue;
-        const targetY = b.isBlackBarrel ? b.y : (b.y - 12);
+        const targetY = b.isBlackBarrel ? b.y : b.y - 12;
         const dist = Math.hypot(laser.x - b.x, laser.y - targetY);
         if (dist < b.colRadiusX + laser.radius) {
           hitBarrel = true;
           laser.alive = false;
-          this.particles.spawnBurst(laser.x, laser.y, b.isBlackBarrel ? '#B040FF' : '#D2A679', 10);
+          this.particles.spawnBurst(
+            laser.x,
+            laser.y,
+            b.isBlackBarrel ? "#B040FF" : "#D2A679",
+            10,
+          );
           const res = b.takeLaserHit(laser.colorId, laser.angle);
           if (res.destroyed) {
-            this.particles.spawnComicText(b.x, b.y, b.isBlackBarrel ? 'REWARD UNLOCKED!' : 'CRASH!', b.isBlackBarrel ? '#B040FF' : '#D2A679');
+            this.particles.spawnComicText(
+              b.x,
+              b.y,
+              b.isBlackBarrel ? "REWARD UNLOCKED!" : "CRASH!",
+              b.isBlackBarrel ? "#B040FF" : "#D2A679",
+            );
             if (b.isBlackBarrel) {
               if (window.LightWars.DashPowerup) {
                 this.powerups.push(new window.LightWars.DashPowerup(b.x, b.y));
@@ -2370,7 +2806,12 @@ class LightWarsGame {
               window.LightWars.sound.playKaboom();
             }
           } else if (b.isBlackBarrel && res.newHit) {
-            this.particles.spawnComicText(b.x, b.y - 30, `+${laser.colorId}! (${res.remaining} left)`, window.LightWars.COLORS[laser.colorId].hex);
+            this.particles.spawnComicText(
+              b.x,
+              b.y - 30,
+              `+${laser.colorId}! (${res.remaining} left)`,
+              window.LightWars.COLORS[laser.colorId].hex,
+            );
             if (window.LightWars.sound) window.LightWars.sound.playOrbConvert();
           }
           break;
@@ -2382,9 +2823,12 @@ class LightWarsGame {
       }
 
       // 3. Boundary Wall Collision Check (Only triggers if laser did not strike any entity!)
-      if (!this.arena.ignoreBoundaries && this.arena.isPointBlocked(laser.x, laser.y)) {
+      if (
+        !this.arena.ignoreBoundaries &&
+        this.arena.isPointBlocked(laser.x, laser.y)
+      ) {
         laser.alive = false;
-        this.particles.spawnBurst(laser.x, laser.y, '#AAAAAA', 8);
+        this.particles.spawnBurst(laser.x, laser.y, "#AAAAAA", 8);
         this.lasers.splice(i, 1);
         continue;
       }
@@ -2392,15 +2836,27 @@ class LightWarsGame {
 
     // Update Enemies & Enemy Shooting
     for (const enemy of this.enemies) {
-      const enemyLaser = enemy.update(dt, this.player, this.arena, this.barrels, this.lasers, this.enemies);
+      const enemyLaser = enemy.update(
+        dt,
+        this.player,
+        this.arena,
+        this.barrels,
+        this.lasers,
+        this.enemies,
+      );
       if (enemyLaser) {
         this.lasers.push(enemyLaser);
         if (this.particles && this.particles.spawnMuzzleFlash) {
-          this.particles.spawnMuzzleFlash(enemyLaser.originX, enemyLaser.originY, enemyLaser.angle, enemyLaser.colorData.hex);
+          this.particles.spawnMuzzleFlash(
+            enemyLaser.originX,
+            enemyLaser.originY,
+            enemyLaser.angle,
+            enemyLaser.colorData.hex,
+          );
         }
       }
     }
-    this.enemies = this.enemies.filter(e => e.alive);
+    this.enemies = this.enemies.filter((e) => e.alive);
 
     // Physical Body Collision Resolution (Enemy-Enemy, Player-Enemy, Enemy-Barrel)
     this.resolveEntityCollisions();
@@ -2453,7 +2909,8 @@ class LightWarsGame {
             const overlap = minDist - dist;
             let nx, ny;
             if (dist < 0.001) {
-              const randAngle = ((i + 1) * 1.618 + (j + 1) * 2.718) % (Math.PI * 2);
+              const randAngle =
+                ((i + 1) * 1.618 + (j + 1) * 2.718) % (Math.PI * 2);
               nx = Math.cos(randAngle);
               ny = Math.sin(randAngle);
             } else {
@@ -2519,7 +2976,11 @@ class LightWarsGame {
             enemy.y += pny * pOverlap * eRatio;
 
             if (arena && arena.pushOutOfWall) {
-              const ps = arena.pushOutOfWall(this.player.x, this.player.y, this.player.radius);
+              const ps = arena.pushOutOfWall(
+                this.player.x,
+                this.player.y,
+                this.player.radius,
+              );
               this.player.x = ps.x;
               this.player.y = ps.y;
               const es = arena.pushOutOfWall(enemy.x, enemy.y, enemy.radius);
@@ -2554,7 +3015,7 @@ class LightWarsGame {
   render() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    if (this.state === 'MENU') return;
+    if (this.state === "MENU") return;
 
     // Apply Camera translation
     this.camera.apply(this.ctx);
@@ -2563,15 +3024,28 @@ class LightWarsGame {
     this.arena.draw(this.ctx);
 
     // 2. Y-sorted 2.5D Entities & Foreground Walls (Player, Enemies, Barrels, Orbs, Crystals, Powerups, Walls)
-    const entities = [...this.orbs, ...this.crystals, ...this.barrels, ...this.powerups, ...this.enemies];
+    const entities = [
+      ...this.orbs,
+      ...this.crystals,
+      ...this.barrels,
+      ...this.powerups,
+      ...this.enemies,
+    ];
     if (this.player) entities.push(this.player);
 
     if (window.LightWars.occlusion) {
-      window.LightWars.occlusion.renderDepthSortedScene(this.ctx, entities, this.spriteManager);
+      window.LightWars.occlusion.renderDepthSortedScene(
+        this.ctx,
+        entities,
+        this.spriteManager,
+      );
     } else {
       entities.sort((a, b) => a.y - b.y);
       for (const ent of entities) {
-        if (ent instanceof window.LightWars.Player || ent instanceof window.LightWars.Enemy) {
+        if (
+          ent instanceof window.LightWars.Player ||
+          ent instanceof window.LightWars.Enemy
+        ) {
           ent.draw(this.ctx, this.spriteManager);
         } else if (ent.draw) {
           ent.draw(this.ctx);
@@ -2593,21 +3067,37 @@ class LightWarsGame {
     if (this.physicsInverted) {
       this.ctx.save();
       const grad = this.ctx.createRadialGradient(
-        this.canvas.width / 2, this.canvas.height / 2, Math.min(this.canvas.width, this.canvas.height) * 0.35,
-        this.canvas.width / 2, this.canvas.height / 2, Math.max(this.canvas.width, this.canvas.height) * 0.75
+        this.canvas.width / 2,
+        this.canvas.height / 2,
+        Math.min(this.canvas.width, this.canvas.height) * 0.35,
+        this.canvas.width / 2,
+        this.canvas.height / 2,
+        Math.max(this.canvas.width, this.canvas.height) * 0.75,
       );
-      grad.addColorStop(0, 'rgba(0, 0, 0, 0)');
-      grad.addColorStop(1, 'rgba(160, 32, 240, 0.28)');
+      grad.addColorStop(0, "rgba(0, 0, 0, 0)");
+      grad.addColorStop(1, "rgba(160, 32, 240, 0.28)");
       this.ctx.fillStyle = grad;
       this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
       this.ctx.restore();
     }
 
     // 5. Draw Screenspace HUD
-    this.ui.drawHUD(this.ctx, this.canvas.width, this.canvas.height, this.player, this.waves, this.enemies);
+    this.ui.drawHUD(
+      this.ctx,
+      this.canvas.width,
+      this.canvas.height,
+      this.player,
+      this.waves,
+      this.enemies,
+    );
 
     // 6. Draw Custom Crosshair (Mini Orb matching currently selected player color)
-    if (this.state === 'PLAYING' && this.player && this.player.alive && this.input.mouseInside) {
+    if (
+      this.state === "PLAYING" &&
+      this.player &&
+      this.player.alive &&
+      this.input.mouseInside
+    ) {
       this.drawCrosshair(this.ctx);
     }
   }
@@ -2618,8 +3108,9 @@ class LightWarsGame {
   drawCrosshair(ctx) {
     const x = this.input.screenMouseX;
     const y = this.input.screenMouseY;
-    const colorData = this.player.getActiveColorData() || window.LightWars.COLORS.RED;
-    const hex = colorData.hex || '#FF2A4D';
+    const colorData =
+      this.player.getActiveColorData() || window.LightWars.COLORS.RED;
+    const hex = colorData.hex || "#FF2A4D";
     const glow = colorData.glow || hex;
 
     const time = (performance.now ? performance.now() : Date.now()) * 0.005;
@@ -2634,11 +3125,11 @@ class LightWarsGame {
 
     // 1. Ambient outer energy glow halo
     const glowGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, outerRadius);
-    glowGrad.addColorStop(0.0, '#FFFFFF');
+    glowGrad.addColorStop(0.0, "#FFFFFF");
     glowGrad.addColorStop(0.2, hex);
     glowGrad.addColorStop(0.55, glow);
     glowGrad.addColorStop(0.85, hex);
-    glowGrad.addColorStop(1.0, 'rgba(0, 0, 0, 0)');
+    glowGrad.addColorStop(1.0, "rgba(0, 0, 0, 0)");
 
     ctx.fillStyle = glowGrad;
     ctx.beginPath();
@@ -2646,12 +3137,12 @@ class LightWarsGame {
     ctx.fill();
 
     // 2. High-intensity additive inner luminous core
-    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalCompositeOperation = "lighter";
     const coreGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, innerRadius);
-    coreGrad.addColorStop(0.0, '#FFFFFF');
-    coreGrad.addColorStop(0.35, '#FFFFFF');
+    coreGrad.addColorStop(0.0, "#FFFFFF");
+    coreGrad.addColorStop(0.35, "#FFFFFF");
     coreGrad.addColorStop(0.7, hex);
-    coreGrad.addColorStop(1.0, 'rgba(0, 0, 0, 0)');
+    coreGrad.addColorStop(1.0, "rgba(0, 0, 0, 0)");
 
     ctx.fillStyle = coreGrad;
     ctx.beginPath();
@@ -2659,9 +3150,9 @@ class LightWarsGame {
     ctx.fill();
 
     // 3. Mini orbiting orbital sparks
-    ctx.fillStyle = '#FFFFFF';
+    ctx.fillStyle = "#FFFFFF";
     for (let i = 0; i < 3; i++) {
-      const angle = time * 3.0 + (i * (Math.PI * 2 / 3));
+      const angle = time * 3.0 + i * ((Math.PI * 2) / 3);
       const sparkDist = outerRadius * 0.85;
       const sx = Math.cos(angle) * sparkDist;
       const sy = Math.sin(angle) * sparkDist;
@@ -2671,7 +3162,7 @@ class LightWarsGame {
     }
 
     // 4. Subtle tactical crosshair tick marks outside the mini orb for precision aiming
-    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalCompositeOperation = "source-over";
     ctx.strokeStyle = hex;
     ctx.lineWidth = 1.0;
     ctx.shadowColor = glow;
@@ -2697,7 +3188,7 @@ class LightWarsGame {
     ctx.stroke();
 
     // Pinpoint white center pip
-    ctx.fillStyle = '#FFFFFF';
+    ctx.fillStyle = "#FFFFFF";
     ctx.beginPath();
     ctx.arc(0, 0, 0.75, 0, Math.PI * 2);
     ctx.fill();
@@ -2707,7 +3198,7 @@ class LightWarsGame {
 
   loop(timestamp) {
     if (!this.lastTime) this.lastTime = timestamp;
-    
+
     const elapsed = timestamp - this.lastTime;
     // Cap at 60 FPS (~16.6ms per frame) to prevent overheating
     if (elapsed < 16) {
@@ -2729,7 +3220,7 @@ class LightWarsGame {
   }
 }
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener("DOMContentLoaded", () => {
   window.game = new LightWarsGame();
   window.game.start();
 });

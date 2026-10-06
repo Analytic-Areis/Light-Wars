@@ -17,7 +17,7 @@ class WaveDirector {
     this.stats = {
       enemiesKilled: 0,
       orbsCrafted: 0,
-      shotsFired: 0
+      shotsFired: 0,
     };
 
     // Instantiate level modular directors
@@ -25,6 +25,7 @@ class WaveDirector {
     this.lvl2 = new window.LightWars.Level2Director(this);
     this.lvl3 = new window.LightWars.Level3Director(this);
     this.lvl4 = new window.LightWars.Level4Director(this);
+    this.lvl5 = new window.LightWars.Level5Director(this);
 
     // Current active level director
     this.currentDirector = this.lvl1;
@@ -32,7 +33,11 @@ class WaveDirector {
 
   // Helper to spawn enemy in arena screen coordinates
   spawnAt(col, row, colorId) {
-    if (this.lvl3 && (this.lvl3.isVictoryInProgress || (this.lvl3.bossRef && !this.lvl3.bossRef.alive))) {
+    if (
+      this.lvl3 &&
+      (this.lvl3.isVictoryInProgress ||
+        (this.lvl3.bossRef && !this.lvl3.bossRef.alive))
+    ) {
       return null;
     }
     if (this.game.arena && this.game.arena.toScreen) {
@@ -45,7 +50,7 @@ class WaveDirector {
 
   // Getters & setters to maintain complete backwards compatibility
   get l1Subwave() {
-    return this.lvl1 ? this.lvl1.l1Subwave : 'CYAN';
+    return this.lvl1 ? this.lvl1.l1Subwave : "CYAN";
   }
   set l1Subwave(val) {
     if (this.lvl1) this.lvl1.l1Subwave = val;
@@ -108,57 +113,77 @@ class WaveDirector {
   // ═════════════════════════════════════════════════════════════════════════════
 
   update(dt) {
-    if (this.currentDirector && typeof this.currentDirector.update === 'function') {
+    if (
+      this.currentDirector &&
+      typeof this.currentDirector.update === "function"
+    ) {
       this.currentDirector.update(dt);
     }
   }
 
   onEnemyDefeated(enemy, laserColor) {
     this.stats.enemiesKilled++;
-    if (this.currentDirector && typeof this.currentDirector.onEnemyDefeated === 'function') {
+    if (
+      this.currentDirector &&
+      typeof this.currentDirector.onEnemyDefeated === "function"
+    ) {
       this.currentDirector.onEnemyDefeated(enemy, laserColor);
     }
   }
 
   onEnemyTransform(enemy, prevColor, newColor, laserColor) {
-    if (this.currentDirector && typeof this.currentDirector.onEnemyTransform === 'function') {
-      this.currentDirector.onEnemyTransform(enemy, prevColor, newColor, laserColor);
+    if (
+      this.currentDirector &&
+      typeof this.currentDirector.onEnemyTransform === "function"
+    ) {
+      this.currentDirector.onEnemyTransform(
+        enemy,
+        prevColor,
+        newColor,
+        laserColor,
+      );
     }
   }
 
   onOrbCrafted(orbColor, laserColor, resultColor) {
     this.stats.orbsCrafted++;
-    if (this.currentDirector && typeof this.currentDirector.onOrbCrafted === 'function') {
+    if (
+      this.currentDirector &&
+      typeof this.currentDirector.onOrbCrafted === "function"
+    ) {
       this.currentDirector.onOrbCrafted(orbColor, laserColor, resultColor);
     }
   }
 
   onBlackBarrelDestroyed(dropX, dropY) {
-    if (this.lvl1 && typeof this.lvl1.onBlackBarrelDestroyed === 'function') {
+    if (this.lvl1 && typeof this.lvl1.onBlackBarrelDestroyed === "function") {
       this.lvl1.onBlackBarrelDestroyed(dropX, dropY);
     }
   }
 
   onDashPowerupCollected() {
-    if (this.lvl1 && typeof this.lvl1.onDashPowerupCollected === 'function') {
+    if (this.lvl1 && typeof this.lvl1.onDashPowerupCollected === "function") {
       this.lvl1.onDashPowerupCollected();
     }
   }
 
   onInvertPowerupCollected() {
-    if (this.lvl3 && typeof this.lvl3.onInvertPowerupCollected === 'function') {
+    if (this.lvl3 && typeof this.lvl3.onInvertPowerupCollected === "function") {
       this.lvl3.onInvertPowerupCollected();
     }
   }
 
   onBossPhysicsInversionActivated() {
-    if (this.lvl3 && typeof this.lvl3.onBossPhysicsInversionActivated === 'function') {
+    if (
+      this.lvl3 &&
+      typeof this.lvl3.onBossPhysicsInversionActivated === "function"
+    ) {
       this.lvl3.onBossPhysicsInversionActivated();
     }
   }
 
   onBossHit(remainingHp) {
-    if (this.lvl3 && typeof this.lvl3.onBossHit === 'function') {
+    if (this.lvl3 && typeof this.lvl3.onBossHit === "function") {
       this.lvl3.onBossHit(remainingHp);
     }
   }
@@ -166,4 +191,3 @@ class WaveDirector {
 
 window.LightWars = window.LightWars || {};
 window.LightWars.WaveDirector = WaveDirector;
-

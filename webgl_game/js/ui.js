@@ -23,20 +23,48 @@ class UIManager {
   drawHUD(ctx, width, height, player, waveManager, enemies = null) {
     if (!player) return;
 
-    // 1. Health Bar (Brawl Stars Hearts)
+    // 1. Health Bar (100 HP – positioned above the ammo tray)
     ctx.save();
-    const heartX = 30;
-    const heartY = 30;
-    for (let i = 0; i < player.maxHealth; i++) {
-      const isFilled = i < player.health;
-      this.drawHeart(ctx, heartX + i * 36, heartY, isFilled);
+    const hpBarW  = 220;
+    const hpBarH  = 18;
+    const hpBarX  = 30;
+    const hpBarY  = 30;
+    const hpPct   = Math.max(0, Math.min(1, player.health / player.maxHealth));
+
+    // Colour: green (full) → yellow → red (low) via HSL hue 120→0
+    const hpColor = `hsl(${Math.round(hpPct * 120)}, 90%, 48%)`;
+
+    // Track (dark background)
+    ctx.fillStyle = 'rgba(10, 14, 25, 0.85)';
+    ctx.strokeStyle = '#2F3858';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(hpBarX - 2, hpBarY - 2, hpBarW + 4, hpBarH + 4, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    // Fill
+    if (hpPct > 0) {
+      ctx.shadowColor = hpColor;
+      ctx.shadowBlur  = 8;
+      ctx.fillStyle   = hpColor;
+      ctx.beginPath();
+      ctx.roundRect(hpBarX, hpBarY, Math.max(4, hpBarW * hpPct), hpBarH, 4);
+      ctx.fill();
+      ctx.shadowBlur = 0;
     }
 
-    // Health label
+    // ❤ icon
+    ctx.fillStyle = '#FF2A4D';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('❤', hpBarX, hpBarY + hpBarH + 16);
+
+    // HP label below the bar
     ctx.fillStyle = '#FFFFFF';
     ctx.font = 'bold 12px sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText(`HP: ${player.health} / ${player.maxHealth}`, heartX, heartY + 34);
+    ctx.fillText(`${player.health} / ${player.maxHealth} HP`, hpBarX + 20, hpBarY + hpBarH + 16);
     ctx.restore();
 
     // 2. Ammo Bar (Bottom Center - Brawl Stars Style Selector)
@@ -276,6 +304,96 @@ class UIManager {
       ctx.fillText("⚠️ NO AMMO IN THIS COLOR! RETURN TO RECHARGE STATION!", width / 2, height - 110);
       ctx.restore();
     }
+
+    // 5. Invert Frame – Comic speed-line vignette overlay
+    if (player.invertActiveTimer > 0) {
+      this._drawInvertVignette(ctx, width, height, player.invertActiveTimer, player.invertDuration);
+    }
+  }
+
+  /**
+   * Draws a blackish-purple comic-book radial speed-lines vignette around the
+   * screen edges while the Invert Frame ability is active.
+   */
+  _drawInvertVignette(ctx, width, height, activeTimer, totalDuration) {
+    ctx.save();
+
+    const cx = width  / 2;
+    const cy = height / 2;
+    // Pulse opacity: 0.55 base + gentle sine throb
+    const pulse = 0.55 + 0.15 * Math.sin(Date.now() * 0.004);
+
+    // ── 1. Dark edge vignette (radial gradient) ──────────────────────────────
+    const vigRadius = Math.max(width, height) * 0.85;
+    const vig = ctx.createRadialGradient(cx, cy, vigRadius * 0.22, cx, cy, vigRadius);
+    vig.addColorStop(0,   'rgba(0,0,0,0)');
+    vig.addColorStop(0.6, 'rgba(15,0,30,0)');
+    vig.addColorStop(1,   `rgba(8,0,20,${(pulse * 0.82).toFixed(2)})`);
+    ctx.fillStyle = vig;
+    ctx.fillRect(0, 0, width, height);
+
+    // ── 2. Radial speed lines ─────────────────────────────────────────────────
+    // Use a seeded deterministic set of rays so they don't flicker every frame.
+    // We build the angles once based on a fixed seed array stored on the instance.
+    if (!this._invertRays) {
+      // Generate 48 rays with random angle offsets and widths (stable across frames)
+      this._invertRays = [];
+      const RAY_COUNT = 48;
+      for (let i = 0; i < RAY_COUNT; i++) {
+        const base = (i / RAY_COUNT) * Math.PI * 2;
+        const jitter = (Math.random() - 0.5) * (Math.PI * 2 / RAY_COUNT) * 0.9;
+        this._invertRays.push({
+          angle: base + jitter,
+          width: 0.4 + Math.random() * 2.2,      // line half-width at edge
+          inner: 0.30 + Math.random() * 0.25,     // fade-in start (fraction of max radius)
+          alpha: 0.25 + Math.random() * 0.55,     // max alpha for this ray
+          dark:  Math.random() < 0.3              // ~30% are darker "thick" rays
+        });
+      }
+    }
+
+    const maxR = Math.hypot(cx, cy) * 1.15; // reach past corners
+
+    for (const ray of this._invertRays) {
+      const innerR = maxR * ray.inner;
+      const outerR = maxR;
+
+      const ix = cx + Math.cos(ray.angle) * innerR;
+      const iy = cy + Math.sin(ray.angle) * innerR;
+      const ox = cx + Math.cos(ray.angle) * outerR;
+      const oy = cy + Math.sin(ray.angle) * outerR;
+
+      // Perpendicular spread at the outer tip
+      const perp  = ray.angle + Math.PI / 2;
+      const spread = ray.width * (outerR / maxR) * 6;
+      const ox1 = ox + Math.cos(perp) * spread;
+      const oy1 = oy + Math.sin(perp) * spread;
+      const ox2 = ox - Math.cos(perp) * spread;
+      const oy2 = oy - Math.sin(perp) * spread;
+
+      const rayAlpha = (ray.alpha * pulse).toFixed(2);
+      // Colour: dark obsidian → purple corona (matches BLACK bullet palette)
+      const rayColor = ray.dark ? `rgba(40,0,70,${rayAlpha})` : `rgba(100,20,180,${rayAlpha})`;
+
+      ctx.beginPath();
+      ctx.moveTo(ix, iy);
+      ctx.lineTo(ox1, oy1);
+      ctx.lineTo(ox2, oy2);
+      ctx.closePath();
+      ctx.fillStyle = rayColor;
+      ctx.fill();
+    }
+
+    // ── 3. Thin purple border glow around entire screen edge ─────────────────
+    const borderAlpha = (pulse * 0.9).toFixed(2);
+    ctx.strokeStyle = `rgba(176, 64, 255, ${borderAlpha})`; // #B040FF
+    ctx.lineWidth   = 6;
+    ctx.shadowColor = '#B040FF';
+    ctx.shadowBlur  = 18;
+    ctx.strokeRect(3, 3, width - 6, height - 6);
+    ctx.shadowBlur  = 0;
+
+    ctx.restore();
   }
 
   drawHeart(ctx, x, y, filled, scale = 1.2) {

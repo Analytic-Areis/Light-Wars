@@ -11,15 +11,17 @@ class Enemy {
     this.y = y;
     this.z = 0;
     this.colorId = colorId;
-    this.colorData = window.LightWars.COLORS[colorId] || window.LightWars.COLORS.CYAN;
+    this.colorData =
+      window.LightWars.COLORS[colorId] || window.LightWars.COLORS.CYAN;
     this.bandColorId = this.colorData.band || this.colorData.complementary;
-    this.bandColorData = window.LightWars.COLORS[this.bandColorId] || window.LightWars.COLORS.RED;
+    this.bandColorData =
+      window.LightWars.COLORS[this.bandColorId] || window.LightWars.COLORS.RED;
 
     this.radius = 16; // Solid ground body collision hitbox radius
     this.bodyRadius = 15; // Full body laser hit capsule radius
     this.spriteWidth = 50;
     this.spriteHeight = 50;
-    this.speed = (105 + Math.random() * 25) * 0.60; // Decreased speed to 60%
+    this.speed = (105 + Math.random() * 25) * 0.6; // Decreased speed to 60%
     this.alive = true;
     this.health = 2;
 
@@ -27,7 +29,7 @@ class Enemy {
     this.walkAnimTime = Math.random() * 25;
     this.idleAnimTime = Math.random() * 25;
     this.isMoving = false;
-    this.facingDir = 'S';
+    this.facingDir = "S";
     this.facingAngle = 0;
     this.hurtFlash = 0;
     this.transformPulse = 0;
@@ -127,7 +129,7 @@ class Enemy {
   // Whole-body vertical capsule hitbox from feet (y - 4) to head (y - 44 / y - 52 for boss) with continuous sweep segment support
   checkLaserHit(laser) {
     if (!this.alive) return false;
-    const topY = this.isBoss ? (this.y - 72) : (this.y - 44);
+    const topY = this.isBoss ? this.y - 72 : this.y - 44;
     const bottomY = this.y - 4;
     const clampedY = Math.max(topY, Math.min(bottomY, laser.y));
     const dist = Math.hypot(laser.x - this.x, laser.y - clampedY);
@@ -140,8 +142,18 @@ class Enemy {
       const dy = laser.y - laser.prevY;
       const segLenSq = dx * dx + dy * dy;
       if (segLenSq > 0.001) {
-        const segClampedY = Math.max(topY, Math.min(bottomY, (laser.prevY + laser.y) / 2));
-        const t = Math.max(0, Math.min(1, ((this.x - laser.prevX) * dx + (segClampedY - laser.prevY) * dy) / segLenSq));
+        const segClampedY = Math.max(
+          topY,
+          Math.min(bottomY, (laser.prevY + laser.y) / 2),
+        );
+        const t = Math.max(
+          0,
+          Math.min(
+            1,
+            ((this.x - laser.prevX) * dx + (segClampedY - laser.prevY) * dy) /
+              segLenSq,
+          ),
+        );
         const projX = laser.prevX + t * dx;
         const projY = laser.prevY + t * dy;
         const sweepDist = Math.hypot(this.x - projX, segClampedY - projY);
@@ -154,23 +166,24 @@ class Enemy {
 
   // Ground-contact-relative sniper rifle muzzle offsets scaled to 1x1 tile size (~50x50 model)
   static MUZZLE_OFFSETS = {
-    N:  { x: -1.5, y: -36.0 },
-    NE: { x: 7.5,  y: -20.0 },
-    E:  { x: 18.5, y: -22.0 },
+    N: { x: -1.5, y: -36.0 },
+    NE: { x: 7.5, y: -20.0 },
+    E: { x: 18.5, y: -22.0 },
     SE: { x: 17.5, y: -25.0 },
-    S:  { x: 0.0,  y: -12.0 },
+    S: { x: 0.0, y: -12.0 },
     SW: { x: -8.5, y: -23.0 },
-    W:  { x: -18.5, y: -17.0 },
-    NW: { x: -18.0, y: -20.0 }
+    W: { x: -18.5, y: -17.0 },
+    NW: { x: -18.0, y: -20.0 },
   };
 
   getMuzzlePos(dir) {
-    const d = dir || this.facingDir || SpriteManager.getDirection8(this.facingAngle);
+    const d =
+      dir || this.facingDir || SpriteManager.getDirection8(this.facingAngle);
     const offset = Enemy.MUZZLE_OFFSETS[d] || { x: 0, y: -22 };
     return {
       x: this.x + offset.x,
       y: this.y + offset.y,
-      dir: d
+      dir: d,
     };
   }
 
@@ -187,7 +200,10 @@ class Enemy {
     const targetAimY = targetY - 20;
     const enemyCenterY = this.y - 24;
     const bodyAngle = Math.atan2(targetAimY - enemyCenterY, targetX - this.x);
-    const distToTarget = Math.hypot(targetX - this.x, targetAimY - enemyCenterY);
+    const distToTarget = Math.hypot(
+      targetX - this.x,
+      targetAimY - enemyCenterY,
+    );
 
     let angle;
     let spawnX;
@@ -201,7 +217,9 @@ class Enemy {
     } else {
       angle = Math.atan2(targetAimY - muzzle.y, targetX - muzzle.x);
       // Safeguard: if angle diverges drastically from body direction towards target, fallback to body angle
-      const dot = Math.cos(angle) * Math.cos(bodyAngle) + Math.sin(angle) * Math.sin(bodyAngle);
+      const dot =
+        Math.cos(angle) * Math.cos(bodyAngle) +
+        Math.sin(angle) * Math.sin(bodyAngle);
       if (dot < 0.5) {
         angle = bodyAngle;
       }
@@ -210,7 +228,10 @@ class Enemy {
     }
 
     // Slower dodgeable speed (315 px/s, decreased to 75% of original 420 px/s)
-    const speed = (window.LightWars.GAME_CONFIG && window.LightWars.GAME_CONFIG.enemyLaserSpeed) || 315;
+    const speed =
+      (window.LightWars.GAME_CONFIG &&
+        window.LightWars.GAME_CONFIG.enemyLaserSpeed) ||
+      315;
     const vx = Math.cos(angle) * speed;
     const vy = Math.sin(angle) * speed;
 
@@ -219,7 +240,14 @@ class Enemy {
     }
 
     // Enemy shoots its own color! isPlayer = false
-    const laser = new window.LightWars.Laser(spawnX, spawnY, vx, vy, this.colorId, false);
+    const laser = new window.LightWars.Laser(
+      spawnX,
+      spawnY,
+      vx,
+      vy,
+      this.colorId,
+      false,
+    );
     laser.originX = spawnX;
     laser.originY = spawnY;
     laser.prevX = spawnX;
@@ -249,7 +277,13 @@ class Enemy {
       const nextX = this.x + this.knockbackVx * dt;
       const nextY = this.y + this.knockbackVy * dt;
       if (arena && arena.resolveMovement) {
-        const res = arena.resolveMovement(this.x, this.y, nextX, nextY, this.radius);
+        const res = arena.resolveMovement(
+          this.x,
+          this.y,
+          nextX,
+          nextY,
+          this.radius,
+        );
         if (Math.abs(res.x - nextX) > 0.05) this.knockbackVx = 0;
         if (Math.abs(res.y - nextY) > 0.05) this.knockbackVy = 0;
         this.x = res.x;
@@ -328,7 +362,10 @@ class Enemy {
       // Obstacle & Line-of-Sight Check:
       // If direct line to player is blocked (e.g. player went behind center box),
       // or if enemy is stuck against an obstacle, navigate via arena waypoints!
-      const hasLOS = arena && arena.hasLineOfSight ? arena.hasLineOfSight(this.x, this.y, player.x, player.y, 4) : true;
+      const hasLOS =
+        arena && arena.hasLineOfSight
+          ? arena.hasLineOfSight(this.x, this.y, player.x, player.y, 4)
+          : true;
 
       // Safe Standoff Positioning:
       // - If NO direct LOS (player is behind the box): actively navigate around the box to reach the occluded region!
@@ -337,9 +374,10 @@ class Enemy {
       // - If within safe zone: Actively space out if crowded, or gently strafe around player
       if (!hasLOS) {
         // Player is behind an obstacle/occluder: pathfind towards player using BFS waypoints
-        const waypoint = (arena && arena.findNextWaypoint)
-          ? arena.findNextWaypoint(this.x, this.y, player.x, player.y)
-          : { x: player.x, y: player.y };
+        const waypoint =
+          arena && arena.findNextWaypoint
+            ? arena.findNextWaypoint(this.x, this.y, player.x, player.y)
+            : { x: player.x, y: player.y };
 
         const wdx = waypoint.x - this.x;
         const wdy = waypoint.y - this.y;
@@ -359,7 +397,13 @@ class Enemy {
         const nextY = this.y + ny * this.speed * dt;
 
         if (arena && arena.resolveMovement) {
-          const res = arena.resolveMovement(this.x, this.y, nextX, nextY, this.radius);
+          const res = arena.resolveMovement(
+            this.x,
+            this.y,
+            nextX,
+            nextY,
+            this.radius,
+          );
           this.x = res.x;
           this.y = res.y;
         } else {
@@ -371,7 +415,10 @@ class Enemy {
         this.walkAnimTime += dt * 12.0;
         this.facingAngle = Math.atan2(ny, nx);
         this.facingDir = SpriteManager.getDirection8(this.facingAngle);
-      } else if (dist < this.idealMinDist || (this.isRetreating && dist < this.idealMinDist + 25)) {
+      } else if (
+        dist < this.idealMinDist ||
+        (this.isRetreating && dist < this.idealMinDist + 25)
+      ) {
         this.isRetreating = true;
         // TOO CLOSE: Back away from the player to stay safe!
         const safeDist = dist > 0.001 ? dist : 1;
@@ -391,13 +438,33 @@ class Enemy {
         let moveNy = ny;
 
         // If direct retreat leads into a wall, steer sideways (strafe) along open floor
-        if (arena && arena.isBodyBlocked && arena.isBodyBlocked(this.x + nx * retreatSpeed * dt, this.y + ny * retreatSpeed * dt, this.radius)) {
+        if (
+          arena &&
+          arena.isBodyBlocked &&
+          arena.isBodyBlocked(
+            this.x + nx * retreatSpeed * dt,
+            this.y + ny * retreatSpeed * dt,
+            this.radius,
+          )
+        ) {
           const perpX = -ny * (this.strafeDir || 1);
           const perpY = nx * (this.strafeDir || 1);
-          if (!arena.isBodyBlocked(this.x + perpX * retreatSpeed * dt, this.y + perpY * retreatSpeed * dt, this.radius)) {
+          if (
+            !arena.isBodyBlocked(
+              this.x + perpX * retreatSpeed * dt,
+              this.y + perpY * retreatSpeed * dt,
+              this.radius,
+            )
+          ) {
             moveNx = perpX;
             moveNy = perpY;
-          } else if (!arena.isBodyBlocked(this.x - perpX * retreatSpeed * dt, this.y - perpY * retreatSpeed * dt, this.radius)) {
+          } else if (
+            !arena.isBodyBlocked(
+              this.x - perpX * retreatSpeed * dt,
+              this.y - perpY * retreatSpeed * dt,
+              this.radius,
+            )
+          ) {
             moveNx = -perpX;
             moveNy = -perpY;
             this.strafeDir = (this.strafeDir || 1) * -1;
@@ -408,7 +475,13 @@ class Enemy {
         const nextY = this.y + moveNy * retreatSpeed * dt;
 
         if (arena && arena.resolveMovement) {
-          const res = arena.resolveMovement(this.x, this.y, nextX, nextY, this.radius);
+          const res = arena.resolveMovement(
+            this.x,
+            this.y,
+            nextX,
+            nextY,
+            this.radius,
+          );
           this.x = res.x;
           this.y = res.y;
         } else {
@@ -437,7 +510,13 @@ class Enemy {
         const nextY = this.y + ny * this.speed * dt;
 
         if (arena && arena.resolveMovement) {
-          const res = arena.resolveMovement(this.x, this.y, nextX, nextY, this.radius);
+          const res = arena.resolveMovement(
+            this.x,
+            this.y,
+            nextX,
+            nextY,
+            this.radius,
+          );
           this.x = res.x;
           this.y = res.y;
         } else {
@@ -461,7 +540,13 @@ class Enemy {
           const nextY = this.y + sny * spreadSpeed * dt;
 
           if (arena && arena.resolveMovement) {
-            const res = arena.resolveMovement(this.x, this.y, nextX, nextY, this.radius);
+            const res = arena.resolveMovement(
+              this.x,
+              this.y,
+              nextX,
+              nextY,
+              this.radius,
+            );
             this.x = res.x;
             this.y = res.y;
           } else {
@@ -481,7 +566,13 @@ class Enemy {
           const nextY = this.y + perpY * driftSpeed * dt;
 
           if (arena && arena.resolveMovement) {
-            const res = arena.resolveMovement(this.x, this.y, nextX, nextY, this.radius);
+            const res = arena.resolveMovement(
+              this.x,
+              this.y,
+              nextX,
+              nextY,
+              this.radius,
+            );
             this.x = res.x;
             this.y = res.y;
           } else {
@@ -532,29 +623,33 @@ class Enemy {
       ? window.LightWars.ENEMY_INTERACTIONS_INVERTED
       : window.LightWars.ENEMY_INTERACTIONS;
     const rules = rulesTable[this.colorId];
-    const interaction = (rules && rules[laserColorId]) ? rules[laserColorId] : { action: 'NONE' };
+    const interaction =
+      rules && rules[laserColorId] ? rules[laserColorId] : { action: "NONE" };
 
     // Apply brief knockback (reduced to 30%: was 140)
-    const kbSpeed = (window.LightWars && window.LightWars.GAME_CONFIG && window.LightWars.GAME_CONFIG.enemyKnockbackSpeed !== undefined)
-      ? window.LightWars.GAME_CONFIG.enemyKnockbackSpeed
-      : 42;
+    const kbSpeed =
+      window.LightWars &&
+      window.LightWars.GAME_CONFIG &&
+      window.LightWars.GAME_CONFIG.enemyKnockbackSpeed !== undefined
+        ? window.LightWars.GAME_CONFIG.enemyKnockbackSpeed
+        : 42;
     this.knockbackVx = Math.cos(hitAngle) * kbSpeed;
     this.knockbackVy = Math.sin(hitAngle) * kbSpeed;
     this.hurtFlash = 1.0;
 
-    if (interaction.action === 'KILL') {
+    if (interaction.action === "KILL") {
       // Counter weakness is instant 1-hit kill
       this.health = 0;
       this.alive = false;
-      return { action: 'KILL' };
+      return { action: "KILL" };
     }
 
-    if (interaction.action === 'TRANSFORM') {
-      return { action: 'TRANSFORM', target: interaction.target };
+    if (interaction.action === "TRANSFORM") {
+      return { action: "TRANSFORM", target: interaction.target };
     }
 
     // action === 'NONE' -> No change when hit by this color!
-    return { action: 'NONE' };
+    return { action: "NONE" };
   }
 
   draw(ctx, spriteManager) {
@@ -562,9 +657,17 @@ class Enemy {
 
     // 1. Ground Contact Shadow
     ctx.save();
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.42)';
+    ctx.fillStyle = "rgba(0, 0, 0, 0.42)";
     ctx.beginPath();
-    ctx.ellipse(this.x, this.y, this.radius * 0.9, this.radius * 0.45, 0, 0, Math.PI * 2);
+    ctx.ellipse(
+      this.x,
+      this.y,
+      this.radius * 0.9,
+      this.radius * 0.45,
+      0,
+      0,
+      Math.PI * 2,
+    );
     ctx.fill();
     ctx.restore();
 
@@ -584,7 +687,7 @@ class Enemy {
     ctx.arc(0, -this.radius * 0.8, this.radius * 0.7, 0, Math.PI * 2);
     ctx.fill();
     ctx.lineWidth = 2.5;
-    ctx.strokeStyle = '#111';
+    ctx.strokeStyle = "#111";
     ctx.stroke();
 
     this.drawContraryEssence(ctx);
@@ -594,7 +697,7 @@ class Enemy {
   // Visual essence of contrary color: floating head diamond crystal (chest red blob removed)
   drawContraryEssence(ctx) {
     if (this.isBoss) return; // Boss has its own void aura
-    const colHex = this.bandColorData ? this.bandColorData.hex : '#FF2A4D';
+    const colHex = this.bandColorData ? this.bandColorData.hex : "#FF2A4D";
     const now = Date.now();
     const pulse = 1.0 + Math.sin(now * 0.006 + this.x * 0.01) * 0.22;
 
@@ -604,9 +707,16 @@ class Enemy {
 
     ctx.save();
     // Soft glow behind diamond
-    const diaGrad = ctx.createRadialGradient(0, floatY, 0.5, 0, floatY, 8 * pulse);
+    const diaGrad = ctx.createRadialGradient(
+      0,
+      floatY,
+      0.5,
+      0,
+      floatY,
+      8 * pulse,
+    );
     diaGrad.addColorStop(0, colHex);
-    diaGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    diaGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
     ctx.fillStyle = diaGrad;
     ctx.beginPath();
     ctx.arc(0, floatY, 8 * pulse, 0, Math.PI * 2);
@@ -621,7 +731,7 @@ class Enemy {
     ctx.closePath();
     ctx.fillStyle = colHex;
     ctx.fill();
-    ctx.strokeStyle = '#FFFFFF';
+    ctx.strokeStyle = "#FFFFFF";
     ctx.lineWidth = 1.0;
     ctx.stroke();
     ctx.restore();
@@ -639,7 +749,7 @@ class Enemy {
  */
 class BlackBoss extends Enemy {
   constructor(x, y) {
-    super(x, y, 'BLACK');
+    super(x, y, "BLACK");
     this.isBoss = true;
     this.name = "The Black Boss";
     this.maxHealth = 3;
@@ -648,7 +758,7 @@ class BlackBoss extends Enemy {
     this.bodyRadius = 22; // Boss laser hitbox radius
     this.spriteWidth = 50;
     this.spriteHeight = 50;
-    this.speed = 90 * 0.60; // Decreased speed to 60%
+    this.speed = 90 * 0.6; // Decreased speed to 60%
 
     // Shooting: black homing bullets
     this.shootCooldown = 2.5;
@@ -656,7 +766,7 @@ class BlackBoss extends Enemy {
     this.idealMaxDist = 240; // 4–5 tiles cap
 
     // Physics Inversion ability
-    this.inversionState = 'IDLE'; // 'IDLE' | 'PREPARING_SHAKE' | 'INVERTED'
+    this.inversionState = "IDLE"; // 'IDLE' | 'PREPARING_SHAKE' | 'INVERTED'
     this.shakeDuration = 1.0;
     this.shakeTimer = 0;
     this.shakeOffset = 0;
@@ -664,22 +774,26 @@ class BlackBoss extends Enemy {
     this.inversionTimer = 0;
     this.abilityIntervalTimer = 999; // Initial delay before periodic triggers
     this.firstInversionTriggered = false;
+    this.canInvert = true;
     this.auraPulse = 0;
   }
 
   // Check if physics inversion is currently active
   isPhysicsInverted() {
-    return this.inversionState === 'INVERTED';
+    return this.inversionState === "INVERTED";
   }
 
   // Black Boss is invulnerable while inverting reality or preparing shake
   isInvulnerable() {
-    return this.inversionState === 'INVERTED' || this.inversionState === 'PREPARING_SHAKE';
+    return (
+      this.inversionState === "INVERTED" ||
+      this.inversionState === "PREPARING_SHAKE"
+    );
   }
 
   triggerPhysicsInversion() {
-    if (this.inversionState !== 'IDLE') return;
-    this.inversionState = 'PREPARING_SHAKE';
+    if (this.inversionState !== "IDLE") return;
+    this.inversionState = "PREPARING_SHAKE";
     this.shakeTimer = this.shakeDuration;
     if (window.LightWars.sound) {
       window.LightWars.sound.playTransform();
@@ -695,39 +809,47 @@ class BlackBoss extends Enemy {
     // Full HP (3): no periodic trigger (stays idle)
     // 2 HP (lost 1 heart): triggers periodically every 30 seconds
     // 1 HP (last heart): triggers periodically every 15 seconds
-    if (this.health === 2) {
+    if (this.canInvert && this.health === 2) {
       this.abilityIntervalTimer -= dt;
-      if (this.abilityIntervalTimer <= 0 && this.inversionState === 'IDLE') {
+      if (this.abilityIntervalTimer <= 0 && this.inversionState === "IDLE") {
         this.abilityIntervalTimer = 30.0;
         this.triggerPhysicsInversion();
       }
-    } else if (this.health === 1) {
+    } else if (this.canInvert && this.health === 1) {
       this.abilityIntervalTimer -= dt;
-      if (this.abilityIntervalTimer <= 0 && this.inversionState === 'IDLE') {
+      if (this.abilityIntervalTimer <= 0 && this.inversionState === "IDLE") {
         this.abilityIntervalTimer = 15.0;
         this.triggerPhysicsInversion();
       }
     }
 
     // Handle high-speed left/right shaking during 1s preparation
-    if (this.inversionState === 'PREPARING_SHAKE') {
+    if (this.inversionState === "PREPARING_SHAKE") {
       this.shakeTimer -= dt;
       // High speed oscillation: 50 Hz
       this.shakeOffset = Math.sin(this.shakeTimer * 50) * 16;
 
       if (this.shakeTimer <= 0) {
         this.shakeOffset = 0;
-        this.inversionState = 'INVERTED';
+        this.inversionState = "INVERTED";
         this.inversionTimer = this.inversionDuration;
 
         // Notify game engine
         if (window.game) {
           window.game.physicsInverted = true;
           if (window.game.unlockHelpCapability) {
-            window.game.unlockHelpCapability('inversion');
+            window.game.unlockHelpCapability("inversion");
           }
-          window.game.particles.spawnComicText(this.x, this.y - 120, "PHYSICS INVERTED!", "#00F0FF");
-          if (window.game.waves && window.game.waves.onBossPhysicsInversionActivated) {
+          window.game.particles.spawnComicText(
+            this.x,
+            this.y - 120,
+            "PHYSICS INVERTED!",
+            "#00F0FF",
+          );
+          if (
+            window.game.waves &&
+            window.game.waves.onBossPhysicsInversionActivated
+          ) {
             window.game.waves.onBossPhysicsInversionActivated();
           }
         }
@@ -737,38 +859,53 @@ class BlackBoss extends Enemy {
     }
 
     // Handle active 10s inverted physics
-    if (this.inversionState === 'INVERTED') {
+    if (this.inversionState === "INVERTED") {
       this.inversionTimer -= dt;
       if (this.inversionTimer <= 0) {
-        this.inversionState = 'IDLE';
+        this.inversionState = "IDLE";
         if (window.game) {
           window.game.physicsInverted = false;
-          window.game.particles.spawnComicText(this.x, this.y - 120, "PHYSICS RESTORED!", "#FFFFFF");
+          window.game.particles.spawnComicText(
+            this.x,
+            this.y - 120,
+            "PHYSICS RESTORED!",
+            "#FFFFFF",
+          );
         }
       }
     }
 
     // Call standard navigation & movement
-    const standardLaser = super.update(dt, player, arena, barrels, lasers, otherEnemies);
+    const standardLaser = super.update(
+      dt,
+      player,
+      arena,
+      barrels,
+      lasers,
+      otherEnemies,
+    );
 
     // If super fired a laser, override with Homing Black Bullet!
     if (standardLaser) {
       // Create homing black laser (decreased to 75% of original 310 px/s)
-      const homingSpeed = (window.LightWars.GAME_CONFIG && window.LightWars.GAME_CONFIG.bossLaserSpeed) || 232.5;
+      const homingSpeed =
+        (window.LightWars.GAME_CONFIG &&
+          window.LightWars.GAME_CONFIG.bossLaserSpeed) ||
+        232.5;
       const homingLaser = new window.LightWars.Laser(
         standardLaser.x,
         standardLaser.y,
         standardLaser.vx * 0.75, // Scaled down launch speed: dodgeable with skill/dash
         standardLaser.vy * 0.75,
-        'BLACK',
+        "BLACK",
         false,
         {
           isHoming: true,
           target: player,
           speed: homingSpeed,
           turnRate: 2.1, // Smooth turning curve allowing evade & dash
-          homingLife: 1.5 // Exactly 1.5s timer before disappearing
-        }
+          homingLife: 1.5, // Exactly 1.5s timer before disappearing
+        },
       );
       homingLaser.originX = standardLaser.originX;
       homingLaser.originY = standardLaser.originY;
@@ -780,9 +917,12 @@ class BlackBoss extends Enemy {
 
   takeLaserHit(laserColorId, hitAngle) {
     // Apply brief knockback (reduced to 30%: was 120)
-    const bossKbSpeed = (window.LightWars && window.LightWars.GAME_CONFIG && window.LightWars.GAME_CONFIG.bossKnockbackSpeed !== undefined)
-      ? window.LightWars.GAME_CONFIG.bossKnockbackSpeed
-      : 36;
+    const bossKbSpeed =
+      window.LightWars &&
+      window.LightWars.GAME_CONFIG &&
+      window.LightWars.GAME_CONFIG.bossKnockbackSpeed !== undefined
+        ? window.LightWars.GAME_CONFIG.bossKnockbackSpeed
+        : 36;
     this.knockbackVx = Math.cos(hitAngle) * bossKbSpeed;
     this.knockbackVy = Math.sin(hitAngle) * bossKbSpeed;
     this.hurtFlash = 1.0;
@@ -790,14 +930,33 @@ class BlackBoss extends Enemy {
     // If boss is invulnerable (during shaking or reality inversion), immune to ALL attacks!
     if (this.isInvulnerable()) {
       if (window.game && window.game.particles) {
-        window.game.particles.spawnBurst(this.x, this.y - 20, '#00F0FF', 14);
-        window.game.particles.spawnComicText(this.x, this.y - 60, 'IMMUNE!', '#00F0FF');
+        window.game.particles.spawnBurst(this.x, this.y - 20, "#00F0FF", 14);
+        window.game.particles.spawnComicText(
+          this.x,
+          this.y - 60,
+          "IMMUNE!",
+          "#00F0FF",
+        );
       }
-      return { action: 'NONE' };
+      return { action: "NONE" };
+    }
+
+    const isInverted = window.game && window.game.physicsInverted;
+    if (isInverted) {
+      if (window.game && window.game.particles) {
+        window.game.particles.spawnBurst(this.x, this.y - 20, "#A020F0", 14);
+        window.game.particles.spawnComicText(
+          this.x,
+          this.y - 60,
+          "IMMUNE IN INVERTED!",
+          "#A020F0",
+        );
+      }
+      return { action: "NONE" };
     }
 
     // Black Boss ONLY takes damage from WHITE laser bullets!
-    if (laserColorId === 'WHITE') {
+    if (laserColorId === "WHITE") {
       this.health -= 1;
       const heartsLeft = this.health;
 
@@ -811,11 +970,11 @@ class BlackBoss extends Enemy {
         this.alive = false;
         if (window.game) {
           window.game.physicsInverted = false;
-          if (typeof window.game.killRemainingMinions === 'function') {
+          if (typeof window.game.killRemainingMinions === "function") {
             window.game.killRemainingMinions(this);
           }
         }
-        return { action: 'KILL', bossDead: true };
+        return { action: "KILL", bossDead: true };
       }
 
       // Notify waves director so minions can replenish and boss can prepare invert
@@ -823,11 +982,11 @@ class BlackBoss extends Enemy {
         window.game.waves.onBossHit(heartsLeft);
       }
 
-      return { action: 'BOSS_HIT', remainingHealth: heartsLeft };
+      return { action: "BOSS_HIT", remainingHealth: heartsLeft };
     }
 
     // Any other laser color deflects off void shields
-    return { action: 'NONE' };
+    return { action: "NONE" };
   }
 
   draw(ctx, spriteManager) {
@@ -835,9 +994,17 @@ class BlackBoss extends Enemy {
 
     // Ground Contact Shadow
     ctx.save();
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+    ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
     ctx.beginPath();
-    ctx.ellipse(this.x + this.shakeOffset, this.y, this.radius * 1.3, this.radius * 0.65, 0, 0, Math.PI * 2);
+    ctx.ellipse(
+      this.x + this.shakeOffset,
+      this.y,
+      this.radius * 1.3,
+      this.radius * 0.65,
+      0,
+      0,
+      Math.PI * 2,
+    );
     ctx.fill();
     ctx.restore();
 
@@ -846,10 +1013,13 @@ class BlackBoss extends Enemy {
 
     // Glowing void aura around Boss
     const pulse = 1.0 + Math.sin(this.auraPulse) * 0.12;
-    const auraColor = (this.inversionState === 'INVERTED') ? 'rgba(0, 240, 255, 0.35)' : 'rgba(160, 32, 240, 0.35)';
+    const auraColor =
+      this.inversionState === "INVERTED"
+        ? "rgba(0, 240, 255, 0.35)"
+        : "rgba(160, 32, 240, 0.35)";
     const grad = ctx.createRadialGradient(0, -33, 7.5, 0, -33, 52 * pulse);
     grad.addColorStop(0, auraColor);
-    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    grad.addColorStop(1, "rgba(0, 0, 0, 0)");
     ctx.fillStyle = grad;
     ctx.beginPath();
     ctx.arc(0, -33, 52 * pulse, 0, Math.PI * 2);
@@ -858,7 +1028,7 @@ class BlackBoss extends Enemy {
     // Inversion shimmer effect if inverted
     // Inversion / Invulnerability barrier effect
     if (this.isInvulnerable()) {
-      ctx.strokeStyle = '#00F0FF';
+      ctx.strokeStyle = "#00F0FF";
       ctx.lineWidth = 2.5;
       ctx.setLineDash([6, 4]);
       ctx.beginPath();
@@ -868,7 +1038,7 @@ class BlackBoss extends Enemy {
 
       // Outer hexagonal protective forcefield
       ctx.save();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       for (let s = 0; s < 6; s++) {
@@ -887,14 +1057,21 @@ class BlackBoss extends Enemy {
     // Render Boss Sprite (scale = 50x50, 1x1 tile)
     let spriteRendered = false;
     if (spriteManager) {
-      const dir = this.facingDir || SpriteManager.getDirection8(this.facingAngle) || 'S';
+      const dir =
+        this.facingDir || SpriteManager.getDirection8(this.facingAngle) || "S";
       let img = null;
       let frameIdx = 0;
       if (this.isMoving) {
-        img = spriteManager.getSprite(`BLACK_${dir}_walk`) || spriteManager.getSprite(`BOSS_${dir}_walk`) || spriteManager.getSprite(`BLACK_S_walk`);
+        img =
+          spriteManager.getSprite(`BLACK_${dir}_walk`) ||
+          spriteManager.getSprite(`BOSS_${dir}_walk`) ||
+          spriteManager.getSprite(`BLACK_S_walk`);
         frameIdx = Math.floor(this.walkAnimTime) % 25;
       } else {
-        img = spriteManager.getSprite(`BLACK_${dir}_idle`) || spriteManager.getSprite(`BOSS_${dir}_idle`) || spriteManager.getSprite(`BLACK_S_idle`);
+        img =
+          spriteManager.getSprite(`BLACK_${dir}_idle`) ||
+          spriteManager.getSprite(`BOSS_${dir}_idle`) ||
+          spriteManager.getSprite(`BLACK_S_idle`);
         frameIdx = Math.floor(this.idleAnimTime || 0) % 25;
       }
 
@@ -907,24 +1084,24 @@ class BlackBoss extends Enemy {
         const sy = row * frameH;
 
         if (this.hurtFlash > 0) {
-          ctx.filter = 'brightness(3.5) contrast(1.8)';
+          ctx.filter = "brightness(3.5) contrast(1.8)";
         }
         const h = 75; // 1.5x normal size (50 * 1.5 = 75)
         const w = 75;
         const feetOffset = h * (224 / 256);
         ctx.drawImage(img, sx, sy, frameW, frameH, -w / 2, -feetOffset, w, h);
-        ctx.filter = 'none';
+        ctx.filter = "none";
         spriteRendered = true;
       }
     }
 
     if (!spriteRendered) {
-      ctx.fillStyle = '#101018';
+      ctx.fillStyle = "#101018";
       ctx.beginPath();
       ctx.arc(0, -this.radius * 1.2, this.radius, 0, Math.PI * 2);
       ctx.fill();
       ctx.lineWidth = 2.5;
-      ctx.strokeStyle = '#A020F0';
+      ctx.strokeStyle = "#A020F0";
       ctx.stroke();
     }
 
@@ -938,3 +1115,183 @@ class BlackBoss extends Enemy {
 window.LightWars = window.LightWars || {};
 window.LightWars.Enemy = Enemy;
 window.LightWars.BlackBoss = BlackBoss;
+
+class WhiteBoss extends Enemy {
+  constructor(x, y) {
+    super(x, y, "WHITE");
+    this.isBoss = true;
+    this.name = "The White Boss";
+    this.maxHealth = 3;
+    this.health = 3;
+    this.radius = 24;
+    this.bodyRadius = 22;
+    this.spriteWidth = 50;
+    this.spriteHeight = 50;
+    this.speed = 50;
+
+    this.shootCooldown = 2.0;
+    this.auraPulse = 0;
+  }
+
+  update(dt, player, arena, barrels = [], lasers = [], otherEnemies = []) {
+    if (!this.alive) return null;
+    this.auraPulse += dt * 4;
+
+    const standardLaser = super.update(
+      dt,
+      player,
+      arena,
+      barrels,
+      lasers,
+      otherEnemies,
+    );
+    if (standardLaser) {
+      const homingLaser = new window.LightWars.Laser(
+        standardLaser.x,
+        standardLaser.y,
+        standardLaser.vx * 0.8,
+        standardLaser.vy * 0.8,
+        "WHITE",
+        false,
+        {
+          isHoming: true,
+          target: player,
+          speed: 200,
+          turnRate: 1.5,
+          homingLife: 2.0,
+        },
+      );
+      homingLaser.originX = standardLaser.originX;
+      homingLaser.originY = standardLaser.originY;
+      return homingLaser;
+    }
+    return null;
+  }
+
+  takeLaserHit(laserColorId, hitAngle) {
+    const kbSpeed = 36;
+    this.knockbackVx = Math.cos(hitAngle) * kbSpeed;
+    this.knockbackVy = Math.sin(hitAngle) * kbSpeed;
+    this.hurtFlash = 1.0;
+
+    const isInverted = window.game && window.game.physicsInverted;
+
+    if (!isInverted) {
+      if (window.game && window.game.particles) {
+        window.game.particles.spawnBurst(this.x, this.y - 20, "#FFFFFF", 14);
+        window.game.particles.spawnComicText(
+          this.x,
+          this.y - 60,
+          "INVINCIBLE!",
+          "#FFFFFF",
+        );
+      }
+      return { action: "NONE" };
+    }
+
+    if (laserColorId === "WHITE") {
+      this.health -= 1;
+      const heartsLeft = this.health;
+
+      if (window.game) {
+        window.game.camera.shake(14);
+        window.LightWars.sound.playKaboom();
+      }
+
+      if (this.health <= 0) {
+        this.health = 0;
+        this.alive = false;
+        if (window.game) {
+          if (typeof window.game.killRemainingMinions === "function") {
+            window.game.killRemainingMinions(this);
+          }
+        }
+        return { action: "KILL", bossDead: true };
+      }
+
+      if (window.game && window.game.waves && window.game.waves.onBossHit) {
+        window.game.waves.onBossHit(heartsLeft);
+      }
+      return { action: "BOSS_HIT", remainingHealth: heartsLeft };
+    }
+
+    return { action: "NONE" };
+  }
+
+  draw(ctx, spriteManager) {
+    if (!this.alive) return;
+
+    ctx.save();
+    ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
+    ctx.beginPath();
+    ctx.ellipse(
+      this.x,
+      this.y,
+      this.radius * 1.3,
+      this.radius * 0.65,
+      0,
+      0,
+      Math.PI * 2,
+    );
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(this.x, this.y);
+
+    const pulse = 1.0 + Math.sin(this.auraPulse) * 0.12;
+    const auraColor = "rgba(255, 255, 255, 0.5)";
+    const grad = ctx.createRadialGradient(0, -33, 7.5, 0, -33, 52 * pulse);
+    grad.addColorStop(0, auraColor);
+    grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(0, -33, 52 * pulse, 0, Math.PI * 2);
+    ctx.fill();
+
+    let spriteRendered = false;
+    if (spriteManager) {
+      const dir = this.facingDir || "S";
+      let img = null;
+      let frameIdx = 0;
+      if (this.isMoving) {
+        img = spriteManager.getSprite(`WHITE_${dir}_walk`);
+        frameIdx = Math.floor(this.walkAnimTime) % 25;
+      } else {
+        img = spriteManager.getSprite(`WHITE_${dir}_idle`);
+        frameIdx = Math.floor(this.idleAnimTime || 0) % 25;
+      }
+
+      if (img) {
+        const col = frameIdx % 5;
+        const row = Math.floor(frameIdx / 5);
+        const frameW = 256;
+        const frameH = 256;
+        const sx = col * frameW;
+        const sy = row * frameH;
+
+        if (this.hurtFlash > 0) ctx.filter = "brightness(3.5) contrast(1.8)";
+
+        const h = 75;
+        const w = 75;
+        const feetOffset = h * (224 / 256);
+        ctx.drawImage(img, sx, sy, frameW, frameH, -w / 2, -feetOffset, w, h);
+        ctx.filter = "none";
+        spriteRendered = true;
+      }
+    }
+
+    if (!spriteRendered) {
+      ctx.fillStyle = "#FFFFFF";
+      ctx.beginPath();
+      ctx.arc(0, -this.radius * 1.2, this.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = "#000000";
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+
+window.LightWars.WhiteBoss = WhiteBoss;

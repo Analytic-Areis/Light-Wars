@@ -9,7 +9,9 @@
  * card-2: Noobi-Wan — "now red blue green will come, use inverted frame and defeat them"
  *           (if player doesn't use inverted frame → reset to pre-card2 state & replay card2)
  *           (if inverted frame is on cooldown → refresh it for this one time)
- * card-3: Noobi-Wan — "here are 3 of each cyan magenta yellow, use inverted frame and defeat them"
+ * card-3: Noobi-Wan — "here is one of each cyan magenta yellow, use inverted frame and defeat them"
+ *           Noobi gifts Fluke 3 CMY bullets each before spawning enemies.
+ *           If player doesn't use inverted frame → reset to the state just after killing RGB (pre-card-3 snapshot)
  *           (same reset logic as card-2 if player doesn't use inverted frame)
  */
 
@@ -216,11 +218,25 @@ class Level4Director {
         '• <span style="color:#FF2AD4">MAGENTA</span> dies to <b>MAGENTA [5]</b><br>' +
         '• <span style="color:#FFE600">YELLOW</span> dies to <b>YELLOW [6]</b><br><br>' +
         '<div class="noobi-callout-box" style="margin:4px 0;padding:6px;font-size:12.5px;font-weight:bold;color:#FF3366;border-left:3.5px solid #9400D3;background:rgba(160,32,240,0.15);border-radius:4px;">' +
-        '&ldquo;Activate <b>[E]</b> to defeat the incoming bots with their own color!&rdquo;</div>',
+        '&ldquo;Here — one of each awaits you. I&rsquo;ll gift you 3 CMY bullets each. Activate <b>[E]</b> and defeat them with their own color!&rdquo;</div>',
       btnText: 'ENGAGE! ⚔️'
     };
 
-    // Snapshot again right before card 3 (same reset pool)
+    // Gift the player 3 bullets of each CMY color before the fight
+    if (this.game.player) {
+      const p = this.game.player;
+      ['CYAN', 'MAGENTA', 'YELLOW'].forEach(color => {
+        p.ammo[color] = (p.ammo[color] || 0) + 3;
+      });
+      if (this.game.particles) {
+        this.game.particles.spawnComicText(
+          this.game.player.x, this.game.player.y - 80,
+          'NOOBI GIFTED 3 CMY BULLETS!', '#00F0FF'
+        );
+      }
+    }
+
+    // Snapshot AFTER gifting CMY bullets — this is the baseline for retries in this phase
     this._snapshotPlayerState();
 
     if (this.game.showTutorialSequence) {
@@ -250,27 +266,17 @@ class Level4Director {
     this.game.enemies.forEach(e => { e.alive = false; });
     this.game.enemies = [];
 
-    // Spawn 3 of each CMY = 9 enemies
+    // Spawn 1 of each CMY = 3 enemies
     const cmyColors = ['CYAN', 'MAGENTA', 'YELLOW'];
     const coords = [
-      { col: 9,  row: 11 },
-      { col: 13, row: 14 },
-      { col: 17, row: 12 },
-      { col: 21, row: 15 },
-      { col: 11, row: 17 },
-      { col: 15, row: 10 },
-      { col: 19, row: 17 },
-      { col: 8,  row: 15 },
-      { col: 22, row: 11 }
+      { col: 10, row: 12 },
+      { col: 15, row: 16 },
+      { col: 20, row: 13 }
     ];
-    let idx = 0;
-    cmyColors.forEach(color => {
-      for (let i = 0; i < 3; i++, idx++) {
-        const c = coords[idx] || { col: 12 + idx, row: 13 };
-        this.waves.spawnAt(c.col, c.row, color);
-      }
+    cmyColors.forEach((color, i) => {
+      this.waves.spawnAt(coords[i].col, coords[i].row, color);
     });
-    this._phaseEnemiesAlive = 9;
+    this._phaseEnemiesAlive = 3;
 
     this.game.ui.setObjective(
       'LEVEL 4 — CMY INVERTED TRAINING',
@@ -309,6 +315,54 @@ class Level4Director {
     setTimeout(() => this._showCard2(), 800);
   }
 
+  // ─── Reset to post-RGB / pre-card-3 state (CMY phase fail) ───────────────
+  _resetToCard3() {
+    if (this.game.particles && this.game.player) {
+      this.game.particles.spawnComicText(
+        this.game.player.x, this.game.player.y - 80,
+        'INVERT FRAME NOT USED!', '#FF2A4D'
+      );
+    }
+
+    // Kill all current enemies
+    this.game.enemies.forEach(e => { e.alive = false; });
+    this.game.enemies = [];
+
+    // Reset phase back to 2
+    this.phase = 2;
+    this._invertUsedInPhase = false;
+
+    // Restore player state to the snapshot taken just after Noobi gifted CMY bullets
+    this._restoreCard2State();
+
+    // Re-show card 3 retry dialogue after a brief pause
+    setTimeout(() => {
+      if (this.game.showTutorialSequence) {
+        const card3Retry = {
+          id: 'l4_card3',
+          badge: '⚡ MASTER NOOBI-WAN INTEL',
+          tracker: 'CARD 03 / 03',
+          step: 3,
+          totalSteps: 3,
+          title: 'MASTER NOOBI-WAN: CMY INVERTED FRAME',
+          speakerImg: L4_NOOBI_IMG,
+          speakerAlt: 'Master Noobi-Wan',
+          message:
+            '<b>INVERTED FRAME PRACTICE: CMY</b><br><br>' +
+            '• <span style="color:#00F0FF">CYAN</span> dies to <b>CYAN [4]</b><br>' +
+            '• <span style="color:#FF2AD4">MAGENTA</span> dies to <b>MAGENTA [5]</b><br>' +
+            '• <span style="color:#FFE600">YELLOW</span> dies to <b>YELLOW [6]</b><br><br>' +
+            '<div class="noobi-callout-box" style="margin:4px 0;padding:6px;font-size:12.5px;font-weight:bold;color:#FF3366;border-left:3.5px solid #9400D3;background:rgba(160,32,240,0.15);border-radius:4px;">' +
+            '&ldquo;You must use the Inverted Frame [E]! Try again — your inventory is restored.&rdquo;</div>',
+          btnText: 'TRY AGAIN! ⚔️'
+        };
+        this.game.showTutorialSequence([card3Retry], () => this._startCMYPhase());
+      } else {
+        this._startCMYPhase();
+      }
+    }, 800);
+  }
+
   // ─── Victory ────────────────────────────────────────────────────────────────
   _levelComplete() {
     if (this.isVictoryInProgress) return;
@@ -338,8 +392,13 @@ class Level4Director {
     if (livingMinions.length === 0 && !this.isVictoryInProgress) {
       // All enemies dead — check if invert frame was used
       if (!this._invertUsedInPhase) {
-        // Player did NOT use invert frame in card2 or card3 → go back to state just before card2 and display card2 again!
-        this._resetToCard2();
+        if (this.phase === 1) {
+          // Player did NOT use invert frame in RGB phase → reset to pre-card2 state and replay card2
+          this._resetToCard2();
+        } else if (this.phase === 2) {
+          // Player did NOT use invert frame in CMY phase → restore post-RGB inventory and replay card3
+          this._resetToCard3();
+        }
       } else if (this.phase === 1) {
         // RGB phase cleared with invert frame → proceed to card 3
         setTimeout(() => this._showCard3(), 800);

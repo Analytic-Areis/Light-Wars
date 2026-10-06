@@ -262,7 +262,12 @@ const GAME_CONFIG = {
   playerDashSpeed: 420,
   playerDashDuration: 0.22,
   playerDashCooldown: 1.2,
-  playerMaxHealth: 3,
+  playerMaxHealth: 100,
+  normalBulletDamage: 10,   // HP damage dealt by normal (colored) enemy bullets
+  blackBulletDamage: 15,    // HP damage dealt by BLACK homing bullets
+  passiveRegenAmount: 20,   // HP healed per passive regen tick (anywhere)
+  passiveRegenInterval: 5.0, // Seconds between each passive regen tick
+  ammoRechargeRate: 1.0,    // Seconds between each +1 ammo recharge tick at pad
   laserSpeed: 487.5, // Decreased to 75% (was 650)
   enemyLaserSpeed: 315, // Decreased to 75% (was 420)
   bossLaserSpeed: 232.5, // Decreased to 75% (was 310)

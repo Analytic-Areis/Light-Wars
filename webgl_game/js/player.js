@@ -66,6 +66,9 @@ class Player {
     this.walkAnimTime = 0;
     this.idleAnimTime = 0;
     this.refillTimer = 0;
+    this.healPadTimer = 0;   // (unused – kept for safety)
+    this.ammoRefillTimer = 0; // counts up for ammo recharge tick (every 1s)
+    this.passiveRegenTimer = 0; // counts up for passive HP regen (every 5s, anywhere)
     this.isRefilling = false;
   }
 
@@ -77,10 +80,12 @@ class Player {
    *   2 hearts lost (1 heart)  → 5 s
    */
   getInvertCooldownMax() {
-    const heartsLost = this.maxHealth - this.health;
-    if (heartsLost >= 2) return 5.0;
-    if (heartsLost >= 1) return 7.0;
-    return 25.0;
+    const maxHp = this.maxHealth;
+    const hpLost = maxHp - this.health;
+    const pctLost = hpLost / maxHp; // 0.0 → 1.0
+    if (pctLost >= 0.66) return 5.0;   // 66%+ lost  → 5s
+    if (pctLost >= 0.33) return 7.0;   // 33%+ lost  → 7s
+    return 25.0;                        // Full-ish health → 25s
   }
 
   getActiveColorId() {
@@ -261,6 +266,18 @@ class Player {
     if (this.shootFaceTimer > 0) this.shootFaceTimer -= dt;
     if (this.dashCooldown > 0) this.dashCooldown -= dt;
     if (this.invertCooldown > 0) this.invertCooldown = Math.max(0, this.invertCooldown - dt);
+
+    // ── Passive HP Regen: +20 HP every 5 seconds, anywhere ─────────────────
+    const regenInterval = (window.LightWars.GAME_CONFIG.passiveRegenInterval || 5.0);
+    const regenAmount   = (window.LightWars.GAME_CONFIG.passiveRegenAmount   || 20);
+    this.passiveRegenTimer += dt;
+    if (this.passiveRegenTimer >= regenInterval) {
+      this.passiveRegenTimer = 0;
+      if (this.health < this.maxHealth) {
+        this.health = Math.min(this.maxHealth, this.health + regenAmount);
+        if (window.LightWars.sound) window.LightWars.sound.playRefill();
+      }
+    }
     if (this.invertActiveTimer > 0) {
       this.invertActiveTimer -= dt;
       if (this.invertActiveTimer <= 0) {
@@ -433,32 +450,28 @@ class Player {
       const dist = Math.hypot(this.x - wl.x, this.y - wl.y);
       if (dist <= wl.radius) {
         this.isRefilling = true;
-        this.refillTimer += dt;
-        if (this.refillTimer >= 0.25) {
-          this.refillTimer = 0;
-          let changed = false;
 
-          // Heal HP
-          if (this.health < this.maxHealth) {
-            this.health = Math.min(this.maxHealth, this.health + 1);
-            changed = true;
-          }
-
+        // ── Ammo Recharge: +1 per primary color every 1 second ─────────────
+        const ammoInterval = (window.LightWars.GAME_CONFIG.ammoRechargeRate || 1.0);
+        this.ammoRefillTimer += dt;
+        if (this.ammoRefillTimer >= ammoInterval) {
+          this.ammoRefillTimer = 0;
+          let ammoChanged = false;
           // Refill only RGB primary laser ammunition types (Capacity: 6 per color)
           // Crafted secondary ammo (Cyan, Magenta, Yellow) is strictly gained from crystals (+1 per crystal)
           for (const c of ['RED', 'GREEN', 'BLUE']) {
             if (this.ammo[c] < this.maxAmmo) {
               this.ammo[c] = Math.min(this.maxAmmo, this.ammo[c] + 1);
-              changed = true;
+              ammoChanged = true;
             }
           }
-          if (changed && window.LightWars.sound) {
+          if (ammoChanged && window.LightWars.sound) {
             window.LightWars.sound.playRefill();
           }
         }
       } else {
         this.isRefilling = false;
-        this.refillTimer = 0;
+        this.ammoRefillTimer = 0;
       }
     }
   }

@@ -131,6 +131,10 @@
 
     loadLevelWalls(levelNum, arena) {
       this.clear();
+      if (levelNum === 4 || levelNum === 5) {
+          return;
+      }
+
       let config = null;
       if (levelNum === 1) {
         config = window.LightWars.LEVEL1_MAP_CONFIG || window.LightWars.MAP_CONFIG || {};

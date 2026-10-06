@@ -146,100 +146,60 @@
       <div class="sw-comic-page" id="comicPage2" style="display: none;">
         <!-- Header / Back to Page 1 navigation -->
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 4px 8px; background: #0A0E1A; border: 2px solid #FFE600; margin-bottom: 4px;">
-          <button id="backToPage1Btn" class="comic-btn" style="font-size: 14px; padding: 4px 12px; background: #2A3655; color: #FFF; border-color: #00F0FF;">
-            &#x25C0; BACK TO PAGE 01
-          </button>
+          <button id="backToPage1Btn" class="comic-btn" style="font-size: 13px; padding: 2px 10px; box-shadow: 2px 2px 0 #FF2A4D; cursor: pointer;">&larr; PAGE 01</button>
           <span style="font-family: 'Bangers', cursive; font-size: 16px; color: #FFE600; letter-spacing: 1px;">
             ISSUE #2 &bull; THE WHITE AWAKENING &bull; INVERTED SPECTRUM
           </span>
           <span class="page-badge current" style="font-size: 11px; padding: 2px 8px;">PAGE 02</span>
         </div>
 
-        <!-- Row 1: Level 4 Story & Mission -->
-        <div class="comic-row row-1" style="flex: 1; display: flex; gap: 6px; position: relative;">
-          <!-- Box: White Canvas for comic strip -->
-          <div class="comic-box box-1" id="comicBoxPage2WhiteCanvas" style="flex: 1.1; background: #FFFFFF; border: 3px solid #000; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-            <div class="comic-caption-box top" style="background: #000; color: #FFE600; border: 2px solid #FFE600; font-family: 'Bangers', cursive; font-size: 14px; padding: 3px 8px; position: absolute; top: 6px; left: 6px; z-index: 5;">
-              <span>EPISODE IV &bull; CHRONICLES OF INVERSION</span>
-            </div>
-            
-            <!-- White canvas comic panel art / placeholder -->
-            <div style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 24px 16px; text-align: center; background: #FFF;">
-              <div style="border: 3px dashed #1B2135; border-radius: 8px; width: 90%; height: 75%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #FAFAFA; box-shadow: inset 0 0 20px rgba(0,0,0,0.06);">
-                <div style="font-size: 38px; margin-bottom: 6px;">&#x1F3A8;</div>
-                <div style="font-family: 'Bangers', cursive; font-size: 20px; color: #080A12; letter-spacing: 1px;">WHITE COMIC CANVAS</div>
-                <div style="font-size: 12px; color: #555; max-width: 260px; line-height: 1.3; margin-top: 4px;">
-                  The dimensional canvas turns pure white as the Inverted Frame power awakens across the galaxy!
-                </div>
-              </div>
-            </div>
+        <!-- Row 1: Level 4 (Retro Comic Invert Panel) -->
+        <div class="comic-row row-1" id="comicRow4" title="Click to Play Level 4">
+          <img src="assets/comic/lvl4_panel.png" alt="Level 4: Invert Frame Combat" class="comic-strip-img">
 
-            <div class="comic-caption-box bottom" style="background: #000; color: #00F0FF; border: 2px solid #00F0FF; font-family: 'Bangers', cursive; font-size: 12px; padding: 2px 8px; position: absolute; bottom: 6px; left: 6px; z-index: 5;">
-              <p>THE REALITY OF THE SPECTRUM HAS REVERSED!</p>
-            </div>
+          <!-- Row 4 Lock Overlay (when Level 3 Black Boss not cleared) -->
+          <div class="comic-row-lock-overlay" id="row4LockOverlay" style="display: none;">
+            <div class="lock-icon">&#x1F512;</div>
+            <div class="lock-heading">EPISODE IV &bull; CHRONICLES OF INVERSION</div>
+            <div class="lock-label">DEFEAT BLACK BOSS TO UNLOCK</div>
           </div>
 
-          <!-- Box: Mission 04 Active Box -->
-          <div class="comic-box box-2 active-mission-box" id="comicBoxLevel4" style="flex: 1.3;">
-            <div class="comic-box-bg" style="background-image: url('assets/map_stuff/Assets_inesh/White_boss/map4and5.png'); background-size: cover; background-position: center; filter: brightness(0.65);"></div>
-            <div class="comic-caption-box top mission-header">
-              <span class="comic-mission-pill" style="background: #A020F0; color: #FFF;">MISSION 04</span>
-              <span class="comic-mission-name">INVERTED FRAME COMBAT</span>
-              <span class="comic-status-pill ready" id="mission4StatusPill">READY</span>
-            </div>
+          <!-- Discreet Chapter & Status Corner Tag -->
+          <div class="comic-row-corner-badge">
+            <span class="comic-tag-ep">EPISODE IV</span>
+            <span class="comic-status-pill ready" id="mission4StatusPill">READY</span>
+          </div>
 
-            <div class="mission-briefing-box" style="margin-top: 36px; background: rgba(8, 10, 18, 0.9); border: 2px solid #A020F0;">
-              <div class="briefing-rule">&#x26A1; <b>INVERT FRAME [KEY E]</b> &bull; 10s duration, 25s cooldown</div>
-              <div class="briefing-rule">&#x1F504; <b>INVERTED VULNERABILITY</b> &bull; Bots die ONLY to their OWN color!</div>
-              <div class="briefing-rule">&#x1F534; <b>RED / GREEN / BLUE</b> &bull; Red dies to Red [1], Green to Green [2], Blue to Blue [3]</div>
-              <div class="briefing-rule">&#x1F4A0; <b>CYAN / MAGENTA / YELLOW</b> &bull; Cyan to Cyan [4], Magenta to Mag [5], Yellow to Yel [6]</div>
-              <div class="briefing-rule">&#x26A0;&#xFE0F; <b>COLOR TRANSFORMATIONS</b> &bull; Color shifting mechanics remain identical!</div>
-            </div>
-
-            <button id="startLevel4Btn" class="comic-btn play-btn pulse-glow" style="margin-top: 10px; background: #A020F0; border-color: #00F0FF; color: #FFF;">
+          <!-- Play Action Overlay -->
+          <div class="comic-panel-action-overlay">
+            <button id="startLevel4Btn" class="comic-btn play-btn pulse-glow">
               <span class="btn-icon">&#x26A1;</span> PLAY LEVEL 4 <span class="btn-icon">&#x26A1;</span>
             </button>
           </div>
         </div>
 
-        <!-- Row 2: Level 5 Box (Below, Locked) -->
-        <div class="comic-row row-2" id="comicRowLevel5" style="position: relative; flex: 0.9; margin-top: 6px; display: flex; gap: 6px;">
-          <!-- Lock overlay for Level 5 -->
+        <!-- Row 2: Level 5 (Retro Comic Face-Off Panel) -->
+        <div class="comic-row row-2" id="comicRow5" title="Click to Battle White Boss">
+          <img src="assets/comic/lvl5_panel.png" alt="Level 5: The White Boss" class="comic-strip-img">
+
+          <!-- Row 5 Lock Overlay (when Level 4 not cleared) -->
           <div class="comic-row-lock-overlay" id="row5LockOverlay">
             <div class="lock-icon">&#x1F512;</div>
-            <div class="lock-label">CLEAR LEVEL 4 TO UNLOCK LEVEL 5</div>
+            <div class="lock-heading">EPISODE V &bull; THE WHITE BOSS</div>
+            <div class="lock-label">CLEAR LEVEL 4 TO UNLOCK</div>
           </div>
 
-          <!-- White canvas / comic strip placeholder for Level 5 -->
-          <div class="comic-box box-3" style="flex: 1.1; background: #FFFFFF; border: 3px solid #000; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-            <div class="comic-caption-box top" style="background: #000; color: #FFE600; border: 2px solid #FFE600; font-family: 'Bangers', cursive; font-size: 13px; padding: 2px 8px; position: absolute; top: 6px; left: 6px; z-index: 5;">
-              <span>EPISODE V &bull; WHITE VOID PROTOCOL</span>
-            </div>
-            
-            <div style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 12px; background: #FFF;">
-              <div style="border: 2px dashed #999; border-radius: 6px; width: 90%; height: 75%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #FAFAFA;">
-                <div style="font-size: 26px;">&#x26AA;</div>
-                <div style="font-family: 'Bangers', cursive; font-size: 16px; color: #333;">WHITE VOID CANVAS</div>
-                <div style="font-size: 11px; color: #777;">Awaiting Level 4 clearance...</div>
-              </div>
-            </div>
+          <!-- Discreet Chapter & Status Corner Tag -->
+          <div class="comic-row-corner-badge">
+            <span class="comic-tag-ep" id="bossRoleBadge5">&#x2605; FINAL BOSS &#x2605;</span>
+            <span class="comic-status-pill locked" id="mission5StatusPill">LOCKED</span>
           </div>
 
-          <!-- Mission 05: The White Boss (Locked) -->
-          <div class="comic-box box-4" id="comicBoxLevel5" style="flex: 1.3; background: #0E1222; border: 3px solid #2B3552;">
-            <div class="comic-caption-box top mission-header">
-              <span class="comic-mission-pill" style="background: #444; color: #AAA;">MISSION 05</span>
-              <span class="comic-mission-name">THE WHITE BOSS</span>
-              <span class="comic-status-pill locked" id="mission5StatusPill">LOCKED</span>
-            </div>
-
-            <div class="box-content-locked" style="padding: 20px 10px; text-align: center;">
-              <div class="comic-lock-icon" style="font-size: 32px;">&#x1F512;</div>
-              <p class="locked-desc" style="font-size: 13px; color: #A0B2DE; margin: 6px 0;">
-                The True Architect of the Spectrum War awaits in the white light sanctuary.
-              </p>
-              <div class="comic-stamp" style="font-size: 12px;">DEFEAT LEVEL 4 TO CHALLENGE</div>
-            </div>
+          <!-- Play Action Overlay (when unlocked) -->
+          <div class="comic-panel-action-overlay">
+            <button id="startLevel5Btn" class="comic-btn play-btn pulse-glow" style="display:none; background: #FF2A4D; border-color: #FFE600;">
+              <span class="btn-icon">&#x2694;&#xFE0F;</span> BATTLE WHITE BOSS <span class="btn-icon">&#x2694;&#xFE0F;</span>
+            </button>
           </div>
         </div>
       </div>
@@ -623,6 +583,7 @@
   <script src="js/lvl2.js"></script>
   <script src="js/lvl3.js"></script>
   <script src="js/lvl4.js"></script>
+  <script src="js/lvl5.js"></script>
   <script src="js/waves.js"></script>
   <script src="js/main.js"></script>
 </body>
