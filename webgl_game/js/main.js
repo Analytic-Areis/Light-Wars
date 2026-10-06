@@ -424,38 +424,68 @@ class LightWarsGame {
       });
     }
 
-    const page2Btn = document.getElementById("goToPage2Btn");
-    if (page2Btn) {
-      page2Btn.addEventListener("click", () => {
-        this.transitionToPage2();
+    const setupTransition = (btnId, toPage) => {
+      const btn = document.getElementById(btnId);
+      if (btn) btn.addEventListener("click", () => this.transitionToPage(toPage));
+    };
+
+    setupTransition("nextToPage2Btn", 2);
+    setupTransition("prevToPage1Btn", 1);
+    setupTransition("nextToPage3Btn", 3);
+    setupTransition("backToPage2Btn", 2);
+
+    const goToPage4Btn = document.getElementById("goToPage4Btn") || document.getElementById("goToPage2Btn");
+    if (goToPage4Btn) {
+      goToPage4Btn.addEventListener("click", () => {
+        this.transitionToPage(4);
       });
     }
 
-    const backToPage1Btn = document.getElementById("backToPage1Btn");
-    if (backToPage1Btn) {
-      backToPage1Btn.addEventListener("click", () => {
-        this.transitionToPage1();
+    const backToPage3Btn = document.getElementById("backToPage3Btn") || document.getElementById("backToPage1Btn");
+    if (backToPage3Btn) {
+      backToPage3Btn.addEventListener("click", () => {
+        this.transitionToPage(3);
       });
     }
 
-    const page1Badge = document.getElementById("page1Badge");
-    if (page1Badge) {
-      page1Badge.addEventListener("click", () => {
-        this.transitionToPage1();
-      });
-    }
+    setupTransition("prevToPage4Btn", 4);
+    setupTransition("nextToPage6Btn", 6);
+    setupTransition("prevToPage5Btn", 5);
 
-    const page2Badge = document.getElementById("page2TeaserBadge");
-    if (page2Badge) {
-      page2Badge.addEventListener("click", () => {
-        if (
-          this.devMode ||
-          localStorage.getItem("lightwars_black_boss_defeated") === "true"
-        ) {
-          this.transitionToPage2();
-        }
-      });
-    }
+    const badges = [
+      { id: "page1Badge", page: 1 },
+      { id: "page2Badge", page: 2 },
+      { id: "page3Badge", page: 3 },
+      { id: "page4TeaserBadge", page: 4, requireDefeatBoss: true },
+      { id: "page5TeaserBadge", page: 5, requireClearLvl5: true },
+      { id: "page6TeaserBadge", page: 6, requireClearLvl5: true },
+      { id: "page2TeaserBadge", page: 4, requireDefeatBoss: true }
+    ];
+
+    badges.forEach((b) => {
+      const badge = document.getElementById(b.id);
+      if (badge) {
+        badge.addEventListener("click", () => {
+          if (
+            b.requireDefeatBoss &&
+            !(
+              this.devMode ||
+              localStorage.getItem("lightwars_black_boss_defeated") === "true"
+            )
+          )
+            return;
+          if (
+            b.requireClearLvl5 &&
+            !(
+              this.devMode ||
+              localStorage.getItem("lightwars_level5_cleared") === "true"
+            )
+          )
+            return;
+          this.transitionToPage(b.page);
+        });
+      }
+    });
 
     // Escape Pause Menu controls
     const pauseResumeBtn = document.getElementById("pauseResumeBtn");
@@ -594,6 +624,17 @@ class LightWarsGame {
 
     this.updateComicMenuLockState();
     this.updateComicMenuBossState();
+
+    // Ensure on startup that ONLY Page 1 is displayed and all other pages are strictly hidden
+    for (let i = 1; i <= 6; i++) {
+      const p = document.getElementById("comicPage" + i);
+      if (p) {
+        p.style.display = i === 1 ? "flex" : "none";
+        p.style.opacity = i === 1 ? "1" : "0";
+        p.style.transform = "none";
+      }
+    }
+    this._currentComicPage = 1;
 
     // Start Main Menu music on first user interaction anywhere (complies with browser AudioContext autoplay policy)
     const startMenuMusicOnFirstGesture = () => {
@@ -1707,13 +1748,12 @@ class LightWarsGame {
         mission3StatusPill.className = "comic-status-pill cleared";
       }
 
-      if (page2TeaserBadge) {
-        page2TeaserBadge.style.display = "inline-block";
-        page2TeaserBadge.innerText = "PAGE 02";
-
-        // Don't overwrite if it's currently active (user is on page 2)
-        if (!page2TeaserBadge.classList.contains("current")) {
-          page2TeaserBadge.className = "page-badge inactive";
+      const page4Badge = document.getElementById("page4TeaserBadge") || page2TeaserBadge;
+      if (page4Badge) {
+        page4Badge.style.display = "inline-block";
+        page4Badge.innerText = "PAGE 04";
+        if (!page4Badge.classList.contains("current")) {
+          page4Badge.className = "page-badge inactive";
         }
       }
     } else {
@@ -1750,17 +1790,39 @@ class LightWarsGame {
       if (bossPlotTwistReveal) {
         bossPlotTwistReveal.style.display = "none";
       }
-      if (page2TeaserBadge) {
+      const page4Badge = document.getElementById("page4TeaserBadge") || page2TeaserBadge;
+      if (page4Badge) {
         if (this.devMode) {
-          page2TeaserBadge.style.display = "inline-block";
-          page2TeaserBadge.innerText = "PAGE 02 (DEV)";
-          if (!page2TeaserBadge.classList.contains("current")) {
-            page2TeaserBadge.className = "page-badge inactive";
+          page4Badge.style.display = "inline-block";
+          page4Badge.innerText = "PAGE 04 (DEV)";
+          if (!page4Badge.classList.contains("current")) {
+            page4Badge.className = "page-badge inactive";
           }
         } else {
-          // Page 2 removed from initial view; only shown after defeating Black Boss
-          page2TeaserBadge.style.display = "none";
+          page4Badge.style.display = "none";
         }
+      }
+    }
+
+    const isLvl5Cleared = this.devMode || localStorage.getItem("lightwars_level5_cleared") === "true";
+    const page5TeaserBadge = document.getElementById("page5TeaserBadge");
+    const page6TeaserBadge = document.getElementById("page6TeaserBadge");
+    if (page5TeaserBadge) {
+      if (isLvl5Cleared) {
+        page5TeaserBadge.style.display = "inline-block";
+        page5TeaserBadge.innerText = "PAGE 05";
+        if (!page5TeaserBadge.classList.contains("current")) page5TeaserBadge.className = "page-badge inactive";
+      } else {
+        page5TeaserBadge.style.display = "none";
+      }
+    }
+    if (page6TeaserBadge) {
+      if (isLvl5Cleared) {
+        page6TeaserBadge.style.display = "inline-block";
+        page6TeaserBadge.innerText = "PAGE 06";
+        if (!page6TeaserBadge.classList.contains("current")) page6TeaserBadge.className = "page-badge inactive";
+      } else {
+        page6TeaserBadge.style.display = "none";
       }
     }
   }
@@ -1774,36 +1836,75 @@ class LightWarsGame {
     this.updateComicMenuBossState();
     document.getElementById("comicMenu").style.display = "flex";
 
-    // If coming back from Level 4, show Page 2; otherwise default to Page 1
+    // Hide all pages first
+    for (let i = 1; i <= 6; i++) {
+      const p = document.getElementById("comicPage" + i);
+      if (p) p.style.display = "none";
+    }
+
     const page1 = document.getElementById("comicPage1");
-    const page2 = document.getElementById("comicPage2");
+    const page3 = document.getElementById("comicPage3");
+    const page4 = document.getElementById("comicPage4") || document.getElementById("comicPage2");
 
-    if (this._justClearedBossAndUnlockedPage2 && page2) {
+    if (this._justClearedBossAndUnlockedPage2) {
       this._justClearedBossAndUnlockedPage2 = false;
-      if (page1) {
-        page1.style.display = "flex";
-        page1.style.opacity = "1";
-        page1.style.transform = "none";
+      if (page3) {
+        page3.style.display = "flex";
+        page3.style.opacity = "1";
+        page3.style.transform = "none";
       }
-      if (page2) page2.style.display = "none";
-
-      // Auto-trigger page turn animation
+      this._currentComicPage = 3;
       setTimeout(() => {
-        this.transitionToPage2();
+        this.transitionToPage(4);
       }, 800);
-    } else if ((this._lastLevel === 4 || this._lastLevel === 5) && page2) {
-      if (page1) page1.style.display = "none";
-      page2.style.display = "flex";
-      page2.style.opacity = "1";
-      page2.style.transform = "none";
+    } else if (this._justClearedWhiteBoss) {
+      this._justClearedWhiteBoss = false;
+      if (page4) {
+        page4.style.display = "flex";
+        page4.style.opacity = "1";
+        page4.style.transform = "none";
+      }
+      this._currentComicPage = 4;
+      setTimeout(() => {
+        this.transitionToPage(5);
+      }, 800);
+    } else if (this._lastLevel === 4 || this._lastLevel === 5) {
+      if (page4) {
+        page4.style.display = "flex";
+        page4.style.opacity = "1";
+        page4.style.transform = "none";
+      }
+      this._currentComicPage = 4;
+    } else if (this._lastLevel >= 1 && this._lastLevel <= 3) {
+      if (page3) {
+        page3.style.display = "flex";
+        page3.style.opacity = "1";
+        page3.style.transform = "none";
+      }
+      this._currentComicPage = 3;
     } else {
       if (page1) {
         page1.style.display = "flex";
         page1.style.opacity = "1";
         page1.style.transform = "none";
       }
-      if (page2) page2.style.display = "none";
+      this._currentComicPage = 1;
     }
+
+    const badgeIds = [
+      "page1Badge", "page2Badge", "page3Badge", 
+      "page4TeaserBadge", "page5TeaserBadge", "page6TeaserBadge"
+    ];
+    badgeIds.forEach((id, index) => {
+      const badge = document.getElementById(id);
+      if (badge) {
+        if (index + 1 === this._currentComicPage) {
+          badge.className = "page-badge current";
+        } else if (!badge.classList.contains("locked")) {
+          badge.className = "page-badge inactive";
+        }
+      }
+    });
 
     document.getElementById("levelClearModal").style.display = "none";
     document.getElementById("gameOverModal").style.display = "none";
@@ -1989,121 +2090,66 @@ class LightWarsGame {
     }
   }
 
-  transitionToPage2() {
-    if (this._currentComicPage === 2) return;
-    this._currentComicPage = 2;
+  transitionToPage(targetPageNum) {
+    if (this._currentComicPage === targetPageNum) return;
 
-    const page1 = document.getElementById("comicPage1");
-    const page2 = document.getElementById("comicPage2");
+    const oldPageNum = this._currentComicPage || 1;
+    this._currentComicPage = targetPageNum;
 
-    if (!page2) return;
+    const oldPage = document.getElementById("comicPage" + oldPageNum);
+    const newPage = document.getElementById("comicPage" + targetPageNum);
+
+    if (!newPage) return;
 
     // Update page badges
-    const page1Badge = document.querySelector(
-      ".sw-comic-page-tracker span:first-child",
-    );
-    const page2Badge = document.getElementById("page2TeaserBadge");
+    const badges = [
+      "page1Badge", "page2Badge", "page3Badge", 
+      "page4TeaserBadge", "page5TeaserBadge", "page6TeaserBadge"
+    ];
 
-    if (page1Badge) {
-      page1Badge.className = "page-badge inactive";
-    }
-    if (page2Badge) {
-      page2Badge.className = "page-badge current";
-    }
+    badges.forEach((id, index) => {
+      const badge = document.getElementById(id);
+      if (badge) {
+        if (index + 1 === targetPageNum) {
+          badge.className = "page-badge current";
+        } else if (!badge.classList.contains("locked")) {
+          badge.className = "page-badge inactive";
+        }
+      }
+    });
 
-    if (page1) {
-      // Better page turn out
-      page1.style.transformOrigin = "left center";
-      page1.style.transition =
+    if (oldPage) {
+      const isForward = targetPageNum > oldPageNum;
+
+      oldPage.style.transformOrigin = isForward ? "left center" : "right center";
+      oldPage.style.transition =
         "transform 0.5s cubic-bezier(0.3, 0.0, 0.2, 1), opacity 0.3s ease-in 0.1s";
-      page1.style.transform = "perspective(1500px) rotateY(-90deg) scale(0.95)";
-      page1.style.opacity = "0";
+      oldPage.style.transform = `perspective(1500px) rotateY(${isForward ? "-90deg" : "90deg"}) scale(0.95)`;
+      oldPage.style.opacity = "0";
 
       setTimeout(() => {
-        page1.style.display = "none";
+        oldPage.style.display = "none";
 
-        page2.style.display = "flex";
-        // Better page turn in
-        page2.style.transformOrigin = "right center";
-        page2.style.transform =
-          "perspective(1500px) rotateY(90deg) scale(0.95)";
-        page2.style.opacity = "0";
+        newPage.style.display = "flex";
+        newPage.style.transformOrigin = isForward ? "right center" : "left center";
+        newPage.style.transform = `perspective(1500px) rotateY(${isForward ? "90deg" : "-90deg"}) scale(0.95)`;
+        newPage.style.opacity = "0";
 
         // Force reflow
-        void page2.offsetWidth;
+        void newPage.offsetWidth;
 
-        page2.style.transition =
+        newPage.style.transition =
           "transform 0.6s cubic-bezier(0.1, 0.8, 0.2, 1), opacity 0.4s ease-out";
-        page2.style.transform = "perspective(1500px) rotateY(0deg) scale(1)";
-        page2.style.opacity = "1";
+        newPage.style.transform = "perspective(1500px) rotateY(0deg) scale(1)";
+        newPage.style.opacity = "1";
 
-        // Update issue badge
-        const issueBox = document.querySelector(
-          ".sw-comic-corner-box .corner-issue",
-        );
-        if (issueBox) issueBox.textContent = "#2";
+        const issueBox = document.querySelector(".sw-comic-corner-box .corner-issue");
+        if (issueBox) issueBox.textContent = `#${targetPageNum}`;
       }, 500);
-    }
-  }
-
-  /**
-   * Animated page flip transition back from Page 2 → Page 1.
-   */
-  transitionToPage1() {
-    if (this._currentComicPage === 1) return;
-    this._currentComicPage = 1;
-
-    const page1 = document.getElementById("comicPage1");
-    const page2 = document.getElementById("comicPage2");
-
-    if (!page1) return;
-
-    if (page2) {
-      // Better page turn out
-      page2.style.transformOrigin = "right center";
-      page2.style.transition =
-        "transform 0.5s cubic-bezier(0.3, 0.0, 0.2, 1), opacity 0.3s ease-in 0.1s";
-      page2.style.transform = "perspective(1500px) rotateY(90deg) scale(0.95)";
-      page2.style.opacity = "0";
-
-      setTimeout(() => {
-        page2.style.display = "none";
-
-        if (page1) {
-          page1.style.display = "flex";
-          // Better page turn in
-          page1.style.transformOrigin = "left center";
-          page1.style.transform =
-            "perspective(1500px) rotateY(-90deg) scale(0.95)";
-          page1.style.opacity = "0";
-
-          // Force reflow
-          void page1.offsetWidth;
-
-          page1.style.transition =
-            "transform 0.6s cubic-bezier(0.1, 0.8, 0.2, 1), opacity 0.4s ease-out";
-          page1.style.transform = "perspective(1500px) rotateY(0deg) scale(1)";
-          page1.style.opacity = "1";
-        }
-
-        // Update page badges
-        const page1Badge = document.querySelector(
-          ".sw-comic-page-tracker span:first-child",
-        );
-        const page2Badge = document.getElementById("page2TeaserBadge");
-
-        if (page1Badge) {
-          page1Badge.className = "page-badge current";
-        }
-        if (page2Badge) {
-          page2Badge.className = "page-badge inactive";
-        }
-
-        const issueBox = document.querySelector(
-          ".sw-comic-corner-box .corner-issue",
-        );
-        if (issueBox) issueBox.textContent = "#1";
-      }, 500);
+    } else {
+      newPage.style.display = "flex";
+      newPage.style.opacity = "1";
+      newPage.style.transform = "none";
     }
   }
 
@@ -2412,6 +2458,7 @@ class LightWarsGame {
       localStorage.setItem("lightwars_level4_cleared", "true");
     } else if (lvl === 5) {
       localStorage.setItem("lightwars_level5_cleared", "true");
+      this._justClearedWhiteBoss = true;
     }
 
     // Update modal text

@@ -341,28 +341,37 @@ body, html {
   z-index: 5;
 }
 
-/* Exact image aspect ratio heights (456, 541, 494 -> total 1491) */
-.sw-comic-page#comicPage1 .comic-row.row-1 {
+/* Page 3 row heights: 3 panels with exact image aspect ratio heights (456, 541, 494 -> total 1491) */
+.sw-comic-page#comicPage3 .comic-row.row-1 {
   flex: 456;
 }
 
-.sw-comic-page#comicPage1 .comic-row.row-2 {
+.sw-comic-page#comicPage3 .comic-row.row-2 {
   flex: 541;
 }
 
-.sw-comic-page#comicPage1 .comic-row.row-3 {
+.sw-comic-page#comicPage3 .comic-row.row-3 {
   flex: 494;
 }
 
-/* Page 2 row heights: 2 panels */
-.sw-comic-page#comicPage2 .comic-row.row-1 {
+/* Page 4 row heights: 2 panels */
+.sw-comic-page#comicPage4 .comic-row.row-1 {
   flex: 1;
   min-height: 0;
 }
 
-.sw-comic-page#comicPage2 .comic-row.row-2 {
+.sw-comic-page#comicPage4 .comic-row.row-2 {
   flex: 1;
   min-height: 0;
+}
+
+/* Single panel full-page art (Pages 1, 2, 5, 6) */
+.sw-comic-page#comicPage1 .comic-row.row-1,
+.sw-comic-page#comicPage2 .comic-row.row-1,
+.sw-comic-page#comicPage5 .comic-row.row-1,
+.sw-comic-page#comicPage6 .comic-row.row-1 {
+  flex: 1;
+  height: 100%;
 }
 
 .comic-strip-img {

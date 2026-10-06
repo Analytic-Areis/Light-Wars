@@ -48,13 +48,53 @@
 
           <div class="sw-comic-page-tracker">
             <span class="page-badge current" id="page1Badge">PAGE 01</span>
-            <span class="page-badge locked" id="page2TeaserBadge" style="display: none;">PAGE 02 &#x1F512;</span>
+            <span class="page-badge inactive" id="page2Badge">PAGE 02</span>
+            <span class="page-badge inactive" id="page3Badge">PAGE 03</span>
+            <span class="page-badge locked" id="page4TeaserBadge" style="display: none;">PAGE 04 &#x1F512;</span>
+            <span class="page-badge locked" id="page5TeaserBadge" style="display: none;">PAGE 05 &#x1F512;</span>
+            <span class="page-badge locked" id="page6TeaserBadge" style="display: none;">PAGE 06 &#x1F512;</span>
           </div>
         </div>
       </div>
 
-      <!-- Comic Book Page 1 (Authentic Comic Size - 100% Full Panels Visible) -->
+      
+      <!-- Comic Book Page 1 (Cover Page) -->
       <div class="sw-comic-page" id="comicPage1">
+        <div class="comic-row row-1" style="flex: 1; height: 100%;">
+          <img src="assets/comic/page1.png" alt="Cover Page" class="comic-strip-img" style="object-fit: contain; width: 100%; height: 100%;">
+          <div class="comic-panel-action-overlay" style="opacity: 1; pointer-events: auto; display: flex; justify-content: flex-end; align-items: flex-end; padding: 20px;">
+            <button id="nextToPage2Btn" class="comic-btn play-btn pulse-glow" style="font-size: 20px;">
+              NEXT PAGE &#x25B6;
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comic Book Page 2 (Prologue) -->
+      <div class="sw-comic-page" id="comicPage2" style="display: none;">
+        <div class="comic-row row-1" style="flex: 1; height: 100%;">
+          <img src="assets/comic/page2.png" alt="Prologue" class="comic-strip-img" style="object-fit: contain; width: 100%; height: 100%;">
+          <div class="comic-panel-action-overlay" style="opacity: 1; pointer-events: auto; display: flex; justify-content: space-between; align-items: flex-end; padding: 20px;">
+            <button id="prevToPage1Btn" class="comic-btn" style="font-size: 20px;">
+              &larr; PREV PAGE
+            </button>
+            <button id="nextToPage3Btn" class="comic-btn play-btn pulse-glow" style="font-size: 20px;">
+              NEXT PAGE &#x25B6;
+            </button>
+          </div>
+        </div>
+      </div>
+
+<!-- Comic Book Page 3 (Authentic Comic Size - 100% Full Panels Visible) -->
+      <div class="sw-comic-page" id="comicPage3" style="display: none;">
+        <!-- Header / Back to Page 2 navigation -->
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 4px 8px; background: #0A0E1A; border: 2px solid #FFE600; margin-bottom: 4px;">
+          <button id="backToPage2Btn" class="comic-btn" style="font-size: 13px; padding: 2px 10px; box-shadow: 2px 2px 0 #FF2A4D; cursor: pointer;">&larr; PAGE 02</button>
+          <span style="font-family: 'Bangers', cursive; font-size: 16px; color: #FFE600; letter-spacing: 1px;">
+            ISSUE #3 &bull; CHROMATIC WARFARE &bull; THE TRILOGY
+          </span>
+          <span class="page-badge current" style="font-size: 11px; padding: 2px 8px;">PAGE 03</span>
+        </div>
 
         <!-- Tier 1: Level 1 Story & Action (UNLOCKED) -->
         <div class="comic-row row-1" id="comicRow1" title="Click to Play Level 1">
@@ -135,22 +175,22 @@
           <div class="boss-plot-twist-reveal" id="bossPlotTwistReveal" style="display: none;">
             <div class="twist-alert-badge">&#x26A1; SPECTRAL REVELATION &#x26A1;</div>
             <p class="twist-text">THE BLACK BOSS HAS FALLEN! But as the shadows parted, the TRUE MASTER of the galaxy was revealed: THE WHITE BOSS! The strip expands!</p>
-            <button id="goToPage2Btn" class="comic-btn page2-action-btn">
-              PAGE 02: THE WHITE AWAKENING &#x25B6;
+            <button id="goToPage4Btn" class="comic-btn page2-action-btn">
+              PAGE 04: THE WHITE AWAKENING &#x25B6;
             </button>
           </div>
         </div>
       </div>
 
       <!-- Comic Book Page 2 (White Awakening - Level 4 & Level 5) -->
-      <div class="sw-comic-page" id="comicPage2" style="display: none;">
+      <div class="sw-comic-page" id="comicPage4" style="display: none;">
         <!-- Header / Back to Page 1 navigation -->
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 4px 8px; background: #0A0E1A; border: 2px solid #FFE600; margin-bottom: 4px;">
-          <button id="backToPage1Btn" class="comic-btn" style="font-size: 13px; padding: 2px 10px; box-shadow: 2px 2px 0 #FF2A4D; cursor: pointer;">&larr; PAGE 01</button>
+          <button id="backToPage3Btn" class="comic-btn" style="font-size: 13px; padding: 2px 10px; box-shadow: 2px 2px 0 #FF2A4D; cursor: pointer;">&larr; PAGE 03</button>
           <span style="font-family: 'Bangers', cursive; font-size: 16px; color: #FFE600; letter-spacing: 1px;">
-            ISSUE #2 &bull; THE WHITE AWAKENING &bull; INVERTED SPECTRUM
+            ISSUE #4 &bull; THE WHITE AWAKENING &bull; INVERTED SPECTRUM
           </span>
-          <span class="page-badge current" style="font-size: 11px; padding: 2px 8px;">PAGE 02</span>
+          <span class="page-badge current" style="font-size: 11px; padding: 2px 8px;">PAGE 04</span>
         </div>
 
         <!-- Row 1: Level 4 (Retro Comic Invert Panel) -->
@@ -199,6 +239,36 @@
           <div class="comic-panel-action-overlay">
             <button id="startLevel5Btn" class="comic-btn play-btn pulse-glow" style="display:none; background: #FF2A4D; border-color: #FFE600;">
               <span class="btn-icon">&#x2694;&#xFE0F;</span> BATTLE WHITE BOSS <span class="btn-icon">&#x2694;&#xFE0F;</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comic Book Page 5 (Ending 1) -->
+      <div class="sw-comic-page" id="comicPage5" style="display: none;">
+        <div class="comic-row row-1" style="flex: 1; height: 100%;">
+          <img src="assets/comic/page5.png" alt="Ending 1" class="comic-strip-img" style="object-fit: contain; width: 100%; height: 100%;">
+          <div class="comic-panel-action-overlay" style="opacity: 1; pointer-events: auto; display: flex; justify-content: space-between; align-items: flex-end; padding: 20px;">
+            <button id="prevToPage4Btn" class="comic-btn" style="font-size: 20px;">
+              &larr; PREV PAGE
+            </button>
+            <button id="nextToPage6Btn" class="comic-btn play-btn pulse-glow" style="font-size: 20px;">
+              NEXT PAGE &#x25B6;
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comic Book Page 6 (To Be Continued) -->
+      <div class="sw-comic-page" id="comicPage6" style="display: none;">
+        <div class="comic-row row-1" style="flex: 1; height: 100%;">
+          <img src="assets/comic/page1.png" alt="To Be Continued" class="comic-strip-img" style="object-fit: contain; width: 100%; height: 100%;">
+          <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; pointer-events: none;">
+            <h1 style="color: #FFE600; font-family: 'Bangers', cursive; font-size: 80px; text-shadow: 4px 4px 0 #FF2A4D; text-align: center; transform: rotate(-5deg); border: 4px solid #000; background: rgba(0,0,0,0.8); padding: 20px;">TO BE CONTINUED...</h1>
+          </div>
+          <div class="comic-panel-action-overlay" style="opacity: 1; pointer-events: auto; display: flex; justify-content: flex-start; align-items: flex-end; padding: 20px;">
+            <button id="prevToPage5Btn" class="comic-btn" style="font-size: 20px;">
+              &larr; PREV PAGE
             </button>
           </div>
         </div>
