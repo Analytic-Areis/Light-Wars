@@ -29,6 +29,7 @@ class LightWarsGame {
     this.orbs = [];
     this.crystals = [];
     this.barrels = [];
+    this.powerups = [];
 
     // Input state
     this.input = {
@@ -1416,6 +1417,7 @@ class LightWarsGame {
     this.lasers = [];
     this.orbs = [];
     this.crystals = [];
+    this.powerups = [];
     this.particles = new window.LightWars.ParticleSystem();
 
     this.waves = new window.LightWars.WaveDirector(this);
@@ -1633,6 +1635,32 @@ class LightWarsGame {
     }
   }
 
+  onDashPowerupCollected(x, y) {
+    if (this.player) {
+      this.player.dashUnlocked = true;
+    }
+    localStorage.setItem('lightwars_dash_unlocked', 'true');
+    this.unlockHelpCapability('dash');
+
+    if (window.LightWars.sound) {
+      if (window.LightWars.sound.playPowerupPickup) {
+        window.LightWars.sound.playPowerupPickup();
+      } else {
+        window.LightWars.sound.playVictory();
+      }
+    }
+
+    if (this.particles) {
+      this.particles.spawnBurst(x, y, '#00F0FF', 36);
+      this.particles.spawnBurst(x, y, '#FFE600', 24);
+      this.particles.spawnComicText(x, y - 40, 'DASH ACQUIRED!', '#00F0FF');
+    }
+
+    if (this.waves && this.waves.onDashPowerupCollected) {
+      this.waves.onDashPowerupCollected();
+    }
+  }
+
   handlePlayerShoot() {
     if (this.state !== 'PLAYING' || !this.player || !this.player.alive) return;
 
@@ -1757,6 +1785,18 @@ class LightWarsGame {
     }
     this.crystals = this.crystals.filter(c => c.alive);
 
+    // Update Ground Powerups (e.g. Dash Powerup) & Player Collection
+    for (const p of this.powerups) {
+      p.update(dt);
+      if (this.player && this.player.alive) {
+        const dist = Math.hypot(this.player.x - p.x, this.player.y - p.y);
+        if (dist <= (p.pickupRadius || 30) + this.player.radius) {
+          p.collect(this.player, this);
+        }
+      }
+    }
+    this.powerups = this.powerups.filter(p => p.alive);
+
     // Update Camera (tracks player and focuses on the active region)
     if (this.player) {
       this.camera.update(dt, this.player.x, this.player.y, this.arena.width, this.arena.height);
@@ -1865,7 +1905,7 @@ class LightWarsGame {
                 this.spawnOrb(enemy.x, enemy.y, dropColor);
               }
 
-              this.waves.onEnemyDefeated(enemy);
+              this.waves.onEnemyDefeated(enemy, laser.colorId);
             } else if (outcome.action === 'BOSS_HIT') {
               // Boss took 1 white bullet hit
               this.camera.shake(12);
@@ -1875,11 +1915,15 @@ class LightWarsGame {
                 this.waves.onBossHit(outcome.remainingHealth);
               }
             } else if (outcome.action === 'TRANSFORM' && this.colorChangingEnabled) {
-              // TRANSFORM only active in Level 2+
+              // TRANSFORM active
               window.LightWars.sound.playTransform();
               this.particles.spawnBurst(enemy.x, enemy.y - 50, window.LightWars.COLORS[outcome.target].hex, 20);
               this.particles.spawnComicText(enemy.x, enemy.y - 70, `➔ ${outcome.target}!`, window.LightWars.COLORS[outcome.target].hex);
+              const prevColor = enemy.colorId;
               enemy.setColor(outcome.target);
+              if (this.waves && this.waves.onEnemyTransform) {
+                this.waves.onEnemyTransform(enemy, prevColor, outcome.target, laser.colorId);
+              }
             } else {
               // 'NONE' OR transform disabled in Level 1 — no effect
               this.particles.spawnBurst(laser.x, laser.y, '#AAAAAA', 8);
@@ -1924,12 +1968,11 @@ class LightWarsGame {
           if (res.destroyed) {
             this.particles.spawnComicText(b.x, b.y, b.isBlackBarrel ? 'REWARD UNLOCKED!' : 'CRASH!', b.isBlackBarrel ? '#B040FF' : '#D2A679');
             if (b.isBlackBarrel) {
-              if (this.player) this.player.dashUnlocked = true;
-              localStorage.setItem('lightwars_dash_unlocked', 'true');
-              this.unlockHelpCapability('dash');
-              if (window.LightWars.sound) window.LightWars.sound.playVictory();
+              if (window.LightWars.DashPowerup) {
+                this.powerups.push(new window.LightWars.DashPowerup(b.x, b.y));
+              }
               if (this.waves && this.waves.onBlackBarrelDestroyed) {
-                this.waves.onBlackBarrelDestroyed();
+                this.waves.onBlackBarrelDestroyed(b.x, b.y);
               }
             } else if (res.dropColor) {
               this.spawnOrb(b.x, b.y, res.dropColor);
@@ -2130,8 +2173,8 @@ class LightWarsGame {
     // 1. Draw 5520x3388 2.5D Dungeon Arena
     this.arena.draw(this.ctx);
 
-    // 2. Y-sorted 2.5D Entities & Foreground Walls (Player, Enemies, Barrels, Orbs, Crystals, Walls)
-    const entities = [...this.orbs, ...this.crystals, ...this.barrels, ...this.enemies];
+    // 2. Y-sorted 2.5D Entities & Foreground Walls (Player, Enemies, Barrels, Orbs, Crystals, Powerups, Walls)
+    const entities = [...this.orbs, ...this.crystals, ...this.barrels, ...this.powerups, ...this.enemies];
     if (this.player) entities.push(this.player);
 
     if (window.LightWars.occlusion) {

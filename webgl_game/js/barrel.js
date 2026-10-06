@@ -270,6 +270,258 @@ class BlackBarrel extends Barrel {
   }
 }
 
+/**
+ * DashPowerup: Collectible pickup dropped when the Black Orb is destroyed.
+ * Floats with glowing particles and an overhead label until the player walks over it.
+ */
+class DashPowerup {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.radius = 12;
+    this.pickupRadius = 32;
+    this.floatTime = 0;
+    this.pulseTime = 0;
+    this.alive = true;
+    this.isCollected = false;
+    this.sparks = [];
+  }
+
+  collect(player, game) {
+    if (this.isCollected || !this.alive || this.isPickingUp) return false;
+    this.isPickingUp = true;
+    this.pickupTimer = 0;
+    this.targetPlayer = player;
+    this.gameRef = game;
+
+    // Audio & initial burst feedback
+    if (window.LightWars.sound) {
+      if (window.LightWars.sound.playPowerupPickup) {
+        window.LightWars.sound.playPowerupPickup();
+      }
+    }
+    if (game && game.particles) {
+      game.particles.spawnBurst(this.x, this.y, '#00F0FF', 30);
+      game.particles.spawnBurst(this.x, this.y, '#FFE600', 20);
+      game.particles.spawnComicText(this.x, this.y - 45, 'DASH ACQUIRED!', '#00F0FF');
+    }
+
+    return true;
+  }
+
+  update(dt) {
+    if (!this.alive) return;
+    this.floatTime += dt * 3.8;
+    this.pulseTime += dt * 4.5;
+
+    // Pickup Animation sequence
+    if (this.isPickingUp) {
+      this.pickupTimer += dt;
+
+      // Animate ascending float & attraction toward player
+      if (this.targetPlayer) {
+        const dx = this.targetPlayer.x - this.x;
+        const dy = (this.targetPlayer.y - 10) - this.y;
+        this.x += dx * Math.min(1.0, dt * 7.5);
+        this.y += dy * Math.min(1.0, dt * 7.5) - (dt * 12);
+      }
+
+      // Continuous luminous energy trail while ascending
+      if (Math.random() < 0.7) {
+        this.sparks.push({
+          angle: Math.random() * Math.PI * 2,
+          dist: 6 + Math.random() * 16,
+          speed: (Math.random() > 0.5 ? 1 : -1) * (4 + Math.random() * 4),
+          life: 0.35,
+          maxLife: 0.35
+        });
+      }
+
+      // After 1.4s of glorious pickup animation, finish collection and invoke callback
+      if (this.pickupTimer >= 1.4) {
+        this.alive = false;
+        this.isCollected = true;
+
+        if (this.gameRef && this.gameRef.particles) {
+          this.gameRef.particles.spawnBurst(this.x, this.y, '#00F0FF', 35);
+          this.gameRef.particles.spawnBurst(this.x, this.y, '#FFFFFF', 25);
+        }
+
+        if (this.gameRef && this.gameRef.onDashPowerupCollected) {
+          this.gameRef.onDashPowerupCollected(this.x, this.y);
+        }
+      }
+    } else {
+      // Ambient lightning sparks before pickup
+      if (Math.random() < 0.35) {
+        this.sparks.push({
+          angle: Math.random() * Math.PI * 2,
+          dist: 14 + Math.random() * 12,
+          speed: (Math.random() > 0.5 ? 1 : -1) * (2 + Math.random() * 2),
+          life: 0.4,
+          maxLife: 0.4
+        });
+      }
+    }
+
+    for (let i = this.sparks.length - 1; i >= 0; i--) {
+      const sp = this.sparks[i];
+      sp.angle += sp.speed * dt;
+      sp.life -= dt;
+      if (sp.life <= 0) {
+        this.sparks.splice(i, 1);
+      }
+    }
+  }
+
+  draw(ctx) {
+    if (!this.alive) return;
+
+    let animScale = 1.0;
+    let animAlpha = 1.0;
+
+    if (this.isPickingUp) {
+      const progress = Math.min(1.0, this.pickupTimer / 1.4);
+      // First expands with energy, then absorbs into player
+      if (progress < 0.3) {
+        animScale = 1.0 + (progress / 0.3) * 0.45;
+      } else {
+        animScale = 1.45 - ((progress - 0.3) / 0.7) * 0.95;
+      }
+      animAlpha = Math.max(0.1, 1.0 - Math.pow(progress, 2.5));
+    }
+
+    const bob = Math.sin(this.floatTime) * 4.0;
+    const pulse = (1.0 + Math.sin(this.pulseTime) * 0.15) * animScale;
+    const cy = this.y - 12 + bob;
+
+    // 1. Ground contact shadow (fades out during pickup animation)
+    ctx.save();
+    ctx.fillStyle = `rgba(0, 0, 0, ${0.45 * animAlpha})`;
+    ctx.beginPath();
+    ctx.ellipse(this.x, this.y + 4, 18 * pulse, 8 * pulse, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(this.x, cy);
+    ctx.globalAlpha = animAlpha;
+
+    // Shockwave pulse if picking up
+    if (this.isPickingUp) {
+      const waveRadius = (this.pickupTimer * 60) % 55;
+      const waveAlpha = Math.max(0, 1.0 - (waveRadius / 55));
+      ctx.save();
+      ctx.strokeStyle = `rgba(0, 240, 255, ${waveAlpha * 0.8})`;
+      ctx.lineWidth = 3.0;
+      ctx.beginPath();
+      ctx.arc(0, 0, waveRadius, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.strokeStyle = `rgba(255, 230, 0, ${waveAlpha * 0.6})`;
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.arc(0, 0, waveRadius * 0.7, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 2. Radiant cyan-purple aura flare
+    const auraR = 24 * pulse;
+    const grad = ctx.createRadialGradient(0, 0, 2, 0, 0, auraR);
+    grad.addColorStop(0, '#FFFFFF');
+    grad.addColorStop(0.25, '#00F0FF');
+    grad.addColorStop(0.6, 'rgba(176, 64, 255, 0.7)');
+    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(0, 0, auraR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 3. Rotating energy rings (spin faster during pickup)
+    const spinMultiplier = this.isPickingUp ? 4.0 : 1.0;
+    ctx.save();
+    ctx.rotate(this.floatTime * 1.5 * spinMultiplier);
+    ctx.strokeStyle = '#00F0FF';
+    ctx.lineWidth = 2.0;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 16 * animScale, 7 * animScale, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.save();
+    ctx.rotate(-this.floatTime * 1.2 * spinMultiplier);
+    ctx.strokeStyle = '#FFE600';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 16 * animScale, 7 * animScale, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    // 4. Core glowing sphere / disc
+    ctx.beginPath();
+    ctx.arc(0, 0, 11 * pulse, 0, Math.PI * 2);
+    ctx.fillStyle = '#08081A';
+    ctx.fill();
+    ctx.lineWidth = 2.2;
+    ctx.strokeStyle = '#00F0FF';
+    ctx.shadowColor = '#00F0FF';
+    ctx.shadowBlur = 12 * animScale;
+    ctx.stroke();
+
+    // 5. Stylized Dash Lightning Bolt symbol in center
+    ctx.save();
+    ctx.scale(animScale, animScale);
+    ctx.fillStyle = '#FFE600';
+    ctx.shadowColor = '#FFE600';
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.moveTo(1, -7);
+    ctx.lineTo(-4, 0);
+    ctx.lineTo(0, 0);
+    ctx.lineTo(-2, 7);
+    ctx.lineTo(5, -1);
+    ctx.lineTo(1, -1);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    // 6. Orbiting sparks
+    for (const sp of this.sparks) {
+      const sx = Math.cos(sp.angle) * sp.dist * animScale;
+      const sy = Math.sin(sp.angle) * (sp.dist * 0.6) * animScale;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.globalAlpha = (sp.life / sp.maxLife) * animAlpha;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 1.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = animAlpha;
+
+    // 7. Overhead Floating Pill Badge: "⚡ DASH POWERUP" (hidden once picked up)
+    if (!this.isPickingUp) {
+      ctx.font = '900 10px "Impact", "Arial Black", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = '#000000';
+      ctx.strokeText('⚡ DASH POWERUP', 0, -22);
+      ctx.fillStyle = '#00F0FF';
+      ctx.fillText('⚡ DASH POWERUP', 0, -22);
+
+      ctx.font = '800 8px sans-serif';
+      ctx.strokeText('[WALK OVER TO EQUIP]', 0, -12);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillText('[WALK OVER TO EQUIP]', 0, -12);
+    }
+
+    ctx.restore();
+  }
+}
+
 window.LightWars = window.LightWars || {};
 window.LightWars.Barrel = Barrel;
 window.LightWars.BlackBarrel = BlackBarrel;
+window.LightWars.DashPowerup = DashPowerup;

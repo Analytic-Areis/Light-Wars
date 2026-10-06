@@ -827,6 +827,32 @@ class SoundEngine {
     return this.playComicDeath();
   }
 
+  playPowerupPickup() {
+    if (this.isMuted) return;
+    this.resume();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51]; // C5, E5, G5, C6, E6 fast arpeggio
+    notes.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const startTime = t + idx * 0.045;
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, startTime);
+
+      gain.gain.setValueAtTime(0.25, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.18);
+
+      osc.connect(gain);
+      gain.connect(this.sfxGain || this.masterGain);
+
+      osc.start(startTime);
+      osc.stop(startTime + 0.19);
+    });
+  }
+
   playEmpty() {
     if (this.isMuted) return;
     this.resume();
