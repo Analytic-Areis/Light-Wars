@@ -147,7 +147,7 @@ class Level5Director {
         title: 'MASTER NOOBI-WAN',
         message: `Do not be rattled, Fluke. He was resurrected — which means he no longer holds the
           <b>Invert Frame power</b> you took from him, and he returns with only
-          <b>2 hearts</b> this time.`,
+          <b>2/3 health</b> this time.`,
         btnText: 'UNDERSTOOD ▶',
       },
       {
@@ -300,7 +300,7 @@ class Level5Director {
         id: 'l5_card8',
         badge: '☠️ WHITE BOSS DEFEATED',
         isBoss: true,
-        speakerImg: L5_WHITE_BOSS_IMG,
+        speakerImg: 'assets/noobi/White Boss_desimating.png',
         title: 'THE WHITE BOSS',
         message: `I am... <b>genuinely surprised</b>.<br>
           <br>

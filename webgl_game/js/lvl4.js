@@ -146,7 +146,7 @@ class Level4Director {
         '• <span style="color:#22E058">GREEN</span> dies to <b>GREEN [2]</b><br>' +
         '• <span style="color:#4D96FF">BLUE</span> dies to <b>BLUE [3]</b><br><br>' +
         '<div class="noobi-callout-box" style="margin:4px 0;padding:6px;font-size:12.5px;font-weight:bold;color:#FF3366;border-left:3.5px solid #9400D3;background:rgba(160,32,240,0.15);border-radius:4px;">' +
-        '&ldquo;Activate <b>[E]</b> to defeat the incoming bots with their own color!&rdquo;</div>',
+        '&ldquo;Activate <b>[RMB]</b> to defeat the incoming bots with their own color!&rdquo;</div>',
       btnText: 'ENGAGE! ⚔️'
     };
 
@@ -190,7 +190,7 @@ class Level4Director {
 
     this.game.ui.setObjective(
       'LEVEL 4 — RGB INVERTED TRAINING',
-      'Activate Inverted Frame [E], then kill RED, GREEN, BLUE with their own colour!'
+      'Activate Inverted Frame [RMB], then kill RED, GREEN, BLUE with their own colour!'
     );
 
     if (this.game.particles) {
@@ -218,7 +218,7 @@ class Level4Director {
         '• <span style="color:#FF2AD4">MAGENTA</span> dies to <b>MAGENTA [5]</b><br>' +
         '• <span style="color:#FFE600">YELLOW</span> dies to <b>YELLOW [6]</b><br><br>' +
         '<div class="noobi-callout-box" style="margin:4px 0;padding:6px;font-size:12.5px;font-weight:bold;color:#FF3366;border-left:3.5px solid #9400D3;background:rgba(160,32,240,0.15);border-radius:4px;">' +
-        '&ldquo;Here — one of each awaits you. I&rsquo;ll gift you 3 CMY bullets each. Activate <b>[E]</b> and defeat them with their own color!&rdquo;</div>',
+        '&ldquo;Here — one of each awaits you. I&rsquo;ll gift you 3 CMY bullets each. Activate <b>[RMB]</b> and defeat them with their own color!&rdquo;</div>',
       btnText: 'ENGAGE! ⚔️'
     };
 
@@ -280,7 +280,7 @@ class Level4Director {
 
     this.game.ui.setObjective(
       'LEVEL 4 — CMY INVERTED TRAINING',
-      'Activate Inverted Frame [E], then kill Cyan, Magenta, Yellow with their own colour!'
+      'Activate Inverted Frame [RMB], then kill Cyan, Magenta, Yellow with their own colour!'
     );
 
     if (this.game.particles) {
@@ -353,7 +353,7 @@ class Level4Director {
             '• <span style="color:#FF2AD4">MAGENTA</span> dies to <b>MAGENTA [5]</b><br>' +
             '• <span style="color:#FFE600">YELLOW</span> dies to <b>YELLOW [6]</b><br><br>' +
             '<div class="noobi-callout-box" style="margin:4px 0;padding:6px;font-size:12.5px;font-weight:bold;color:#FF3366;border-left:3.5px solid #9400D3;background:rgba(160,32,240,0.15);border-radius:4px;">' +
-            '&ldquo;You must use the Inverted Frame [E]! Try again — your inventory is restored.&rdquo;</div>',
+            '&ldquo;You must use the Inverted Frame [RMB]! Try again — your inventory is restored.&rdquo;</div>',
           btnText: 'TRY AGAIN! ⚔️'
         };
         this.game.showTutorialSequence([card3Retry], () => this._startCMYPhase());

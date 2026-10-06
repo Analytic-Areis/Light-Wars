@@ -897,7 +897,7 @@ class LightWarsGame {
         minLevel: 1,
         icon: "⚡",
         name: "HIGH-SPEED DASH WARP",
-        key: "SPACE / RMB",
+        key: "SPACE",
         desc: "Warp at high velocity to <b>dodge enemy lasers</b>, slip through crossfire, and evade dangerous barrel concussions!",
         unlocked: !!this.unlockedCapabilities.dash,
         lockHint: "Destroy the Black Orb in Level 1 to unlock Dash.",
@@ -917,8 +917,8 @@ class LightWarsGame {
         minLevel: 3,
         icon: "🔄",
         name: "INVERT FRAME ABILITY",
-        key: "KEY [E]",
-        desc: "Activate Invert Frame using <b>KEY [E]</b> to reverse light physics for 10s! Cooldown scales with damage: <b>25s</b> at full health, <b>7s</b> after 1 heart lost, <b>5s</b> after 2 hearts lost. When inverted, bots can only be destroyed by their matching color lasers, and the Black Boss is invincible.",
+        key: "KEY [RMB]",
+        desc: "Activate Invert Frame using <b>KEY [RMB]</b> to reverse light physics for 10s! Cooldown scales with damage: <b>25s</b> at full health, <b>7s</b> after 1 heart lost, <b>5s</b> after 2 hearts lost. When inverted, bots can only be destroyed by their matching color lasers, and the Black Boss is invincible.",
         unlocked: !!this.unlockedCapabilities.inversion,
         lockHint: "Defeat the Black Boss in Mission 03 to acquire.",
       },
@@ -1412,7 +1412,7 @@ class LightWarsGame {
       title = "FIELD GUIDE: LEVEL 2 TACTICS";
       message =
         "Welcome to Level 2, Fluke. The chromatic battlefield expands:<br><br>" +
-        '• <b>DASH:</b> Press <span class="noobi-key">[SPACE]</span> or <span class="noobi-key">[RMB]</span> to dash and avoid enemy lasers!<br>' +
+        '• <b>DASH:</b> Press <span class="noobi-key">[SPACE]</span> to dash and avoid enemy lasers!<br>' +
         "• <b>COUNTER MATRIX:</b><br>" +
         '&nbsp;&nbsp;&bull; <span class="noobi-hl red">RED</span> dies to <span class="noobi-hl cyan">CYAN [4]</span> | <span class="noobi-hl green">GREEN</span> dies to <span class="noobi-hl magenta">MAGENTA [5]</span> | <span class="noobi-hl blue">BLUE</span> dies to <span class="noobi-hl yellow">YELLOW [6]</span><br>' +
         "• Fuse orbs with your blasters to synthesize high-spectrum Ammo Crystals!";
@@ -1422,7 +1422,7 @@ class LightWarsGame {
         "Tactical guide against the Black Boss, Fluke:<br><br>" +
         "• <b>WHITE BULLETS:</b> Black Boss requires <b>3 hits of WHITE LASER [7]</b>. Normal enemies take 1 hit.<br>" +
         "• <b>SYNTHESIZING WHITE AMMO:</b> Shoot a complementary wavelength into an orb (e.g. Red into Cyan orb, or Cyan into Red orb)!<br>" +
-        '• <b>HOMING BULLETS:</b> Use your DASH <span class="noobi-key">[SPACE / RMB]</span> and distance to dodge tracking black lasers!<br>' +
+        '• <b>HOMING BULLETS:</b> Use your DASH <span class="noobi-key">[SPACE]</span> and distance to dodge tracking black lasers!<br>' +
         "• <b>LIGHT INVERSION:</b> When the boss shakes rapidly, physics inverts for 10s: weak is strong and strong is weak (e.g. Cyan dies to Cyan)!";
     }
     this.showStopTutorial(null, title, message);
@@ -2309,17 +2309,7 @@ class LightWarsGame {
     window.LightWars.sound.playOrbSpawn();
     this.unlockHelpCapability("orbCrafting");
 
-    // Stop Tutorial: First Orb dropped
-    if (this._lastLevel === 1) {
-      this.showStopTutorial(
-        "l1_orb_drop",
-        "CHROMATIC ORB DETECTED!",
-        "Defeated troops leave behind energy <b>ORBS</b>!<br><br>" +
-          "• Shoot this orb with its <b>complementary laser</b> to convert it into Ammo Crystals!<br>" +
-          "• Or walk over it to absorb basic spectral charge.<br><br>" +
-          "Experiment with your lasers to craft ammo!",
-      );
-    }
+
   }
 
   onDashPowerupCollected(x, y) {

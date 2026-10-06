@@ -97,8 +97,8 @@ class Level1Director {
         totalSteps: 6,
         title: 'SPAWN POINT REFILL & HEAL',
         message:
-          'Remember this survival rule, Fluke: <b>when you are at the spawn point, your RGB shots will refill and heal</b>!<br><br>' +
-          'The glowing <b>White Sanctuary</b> in the center chamber radiates pure restorative light. Step onto it anytime to reload your Red, Green, and Blue blasters and mend your health hearts!',
+          'Remember this survival rule, Fluke: <b>your health will automatically regenerate over time</b>!<br><br>' +
+          'The glowing <b>White Sanctuary</b> in the center chamber radiates pure restorative light. Step onto it anytime to reload your Red, Green, and Blue blasters! (And remember, your health passively recovers every 5 seconds).',
         btnText: 'CONTINUE NOOBI-WAN ▶'
       },
       {
@@ -275,7 +275,7 @@ class Level1Director {
           'l1_dash_unlocked',
           'SURPRISE UNLOCKED: DASH ABILITY!',
           'SPLENDID WORK, FLUKE! You have collected the powerup released from the Black Orb: <b>THE DASH ABILITY</b>!<br><br>' +
-          '• Press <span class="noobi-key">[SPACE]</span> or <span class="noobi-key">[RMB]</span> to warp through danger at high speed!<br>' +
+          '• Press <span class="noobi-key">[SPACE]</span> to warp through danger at high speed!<br>' +
           '• Dashing makes you slip past hostile projectiles and reposition in an instant.<br><br>' +
           'You have mastered the foundations of the chromatic spectrum. Prepare yourself—the war escalates!',
           {
