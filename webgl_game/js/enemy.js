@@ -208,8 +208,8 @@ class Enemy {
       spawnY = muzzle.y + Math.sin(angle) * 12;
     }
 
-    // Slower dodgeable speed (420 px/s vs player's 820 px/s)
-    const speed = 420;
+    // Slower dodgeable speed (315 px/s, decreased to 75% of original 420 px/s)
+    const speed = (window.LightWars.GAME_CONFIG && window.LightWars.GAME_CONFIG.enemyLaserSpeed) || 315;
     const vx = Math.cos(angle) * speed;
     const vy = Math.sin(angle) * speed;
 
@@ -263,7 +263,7 @@ class Enemy {
 
     // Safety check: ensure enemy is always strictly within the walkable area of the hero
     if (arena && arena.pushOutOfWall) {
-      const safe = arena.pushOutOfWall(this.x, this.y, this.radius);
+      const safe = arena.pushOutOfWall(this.x, this.y, this.radius + 4);
       this.x = safe.x;
       this.y = safe.y;
     }
@@ -350,8 +350,25 @@ class Enemy {
         }
 
         const retreatSpeed = this.speed * 1.15;
-        const nextX = this.x + nx * retreatSpeed * dt;
-        const nextY = this.y + ny * retreatSpeed * dt;
+        let moveNx = nx;
+        let moveNy = ny;
+
+        // If direct retreat leads into a wall, steer sideways (strafe) along open floor
+        if (arena && arena.isBodyBlocked && arena.isBodyBlocked(this.x + nx * retreatSpeed * dt, this.y + ny * retreatSpeed * dt, this.radius + 4)) {
+          const perpX = -ny * (this.strafeDir || 1);
+          const perpY = nx * (this.strafeDir || 1);
+          if (!arena.isBodyBlocked(this.x + perpX * retreatSpeed * dt, this.y + perpY * retreatSpeed * dt, this.radius + 2)) {
+            moveNx = perpX;
+            moveNy = perpY;
+          } else if (!arena.isBodyBlocked(this.x - perpX * retreatSpeed * dt, this.y - perpY * retreatSpeed * dt, this.radius + 2)) {
+            moveNx = -perpX;
+            moveNy = -perpY;
+            this.strafeDir = (this.strafeDir || 1) * -1;
+          }
+        }
+
+        const nextX = this.x + moveNx * retreatSpeed * dt;
+        const nextY = this.y + moveNy * retreatSpeed * dt;
 
         if (arena && arena.resolveMovement) {
           const res = arena.resolveMovement(this.x, this.y, nextX, nextY, this.radius);
@@ -457,6 +474,13 @@ class Enemy {
         this.x = res.x;
         this.y = res.y;
       }
+    }
+
+    // Final boundary safeguard: keep enemy strictly clear of any blocked boundary walls
+    if (arena && arena.pushOutOfWall) {
+      const safe = arena.pushOutOfWall(this.x, this.y, this.radius + 4);
+      this.x = safe.x;
+      this.y = safe.y;
     }
 
     return firedLaser;
@@ -683,18 +707,19 @@ class BlackBoss extends Enemy {
 
     // If super fired a laser, override with Homing Black Bullet!
     if (standardLaser) {
-      // Create homing black laser
+      // Create homing black laser (decreased to 75% of original 310 px/s)
+      const homingSpeed = (window.LightWars.GAME_CONFIG && window.LightWars.GAME_CONFIG.bossLaserSpeed) || 232.5;
       const homingLaser = new window.LightWars.Laser(
         standardLaser.x,
         standardLaser.y,
-        standardLaser.vx * 0.75, // 315 px/s speed: dodgeable with skill/dash
+        standardLaser.vx * 0.75, // Scaled down launch speed: dodgeable with skill/dash
         standardLaser.vy * 0.75,
         'BLACK',
         false,
         {
           isHoming: true,
           target: player,
-          speed: 310,
+          speed: homingSpeed,
           turnRate: 2.1, // Smooth turning curve allowing evade & dash
           homingLife: 1.5 // Exactly 1.5s timer before disappearing
         }

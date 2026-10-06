@@ -197,6 +197,7 @@ class Arena {
       }
     };
     this.mapImg.src = config.imageSrc || 'assets/map_stuff/starting_map.png';
+    this.boundaryEdges = this.computeBoundaryEdges();
   }
 
   /**
@@ -356,12 +357,43 @@ class Arena {
   }
 
   /**
-   * Safety check: push entity back onto nearest walkable floor if ever inside a blocked tile
+   * Safety check: push entity back onto valid walkable floor with full body radius clearance
    */
   pushOutOfWall(px, py, radius = 12) {
     if (this.ignoreBoundaries) return { x: px, y: py };
-    if (!this.isPointBlocked(px, py)) return { x: px, y: py };
+    if (!this.isBodyBlocked(px, py, radius)) return { x: px, y: py };
 
+    let curX = px, curY = py;
+    const angles = [0, 0.785, 1.571, 2.356, 3.142, 3.927, 4.712, 5.498];
+
+    // Phase 1: Iterative continuous outward nudge away from blocked perimeter points
+    for (let step = 0; step < 4; step++) {
+      let pushX = 0, pushY = 0, blockedCount = 0;
+      if (this.isPointBlocked(curX, curY)) {
+        blockedCount += 2;
+      }
+      for (let i = 0; i < 8; i++) {
+        const ang = angles[i];
+        const sx = curX + Math.cos(ang) * radius;
+        const sy = curY + Math.sin(ang) * (radius * 0.52);
+        if (this.isPointBlocked(sx, sy)) {
+          pushX -= Math.cos(ang);
+          pushY -= Math.sin(ang) * 0.52;
+          blockedCount++;
+        }
+      }
+      if (blockedCount === 0) break;
+      const len = Math.hypot(pushX, pushY);
+      if (len > 0.001) {
+        curX += (pushX / len) * 7.0;
+        curY += (pushY / len) * 7.0;
+        if (!this.isBodyBlocked(curX, curY, radius)) {
+          return { x: curX, y: curY };
+        }
+      }
+    }
+
+    // Phase 2: Search neighboring grid tiles for closest tile with full body clearance
     const g = this.toGrid(px, py);
     const tc = Math.floor(g.c);
     const tr = Math.floor(g.r);
@@ -371,23 +403,25 @@ class Arena {
     let bestY = py;
 
     if (this.blocked) {
-      for (let dr = -5; dr <= 5; dr++) {
-        for (let dc = -5; dc <= 5; dc++) {
+      for (let dr = -6; dr <= 6; dr++) {
+        for (let dc = -6; dc <= 6; dc++) {
           const nc = tc + dc;
           const nr = tr + dr;
           if (nc >= 0 && nr >= 0 && nc < this.cols && nr < this.rows && this.blocked[nr][nc] === 0) {
             const cand = this.toScreen(nc + 0.5, nr + 0.5);
-            const d = Math.hypot(cand.x - px, cand.y - py);
-            if (d < bestDist) {
-              bestDist = d;
-              bestX = cand.x;
-              bestY = cand.y;
+            if (!this.isBodyBlocked(cand.x, cand.y, radius)) {
+              const d = Math.hypot(cand.x - px, cand.y - py);
+              if (d < bestDist) {
+                bestDist = d;
+                bestX = cand.x;
+                bestY = cand.y;
+              }
             }
           }
         }
       }
 
-      // If knocked far out of bounds, search full map for the closest valid walkable tile
+      // Phase 3: Global map search if pushed far out of bounds
       if (bestDist === Infinity) {
         for (let r = 0; r < this.rows; r++) {
           for (let c = 0; c < this.cols; c++) {
@@ -404,13 +438,80 @@ class Arena {
         }
       }
 
-      // If still not found, safely fallback to the hero's spawn location
+      // Safe fallback to hero spawn
       if (bestDist === Infinity && this.spawn) {
         bestX = this.spawn.x;
         bestY = this.spawn.y;
       }
     }
     return { x: bestX, y: bestY };
+  }
+
+  /**
+   * Precompute boundary perimeter edges separating walkable tiles (0) from blocked tiles (1)
+   */
+  computeBoundaryEdges() {
+    if (!this.blocked || !this.cols || !this.rows) return [];
+    const edges = [];
+    for (let r = 0; r < this.rows; r++) {
+      for (let c = 0; c < this.cols; c++) {
+        if (this.blocked[r][c] !== 0) continue; // Walkable tiles only
+
+        // Top-Right edge: (c, r) -> (c + 1, r)
+        if (r === 0 || this.blocked[r - 1][c] === 1) {
+          edges.push({ p1: this.toScreen(c, r), p2: this.toScreen(c + 1, r) });
+        }
+        // Bottom-Right edge: (c + 1, r) -> (c + 1, r + 1)
+        if (c === this.cols - 1 || this.blocked[r][c + 1] === 1) {
+          edges.push({ p1: this.toScreen(c + 1, r), p2: this.toScreen(c + 1, r + 1) });
+        }
+        // Bottom-Left edge: (c + 1, r + 1) -> (c, r + 1)
+        if (r === this.rows - 1 || this.blocked[r + 1][c] === 1) {
+          edges.push({ p1: this.toScreen(c + 1, r + 1), p2: this.toScreen(c, r + 1) });
+        }
+        // Top-Left edge: (c, r + 1) -> (c, r)
+        if (c === 0 || this.blocked[r][c - 1] === 1) {
+          edges.push({ p1: this.toScreen(c, r + 1), p2: this.toScreen(c, r) });
+        }
+      }
+    }
+    return edges;
+  }
+
+  /**
+   * Render glowing sci-fi holographic perimeter demarcating the clear arena boundaries
+   */
+  drawArenaBoundaries(ctx) {
+    if (!this.boundaryEdges || this.boundaryEdges.length === 0) return;
+    ctx.save();
+    const pulse = 0.65 + 0.25 * Math.sin(this.galaxyTime * 2.2);
+
+    // 1. Soft atmospheric outer glow
+    ctx.shadowColor = '#00F0FF';
+    ctx.shadowBlur = 8;
+    ctx.strokeStyle = `rgba(0, 240, 255, ${0.40 * pulse})`;
+    ctx.lineWidth = 3.2;
+    ctx.beginPath();
+    for (let i = 0; i < this.boundaryEdges.length; i++) {
+      const e = this.boundaryEdges[i];
+      ctx.moveTo(e.p1.x, e.p1.y);
+      ctx.lineTo(e.p2.x, e.p2.y);
+    }
+    ctx.stroke();
+
+    // 2. Crisp bright neon laser perimeter line
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = `rgba(215, 250, 255, ${0.80 * pulse})`;
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    for (let i = 0; i < this.boundaryEdges.length; i++) {
+      const e = this.boundaryEdges[i];
+      ctx.moveTo(e.p1.x, e.p1.y);
+      ctx.lineTo(e.p2.x, e.p2.y);
+    }
+    ctx.stroke();
+
+    ctx.restore();
   }
 
   update(dt) {
@@ -482,6 +583,9 @@ class Arena {
       ctx.fillStyle = 'rgba(8, 9, 14, 0.4)';
       ctx.fillRect(0, 0, this.width, this.height);
     }
+
+    // 1.5. Draw Clear Holographic Arena Boundaries
+    this.drawArenaBoundaries(ctx);
 
     // 2. Draw Radiant Recharge Station
     const wl = this.whiteLight;

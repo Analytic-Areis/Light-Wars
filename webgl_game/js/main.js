@@ -998,7 +998,7 @@ class LightWarsGame {
 
         const screenPos = this.arena.toScreen(tileCenterGx, tileCenterGy);
         if (this.arena.isPointBlocked(screenPos.x, screenPos.y)) continue;
-        if (this.arena.isBodyBlocked && this.arena.isBodyBlocked(screenPos.x, screenPos.y, 14)) continue;
+        if (this.arena.isBodyBlocked && this.arena.isBodyBlocked(screenPos.x, screenPos.y, 20)) continue;
 
         const crowded = isTooCloseToOtherEnemy(screenPos.x, screenPos.y);
         const crowdedPenalty = crowded ? 5000 : 0;
@@ -1022,12 +1022,12 @@ class LightWarsGame {
       validCandidates.sort((a, b) => a.score - b.score);
       let bestPos = validCandidates[0].pos;
       if (this.arena.pushOutOfWall) {
-        bestPos = this.arena.pushOutOfWall(bestPos.x, bestPos.y);
+        bestPos = this.arena.pushOutOfWall(bestPos.x, bestPos.y, 20);
       }
       return bestPos;
     }
 
-    // Fallback: search all walkable tiles outside the 2.5-tile radius
+    // Fallback: search all walkable tiles outside the 2.5-tile radius with strict body clearance
     let bestPos = { x: targetX, y: targetY };
     let bestDist = Infinity;
     for (let r = 0; r < maxRows; r++) {
@@ -1036,6 +1036,7 @@ class LightWarsGame {
         const distTiles = Math.hypot(c + 0.5 - pGrid.gx, r + 0.5 - pGrid.gy);
         if (distTiles < minTileDist) continue;
         const pos = this.arena.toScreen(c + 0.5, r + 0.5);
+        if (this.arena.isBodyBlocked && this.arena.isBodyBlocked(pos.x, pos.y, 20)) continue;
         const d = Math.hypot(pos.x - targetX, pos.y - targetY);
         if (d < bestDist) {
           bestDist = d;
@@ -1044,7 +1045,7 @@ class LightWarsGame {
       }
     }
     if (this.arena.pushOutOfWall) {
-      bestPos = this.arena.pushOutOfWall(bestPos.x, bestPos.y);
+      bestPos = this.arena.pushOutOfWall(bestPos.x, bestPos.y, 20);
     }
     return bestPos;
   }
@@ -1219,14 +1220,6 @@ class LightWarsGame {
         continue;
       }
 
-      // 1. Boundary Wall Collision Check
-      if (!this.arena.ignoreBoundaries && this.arena.isPointBlocked(laser.x, laser.y)) {
-        laser.alive = false;
-        this.particles.spawnBurst(laser.x, laser.y, '#AAAAAA', 8);
-        this.lasers.splice(i, 1);
-        continue;
-      }
-
       // Despawn lasers that travel far outside the map
       if (laser.x < -400 || laser.y < -400 || laser.x > this.arena.width + 400 || laser.y > this.arena.height + 400) {
         laser.alive = false;
@@ -1234,45 +1227,7 @@ class LightWarsGame {
         continue;
       }
 
-      // 2. Destructible Barrel Collision Check
-      let hitBarrel = false;
-      for (const b of this.barrels) {
-        if (!b.alive) continue;
-        const targetY = b.isBlackBarrel ? b.y : (b.y - 12);
-        const dist = Math.hypot(laser.x - b.x, laser.y - targetY);
-        if (dist < b.colRadiusX + laser.radius) {
-          hitBarrel = true;
-          laser.alive = false;
-          this.particles.spawnBurst(laser.x, laser.y, b.isBlackBarrel ? '#B040FF' : '#D2A679', 10);
-          const res = b.takeLaserHit(laser.colorId, laser.angle);
-          if (res.destroyed) {
-            this.particles.spawnComicText(b.x, b.y, b.isBlackBarrel ? 'REWARD UNLOCKED!' : 'CRASH!', b.isBlackBarrel ? '#B040FF' : '#D2A679');
-            if (b.isBlackBarrel) {
-              if (this.player) this.player.dashUnlocked = true;
-              localStorage.setItem('lightwars_dash_unlocked', 'true');
-              if (window.LightWars.sound) window.LightWars.sound.playVictory();
-              if (this.waves && this.waves.onBlackBarrelDestroyed) {
-                this.waves.onBlackBarrelDestroyed();
-              }
-            } else if (res.dropColor) {
-              this.spawnOrb(b.x, b.y, res.dropColor);
-            }
-            if (window.LightWars.sound) {
-              window.LightWars.sound.playKaboom();
-            }
-          } else if (b.isBlackBarrel && res.newHit) {
-            this.particles.spawnComicText(b.x, b.y - 30, `+${laser.colorId}! (${res.remaining} left)`, window.LightWars.COLORS[laser.colorId].hex);
-            if (window.LightWars.sound) window.LightWars.sound.playOrbConvert();
-          }
-          break;
-        }
-      }
-      if (hitBarrel) {
-        this.lasers.splice(i, 1);
-        continue;
-      }
-
-      // 3. Collision handling based on laser owner
+      // 1. Entity Collision Handling (Check targets FIRST before background boundary walls!)
       if (laser.isPlayer) {
         // [only for 1st level] orbs must be uninteractable till all the enemies die **NOTE only 1st level**
         const isLevel1 = (this.waves && this.waves.level === 1);
@@ -1287,35 +1242,35 @@ class LightWarsGame {
           for (let j = this.orbs.length - 1; j >= 0; j--) {
             const orb = this.orbs[j];
             if (!orb.alive) continue;
-          const clampedOrbY = Math.max(orb.y - 45, Math.min(orb.y + 10, laser.y));
-          const d = Math.hypot(laser.x - orb.x, laser.y - clampedOrbY);
-          if (d < (orb.hitRadius || 36)) {
-            const res = orb.hitByLaser(laser.colorId);
-            if (res.success) {
-              laser.alive = false;
-              laserConsumed = true;
+            const clampedOrbY = Math.max(orb.y - 45, Math.min(orb.y + 10, laser.y));
+            const d = Math.hypot(laser.x - orb.x, laser.y - clampedOrbY);
+            if (d < (orb.hitRadius || 36)) {
+              const res = orb.hitByLaser(laser.colorId);
+              if (res.success) {
+                laser.alive = false;
+                laserConsumed = true;
 
-              // Audio & comic banner
-              if (window.LightWars.sound) window.LightWars.sound.playOrbConvert();
-              const resultColorHex = window.LightWars.COLORS[res.resultColor] ? window.LightWars.COLORS[res.resultColor].hex : '#FFFFFF';
-              this.particles.spawnBurst(orb.x, orb.y, resultColorHex, 24);
-              this.particles.spawnComicText(orb.x, orb.y, 'CRAFTED!', resultColorHex);
+                // Audio & comic banner
+                if (window.LightWars.sound) window.LightWars.sound.playOrbConvert();
+                const resultColorHex = window.LightWars.COLORS[res.resultColor] ? window.LightWars.COLORS[res.resultColor].hex : '#FFFFFF';
+                this.particles.spawnBurst(orb.x, orb.y, resultColorHex, 24);
+                this.particles.spawnComicText(orb.x, orb.y, 'CRAFTED!', resultColorHex);
 
-              // Spawn 2 crystals in the place of the orb for player to collect!
-              this.crystals.push(new window.LightWars.AmmoCrystal(orb.x, orb.y, res.resultColor, Math.PI));
-              this.crystals.push(new window.LightWars.AmmoCrystal(orb.x, orb.y, res.resultColor, 0));
+                // Spawn 2 crystals in the place of the orb for player to collect!
+                this.crystals.push(new window.LightWars.AmmoCrystal(orb.x, orb.y, res.resultColor, Math.PI));
+                this.crystals.push(new window.LightWars.AmmoCrystal(orb.x, orb.y, res.resultColor, 0));
 
-              this.waves.onOrbCrafted(orb.colorId, laser.colorId, res.resultColor);
-              break;
-            } else {
-              // Deflected off incompatible orb
-              this.particles.spawnBurst(laser.x, laser.y, '#FFFFFF', 6);
-              laser.alive = false;
-              laserConsumed = true;
-              break;
+                this.waves.onOrbCrafted(orb.colorId, laser.colorId, res.resultColor);
+                break;
+              } else {
+                // Deflected off incompatible orb
+                this.particles.spawnBurst(laser.x, laser.y, '#FFFFFF', 6);
+                laser.alive = false;
+                laserConsumed = true;
+                break;
+              }
             }
           }
-        }
         }
 
         if (laserConsumed) {
@@ -1324,10 +1279,12 @@ class LightWarsGame {
         }
 
         // Player Laser: Check collision with Enemies (Whole-body hitbox!)
+        let hitEnemy = false;
         for (let j = this.enemies.length - 1; j >= 0; j--) {
           const enemy = this.enemies[j];
           if (!enemy.alive) continue;
           if (enemy.checkLaserHit(laser)) {
+            hitEnemy = true;
             const hitAngle = Math.atan2((enemy.y - 50) - laser.y, enemy.x - laser.x);
             const outcome = enemy.takeLaserHit(laser.colorId, hitAngle);
 
@@ -1371,6 +1328,11 @@ class LightWarsGame {
             break;
           }
         }
+
+        if (hitEnemy) {
+          this.lasers.splice(i, 1);
+          continue;
+        }
       } else {
         // Enemy Laser: Check collision with Player (Whole-body hitbox!)
         if (this.player && this.player.alive && this.player.checkLaserHit(laser)) {
@@ -1385,6 +1347,52 @@ class LightWarsGame {
           this.lasers.splice(i, 1);
           continue;
         }
+      }
+
+      // 2. Destructible Barrel Collision Check
+      let hitBarrel = false;
+      for (const b of this.barrels) {
+        if (!b.alive) continue;
+        const targetY = b.isBlackBarrel ? b.y : (b.y - 12);
+        const dist = Math.hypot(laser.x - b.x, laser.y - targetY);
+        if (dist < b.colRadiusX + laser.radius) {
+          hitBarrel = true;
+          laser.alive = false;
+          this.particles.spawnBurst(laser.x, laser.y, b.isBlackBarrel ? '#B040FF' : '#D2A679', 10);
+          const res = b.takeLaserHit(laser.colorId, laser.angle);
+          if (res.destroyed) {
+            this.particles.spawnComicText(b.x, b.y, b.isBlackBarrel ? 'REWARD UNLOCKED!' : 'CRASH!', b.isBlackBarrel ? '#B040FF' : '#D2A679');
+            if (b.isBlackBarrel) {
+              if (this.player) this.player.dashUnlocked = true;
+              localStorage.setItem('lightwars_dash_unlocked', 'true');
+              if (window.LightWars.sound) window.LightWars.sound.playVictory();
+              if (this.waves && this.waves.onBlackBarrelDestroyed) {
+                this.waves.onBlackBarrelDestroyed();
+              }
+            } else if (res.dropColor) {
+              this.spawnOrb(b.x, b.y, res.dropColor);
+            }
+            if (window.LightWars.sound) {
+              window.LightWars.sound.playKaboom();
+            }
+          } else if (b.isBlackBarrel && res.newHit) {
+            this.particles.spawnComicText(b.x, b.y - 30, `+${laser.colorId}! (${res.remaining} left)`, window.LightWars.COLORS[laser.colorId].hex);
+            if (window.LightWars.sound) window.LightWars.sound.playOrbConvert();
+          }
+          break;
+        }
+      }
+      if (hitBarrel) {
+        this.lasers.splice(i, 1);
+        continue;
+      }
+
+      // 3. Boundary Wall Collision Check (Only triggers if laser did not strike any entity!)
+      if (!this.arena.ignoreBoundaries && this.arena.isPointBlocked(laser.x, laser.y)) {
+        laser.alive = false;
+        this.particles.spawnBurst(laser.x, laser.y, '#AAAAAA', 8);
+        this.lasers.splice(i, 1);
+        continue;
       }
     }
 
@@ -1471,10 +1479,10 @@ class LightWarsGame {
             e2.y += ny * overlap * ratio2;
 
             if (arena && arena.pushOutOfWall) {
-              const s1 = arena.pushOutOfWall(e1.x, e1.y, e1.radius);
+              const s1 = arena.pushOutOfWall(e1.x, e1.y, e1.radius + 4);
               e1.x = s1.x;
               e1.y = s1.y;
-              const s2 = arena.pushOutOfWall(e2.x, e2.y, e2.radius);
+              const s2 = arena.pushOutOfWall(e2.x, e2.y, e2.radius + 4);
               e2.x = s2.x;
               e2.y = s2.y;
             }
@@ -1520,7 +1528,7 @@ class LightWarsGame {
               const ps = arena.pushOutOfWall(this.player.x, this.player.y, this.player.radius);
               this.player.x = ps.x;
               this.player.y = ps.y;
-              const es = arena.pushOutOfWall(enemy.x, enemy.y, enemy.radius);
+              const es = arena.pushOutOfWall(enemy.x, enemy.y, enemy.radius + 4);
               enemy.x = es.x;
               enemy.y = es.y;
             }
@@ -1538,6 +1546,11 @@ class LightWarsGame {
           if (res.collided) {
             enemy.x = res.x;
             enemy.y = res.y;
+            if (arena && arena.pushOutOfWall) {
+              const es = arena.pushOutOfWall(enemy.x, enemy.y, enemy.radius + 4);
+              enemy.x = es.x;
+              enemy.y = es.y;
+            }
           }
         }
       }

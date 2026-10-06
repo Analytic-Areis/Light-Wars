@@ -170,9 +170,9 @@ class WaveDirector {
       }
     ];
 
-    // Spawn the 2 Cyan enemies (strictly at least 4 tiles away on walkable floor)
+    // Spawn the 2 Cyan enemies (strictly on clear open floor away from boundaries)
     this.spawnAt(16, 6, 'CYAN');
-    this.spawnAt(8, 7, 'CYAN');
+    this.spawnAt(10, 8, 'CYAN');
     this.enemiesRemainingInPhase = 2;
 
     if (this.game.showTutorialSequence) {
@@ -223,11 +223,11 @@ class WaveDirector {
       this.game.particles.spawnComicText(this.game.player.x, this.game.player.y - 80, "REINFORCEMENTS!", "#FF2AD4");
     }
 
-    // Spawn 2 Yellow and 2 Magenta troops
-    this.spawnAt(5, 12, 'YELLOW');
-    this.spawnAt(12, 5, 'YELLOW');
+    // Spawn 2 Yellow and 2 Magenta troops on clear open floor
+    this.spawnAt(9, 12, 'YELLOW');
+    this.spawnAt(13, 7, 'YELLOW');
     this.spawnAt(13, 11, 'MAGENTA');
-    this.spawnAt(7, 4, 'MAGENTA');
+    this.spawnAt(11, 8, 'MAGENTA');
     this.enemiesRemainingInPhase = 4;
   }
 
@@ -383,7 +383,7 @@ class WaveDirector {
       this.game.particles.spawnComicText(this.game.player.x, this.game.player.y - 80, "RED + MAGENTA INCOMING!", "#FF2A4D");
     }
 
-    this.spawnAt(11, 4, 'RED');
+    this.spawnAt(11, 7, 'RED');
     this.spawnAt(14, 11, 'MAGENTA');
     this.enemiesRemainingInPhase = 2;
   }
@@ -400,7 +400,7 @@ class WaveDirector {
     }
 
     this.spawnAt(14, 13, 'BLUE');
-    this.spawnAt(5, 12, 'CYAN');
+    this.spawnAt(9, 11, 'CYAN');
     this.enemiesRemainingInPhase = 2;
   }
 
@@ -415,8 +415,8 @@ class WaveDirector {
       this.game.particles.spawnComicText(this.game.player.x, this.game.player.y - 80, "GREEN + YELLOW INCOMING!", "#00FF66");
     }
 
-    this.spawnAt(4, 13, 'GREEN');
-    this.spawnAt(13, 3, 'YELLOW');
+    this.spawnAt(9, 13, 'GREEN');
+    this.spawnAt(14, 7, 'YELLOW');
     this.enemiesRemainingInPhase = 2;
   }
 
@@ -464,9 +464,9 @@ class WaveDirector {
     );
 
     // Initial spawn: CYM trio
-    this.spawnAt(11, 4, 'CYAN');
-    this.spawnAt(13, 5, 'YELLOW');
-    this.spawnAt(14, 11, 'MAGENTA');
+    this.spawnAt(8, 6, 'CYAN');
+    this.spawnAt(24, 11, 'YELLOW');
+    this.spawnAt(7, 13, 'MAGENTA');
 
     // Spawn the Black Boss at upper center dais
     const bossPos = (this.game.arena && this.game.arena.toScreen)
@@ -516,9 +516,9 @@ class WaveDirector {
 
   spawnL3MinionSet(setType) {
     const minionCoords = [
-      { col: 11, row: 4 },
-      { col: 14, row: 11 },
-      { col: 5, row: 12 }
+      { col: 8, row: 6 },
+      { col: 24, row: 11 },
+      { col: 7, row: 13 }
     ];
 
     if (setType === 'RGB') {
@@ -602,9 +602,9 @@ class WaveDirector {
     const missingColors = targetSet.filter(c => !livingColors.includes(c));
 
     const minionCoords = [
-      { col: 11, row: 4 },
-      { col: 14, row: 11 },
-      { col: 5, row: 12 }
+      { col: 8, row: 6 },
+      { col: 24, row: 11 },
+      { col: 7, row: 13 }
     ];
 
     if (missingColors.length > 0) {

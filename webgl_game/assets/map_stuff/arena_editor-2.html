@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Isometric Arena Editor</title>
+<style>
+:root{--bg:#12151c;--panel:#1b2030;--line:#2e3650;--tx:#dfe6f5;--mut:#8b96b2;--ac:#4da3ff}
+*{box-sizing:border-box}html,body{height:100%;margin:0;background:var(--bg);color:var(--tx);font:13px system-ui,sans-serif}
+#app{display:flex;height:100%}#stage{flex:1;position:relative;min-width:0}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#side{width:320px;background:var(--panel);border-left:1px solid var(--line);overflow:auto;padding:12px}
+h3{margin:0 0 8px}h4{margin:14px 0 6px;color:var(--mut);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+button{background:#262d44;color:var(--tx);border:1px solid var(--line);border-radius:6px;padding:6px 8px;cursor:pointer;font:inherit}
+button:hover{border-color:var(--ac)}button.on{background:var(--ac);color:#06101e;border-color:var(--ac)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}.row{display:flex;gap:6px;align-items:center;margin:4px 0}
+input[type=number],input[type=text]{width:100%;background:#10131b;color:var(--tx);border:1px solid var(--line);border-radius:5px;padding:4px 6px;font:inherit}
+.shape{display:flex;gap:6px;align-items:center;padding:4px 6px;border-radius:5px;cursor:pointer}.shape.sel{background:#262d44}
+.dot{width:10px;height:10px;border-radius:50%}.x{margin-left:auto;padding:0 6px}
+#status{color:var(--mut);margin-top:8px;min-height:36px}#help{color:var(--mut);font-size:12px;line-height:1.5}
+#empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--mut);pointer-events:none;text-align:center}
+label{display:flex;gap:6px;align-items:center;margin:3px 0}
+</style></head><body>
+<div id="app">
+ <div id="stage"><canvas id="cv"></canvas><div id="empty">Load your map image<br>(button on the right, or drag &amp; drop it here)</div></div>
+ <div id="side">
+  <h3>Isometric Arena Editor</h3>
+  <div class="row"><button id="bImg">Load image…</button><button id="bJson">Load JSON…</button></div>
+  <input type="file" id="fImg" accept="image/*" hidden><input type="file" id="fJson" accept=".json" hidden>
+
+  <h4>Tool</h4>
+  <div class="grid" id="tools">
+   <button data-t="select">Select / edit (V)</button><button data-t="corners">Grid corners (C)</button>
+   <button data-t="walk">+ Walkable area (W)</button><button data-t="block">+ Obstacle (B)</button>
+   <button data-t="occ">+ Occluder (O)</button><button data-t="spawn">Set spawn (S)</button>
+  </div>
+
+  <h4>Grid</h4>
+  <div class="row"><span>cols</span><input type="number" id="cols" min="4" max="200" value="36"><span>rows</span><input type="number" id="rows" min="4" max="200" value="24"></div>
+  <div class="row"><span title="Number of corners of the arena outline. 4 = plain rectangle, 6 = hexagon, 8 = octagon…">outline corners</span><input type="number" id="nCorn" min="4" max="24" value="4"></div>
+  <div class="row"><button data-n="4">Rect</button><button data-n="6">Hex</button><button data-n="8">Octagon</button></div>
+  <label><input type="checkbox" id="outWalk" checked>Outline itself is walkable</label>
+  <label><input type="checkbox" id="showGrid" checked>Show grid</label>
+  <label><input type="checkbox" id="showWalk" checked>Show walkable / blocked tiles</label>
+  <label><input type="checkbox" id="strict">Strict edges (whole tile must be inside)</label>
+
+  <h4>Shapes</h4>
+  <div id="list"></div><div id="insp"></div>
+
+  <h4>Export</h4>
+  <div class="grid"><button id="bExp">map_collision.json</button><button id="bPng">Occluder PNGs</button></div>
+  <div id="status"></div>
+  <h4>How to use</h4>
+  <div id="help">
+   1. Load image. Choose <b>Grid corners</b> and drag the 4 handles so the grid lines run parallel to the floor tile seams (handles can sit outside the floor/image). Order: top, right, bottom, left.<br>
+   1b. <b>Non-rectangular arena</b>: set <b>outline corners</b> (or click Hex / Octagon). Orange handles A, B, C… appear in the Grid corners tool: drag them to trace the arena edge. Double-click an edge to add a corner, double-click a corner to remove it. The grid is drawn only inside the outline, tiles outside are blocked, and the inside is walkable automatically (untick the option to draw walkable areas yourself).<br>
+   2. <b>Walkable area</b>: click each corner point of the arena. Enter / double-click / click the first point to close. Add as many polygons as you like.<br>
+   3. <b>Obstacle</b>: polygons cut out of the walkable area (reactor, pillars, consoles).<br>
+   4. <b>Occluder</b>: trace the part of an object that should hide / fade when someone walks behind it.<br>
+   5. Export the JSON + occluder PNGs into your game folder.<br><br>
+   Select tool: drag points, double-click a point to delete, double-click an edge to add a point, Del removes the shape. Ctrl+Z undo. Wheel = zoom, Space/middle-drag = pan.
+  </div>
+ </div>
+</div>
+<script>
+const $=s=>document.querySelector(s), cv=$('#cv'), ctx=cv.getContext('2d');
+const COL={walk:'#3ddc84',block:'#ff5a5a',occ:'#ffd23d'};
+let img=null,W=1536,H=1024,Hm=null,R={B:[],O:[],walk:0};
+let S={cols:36,rows:24,corners:[[0,0],[1,0],[1,1],[0,1]],shapes:[],spawn:null,nid:1,outline:null,outWalk:true};
+let tool='select',view={s:1,x:0,y:0},sel=null,draft=null,mouse=[0,0],drag=null,hist=[],space=false,dirty=true;
+
+/* ---------- projection (identical maths to new_map_collision.js) ---------- */
+function homog(){const [[x0,y0],[x1,y1],[x2,y2],[x3,y3]]=S.corners;
+ const dx1=x1-x2,dx2=x3-x2,dx3=x0-x1+x2-x3,dy1=y1-y2,dy2=y3-y2,dy3=y0-y1+y2-y3;
+ const D=dx1*dy2-dx2*dy1,g=(dx3*dy2-dx2*dy3)/D,h=(dx1*dy3-dx3*dy1)/D;
+ return{a:x1-x0+g*x1,b:x3-x0+h*x3,d:y1-y0+g*y1,e:y3-y0+h*y3,g,h,x0,y0};}
+function g2s(c,r){const m=Hm,u=c/S.cols,v=r/S.rows,w=m.g*u+m.h*v+1;return[(m.a*u+m.b*v+m.x0)/w,(m.d*u+m.e*v+m.y0)/w];}
+function s2g(x,y){const m=Hm,[a,b,c,d,e,f,g,h,i]=[m.a,m.b,m.x0,m.d,m.e,m.y0,m.g,m.h,1];
+ const X=(e*i-f*h)*x+(c*h-b*i)*y+(b*f-c*e),Y=(f*g-d*i)*x+(a*i-c*g)*y+(c*d-a*f),Z=(d*h-e*g)*x+(b*g-a*h)*y+(a*e-b*d);
+ return[X/Z*S.cols,Y/Z*S.rows];}
+function pip(p,pts){let ins=false;for(let i=0,j=pts.length-1;i<pts.length;j=i++){const a=pts[i],b=pts[j];
+ if((a[1]>p[1])!==(b[1]>p[1])&&p[0]<(b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1])+a[0])ins=!ins;}return ins;}
+
+/* ---------- rasterise shapes -> blocked grid ---------- */
+function raster(){
+ const ok=t=>S.shapes.filter(s=>s.type===t&&s.pts.length>2),walk=ok('walk'),blk=ok('block'),strict=$('#strict').checked;
+ const B=[],O=[];let n=0;const OL=S.outline&&S.outline.length>2?S.outline:null,ow=OL&&S.outWalk;
+ for(let r=0;r<S.rows;r++){B.push([]);O.push([]);for(let c=0;c<S.cols;c++){
+  const ctr=g2s(c+.5,r+.5),pts=[ctr,g2s(c,r),g2s(c+1,r),g2s(c+1,r+1),g2s(c,r+1)];
+  const inOL=!OL||(strict?pts.every(p=>pip(p,OL)):pip(ctr,OL));
+  const inW=inOL&&(walk.some(s=>strict?pts.every(p=>pip(p,s.pts)):pip(ctr,s.pts))||(ow&&inOL));
+  const inB=blk.some(s=>strict?pts.some(p=>pip(p,s.pts)):pip(ctr,s.pts));
+  const free=inW&&!inB;B[r].push(free?0:1);O[r].push(inB&&inW?1:0);if(free)n++;}}
+ return{B,O,walk:n};}
+function refresh(){try{Hm=homog();R=raster();}catch(e){}dirty=true;list();}
+function footprint(s){ // tile rectangle [c0,r0,c1,r1] used for depth sorting
+ if(s.fp&&s.fp.every(v=>v!==''&&!isNaN(+v)))return s.fp.map(Number);
+ let c0=1e9,r0=1e9,c1=-1,r1=-1;
+ for(let r=0;r<S.rows;r++)for(let c=0;c<S.cols;c++)if(R.O[r]&&R.O[r][c]&&pip(g2s(c+.5,r+.5),s.pts)){
+  c0=Math.min(c0,c);r0=Math.min(r0,r);c1=Math.max(c1,c);r1=Math.max(r1,r);}
+ return c1<0?null:[c0,r0,c1+1,r1+1];}
+
+/* ---------- history ---------- */
+const snap=()=>JSON.stringify({cols:S.cols,rows:S.rows,corners:S.corners,shapes:S.shapes,spawn:S.spawn,nid:S.nid,outline:S.outline,outWalk:S.outWalk});
+function push(){hist.push(snap());if(hist.length>100)hist.shift();}
+function undo(){if(!hist.length)return;Object.assign(S,JSON.parse(hist.pop()));sel=null;draft=null;$('#cols').value=S.cols;$('#rows').value=S.rows;syncOutUI();refresh();}
+
+/* ---------- view helpers ---------- */
+const toImg=(ex,ey)=>[(ex-view.x)/view.s,(ey-view.y)/view.s];
+const tol=()=>9/view.s, dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
+function fit(){const r=cv.getBoundingClientRect();view.s=Math.min(r.width/W,r.height/H)*.96;view.x=(r.width-W*view.s)/2;view.y=(r.height-H*view.s)/2;dirty=true;}
+function resize(){const r=cv.getBoundingClientRect(),d=devicePixelRatio||1;cv.width=r.width*d;cv.height=r.height*d;dirty=true;}
+new ResizeObserver(()=>{resize();if(img&&!view.fitted){fit();view.fitted=1}}).observe(cv);
+
+/* ---------- drawing ---------- */
+function poly(pts,close=true){ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));if(close)ctx.closePath();}
+function render(){
+ const d=devicePixelRatio||1;ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);
+ ctx.setTransform(d*view.s,0,0,d*view.s,d*view.x,d*view.y);if(!img||!Hm)return;
+ const lw=1/view.s;ctx.lineWidth=lw;ctx.drawImage(img,0,0);
+ if($('#showWalk').checked)for(let r=0;r<S.rows;r++)for(let c=0;c<S.cols;c++){
+  const f=R.B[r][c]===0?'rgba(61,220,132,.2)':R.O[r][c]?'rgba(255,90,90,.35)':null;if(!f)continue;
+  poly([g2s(c,r),g2s(c+1,r),g2s(c+1,r+1),g2s(c,r+1)]);ctx.fillStyle=f;ctx.fill();}
+ if($('#showGrid').checked){ctx.strokeStyle='rgba(80,200,255,.35)';
+  if(S.outline&&S.outline.length>2){ctx.beginPath();for(let r=0;r<S.rows;r++)for(let c=0;c<S.cols;c++){
+    if(!pip(g2s(c+.5,r+.5),S.outline))continue;const a=g2s(c,r),b=g2s(c+1,r),d=g2s(c+1,r+1),e=g2s(c,r+1);
+    ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.lineTo(d[0],d[1]);ctx.lineTo(e[0],e[1]);ctx.closePath();}ctx.stroke();}
+  else{for(let c=0;c<=S.cols;c++){poly([g2s(c,0),g2s(c,S.rows)],false);ctx.stroke();}
+  for(let r=0;r<=S.rows;r++){poly([g2s(0,r),g2s(S.cols,r)],false);ctx.stroke();}}}
+ if(S.outline&&S.outline.length>2){poly(S.outline);ctx.strokeStyle='#ff9f2e';ctx.lineWidth=2*lw;ctx.setLineDash([8*lw,5*lw]);ctx.stroke();ctx.setLineDash([]);}
+ for(const s of S.shapes){if(s.pts.length<2)continue;const k=COL[s.type],on=s===sel;
+  poly(s.pts);ctx.fillStyle=k+(on?'44':'22');if(s.pts.length>2)ctx.fill();ctx.strokeStyle=k;ctx.lineWidth=(on?3:1.8)*lw;ctx.stroke();
+  if(on||tool==='select'){ctx.fillStyle=k;for(const p of s.pts)ctx.fillRect(p[0]-4*lw,p[1]-4*lw,8*lw,8*lw);}}
+ if(draft){const k=COL[draft.type],p=draft.pts;ctx.lineWidth=2*lw;ctx.strokeStyle=k;poly([...p,mouse],false);ctx.stroke();
+  p.forEach((q,i)=>{ctx.fillStyle=i===0&&p.length>2?'#fff':k;ctx.beginPath();ctx.arc(q[0],q[1],(i===0?6:4)*lw,0,7);ctx.fill();});}
+ if(S.spawn){const f=g2s(S.spawn[0]+.5,S.spawn[1]+.5);ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(f[0],f[1],7*lw,0,7);ctx.fill();
+  ctx.fillStyle='#000';ctx.font=`${11*lw}px sans-serif`;ctx.fillText('S',f[0]-3*lw,f[1]+4*lw);}
+ if(tool==='corners'){S.corners.forEach((p,i)=>{ctx.fillStyle='#4da3ff';ctx.beginPath();ctx.arc(p[0],p[1],9*lw,0,7);ctx.fill();
+  ctx.fillStyle='#06101e';ctx.font=`bold ${12*lw}px sans-serif`;ctx.fillText(i+1,p[0]-3.5*lw,p[1]+4*lw);});
+  ctx.strokeStyle='#4da3ff';ctx.lineWidth=2*lw;poly(S.corners);ctx.stroke();
+  if(S.outline)S.outline.forEach((p,i)=>{ctx.fillStyle='#ff9f2e';ctx.beginPath();ctx.arc(p[0],p[1],8*lw,0,7);ctx.fill();
+   ctx.fillStyle='#1a0e00';ctx.font=`bold ${11*lw}px sans-serif`;ctx.fillText(String.fromCharCode(65+i%26),p[0]-3.5*lw,p[1]+4*lw);});}
+}
+(function loop(){if(dirty){dirty=false;render();}requestAnimationFrame(loop);})();
+
+/* ---------- input ---------- */
+function setTool(t){tool=t;draft=null;document.querySelectorAll('#tools button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+ cv.style.cursor=t==='select'||t==='corners'?'default':'crosshair';dirty=true;}
+function hitVertex(p){for(let k=S.shapes.length-1;k>=0;k--){const s=S.shapes[k];for(let i=0;i<s.pts.length;i++)if(dist(p,s.pts[i])<tol())return{s,i};}return null;}
+function hitEdge(p){for(const s of S.shapes)for(let i=0;i<s.pts.length;i++){const a=s.pts[i],b=s.pts[(i+1)%s.pts.length],l=dist(a,b)||1;
+ const t=Math.max(0,Math.min(1,((p[0]-a[0])*(b[0]-a[0])+(p[1]-a[1])*(b[1]-a[1]))/(l*l)));
+ if(dist(p,[a[0]+t*(b[0]-a[0]),a[1]+t*(b[1]-a[1])])<tol())return{s,i:i+1};}return null;}
+function finish(){if(!draft)return;if(draft.pts.length>=3){push();const n=S.nid++;
+  const s={id:n,type:draft.type,name:(draft.type==='occ'?'occluder':draft.type)+n,pts:draft.pts};if(s.type==='occ'){s.fade=0.4;s.fp=null;}
+  S.shapes.push(s);sel=s;refresh();}draft=null;dirty=true;}
+cv.addEventListener('contextmenu',e=>e.preventDefault());
+cv.addEventListener('pointerdown',e=>{if(!img)return;cv.setPointerCapture(e.pointerId);
+ const r=cv.getBoundingClientRect(),ex=e.clientX-r.left,ey=e.clientY-r.top,p=toImg(ex,ey);
+ if(e.button===1||e.button===2||space){drag={k:'pan',ex,ey,vx:view.x,vy:view.y};return;}
+ if(tool==='corners'){const o=S.outline?S.outline.findIndex(c=>dist(p,c)<12/view.s):-1;
+  if(o>=0){push();drag={k:'ocorner',i:o};return;}
+  const i=S.corners.findIndex(c=>dist(p,c)<12/view.s);if(i>=0){push();drag={k:'corner',i};}return;}
+ if(tool==='select'){const v=hitVertex(p);if(v){push();sel=v.s;drag={k:'vtx',v};}
+  else{sel=null;for(let k=S.shapes.length-1;k>=0;k--)if(S.shapes[k].pts.length>2&&pip(p,S.shapes[k].pts)){sel=S.shapes[k];break;}}list();dirty=true;return;}
+ if(tool==='spawn'){const[c,rr]=s2g(...p);push();S.spawn=[Math.floor(c),Math.floor(rr)];dirty=true;status();return;}
+ if(!draft)draft={type:tool,pts:[p]};
+ else if(draft.pts.length>2&&dist(p,draft.pts[0])<tol()){finish();}
+ else draft.pts.push(p);dirty=true;});
+cv.addEventListener('pointermove',e=>{const r=cv.getBoundingClientRect(),ex=e.clientX-r.left,ey=e.clientY-r.top;mouse=toImg(ex,ey);
+ if(drag){if(drag.k==='pan'){view.x=drag.vx+ex-drag.ex;view.y=drag.vy+ey-drag.ey;}
+  else if(drag.k==='corner'){S.corners[drag.i]=[...mouse];refresh();}
+  else if(drag.k==='ocorner'){S.outline[drag.i]=[...mouse];refresh();}
+  else if(drag.k==='vtx'){drag.v.s.pts[drag.v.i]=[...mouse];refresh();}}
+ if(Hm){const[c,rr]=s2g(...mouse);status(`tile (${Math.floor(c)}, ${Math.floor(rr)})`);}dirty=true;});
+cv.addEventListener('pointerup',()=>{if(drag&&drag.k!=='pan')refresh();drag=null;});
+cv.addEventListener('dblclick',e=>{if(!img)return;const r=cv.getBoundingClientRect(),p=toImg(e.clientX-r.left,e.clientY-r.top);
+ if(draft){const q=draft.pts;if(q.length>1&&dist(q[q.length-1],q[q.length-2])<2/view.s)q.pop();finish();return;}
+ if(tool==='corners'&&S.outline){const o=S.outline.findIndex(c=>dist(p,c)<12/view.s);
+  if(o>=0){if(S.outline.length>3){push();S.outline.splice(o,1);syncOutUI();refresh();}return;}
+  const OL=S.outline;for(let i=0;i<OL.length;i++){const a=OL[i],b=OL[(i+1)%OL.length],l=dist(a,b)||1;
+   const t=Math.max(0,Math.min(1,((p[0]-a[0])*(b[0]-a[0])+(p[1]-a[1])*(b[1]-a[1]))/(l*l)));
+   if(dist(p,[a[0]+t*(b[0]-a[0]),a[1]+t*(b[1]-a[1])])<tol()){push();OL.splice(i+1,0,p);syncOutUI();refresh();return;}}return;}
+ if(tool!=='select')return;const v=hitVertex(p);
+ if(v&&v.s.pts.length>3){push();v.s.pts.splice(v.i,1);refresh();}
+ else if(!v){const h=hitEdge(p);if(h){push();h.s.pts.splice(h.i,0,p);sel=h.s;refresh();}}});
+cv.addEventListener('wheel',e=>{e.preventDefault();const r=cv.getBoundingClientRect(),ex=e.clientX-r.left,ey=e.clientY-r.top,f=e.deltaY<0?1.15:1/1.15;
+ view.x=ex-(ex-view.x)*f;view.y=ey-(ey-view.y)*f;view.s*=f;dirty=true;},{passive:false});
+addEventListener('keydown',e=>{if(/INPUT|TEXTAREA/.test(e.target.tagName)&&e.target.type!=='checkbox')return;
+ if(e.code==='Space'){space=true;e.preventDefault();return;}
+ if((e.ctrlKey||e.metaKey)&&e.key==='z'){undo();e.preventDefault();return;}
+ const m={v:'select',c:'corners',w:'walk',b:'block',o:'occ',s:'spawn'}[e.key.toLowerCase()];if(m&&!e.ctrlKey)setTool(m);
+ if(e.key==='Enter')finish();if(e.key==='Escape'){draft=null;dirty=true;}
+ if((e.key==='Delete'||e.key==='Backspace')&&sel){push();S.shapes=S.shapes.filter(s=>s!==sel);sel=null;refresh();}});
+addEventListener('keyup',e=>{if(e.code==='Space')space=false;});
+document.querySelectorAll('#tools button').forEach(b=>b.onclick=()=>setTool(b.dataset.t));
+
+/* ---------- side panel ---------- */
+function list(){const L=$('#list');L.innerHTML='';
+ S.shapes.forEach(s=>{const d=document.createElement('div');d.className='shape'+(s===sel?' sel':'');
+  d.innerHTML=`<span class="dot" style="background:${COL[s.type]}"></span><span>${s.name}</span><small style="color:var(--mut)">${s.type} · ${s.pts.length} pts</small><button class="x">×</button>`;
+  d.onclick=()=>{sel=s;list();dirty=true;};
+  d.querySelector('.x').onclick=ev=>{ev.stopPropagation();push();S.shapes=S.shapes.filter(q=>q!==s);if(sel===s)sel=null;refresh();};L.appendChild(d);});
+ const I=$('#insp');I.innerHTML='';if(!sel)return;
+ I.innerHTML=`<div class="row"><span>name</span><input type="text" id="iName" value="${sel.name}"></div>`;
+ $('#iName').onchange=e=>{sel.name=e.target.value.replace(/[^\w-]/g,'_')||sel.name;list();};
+ if(sel.type==='occ'){const fp=footprint(sel),v=sel.fp||['','','',''];
+  I.innerHTML+=`<div class="row"><span>fade</span><input type="number" id="iFade" min="0" max="1" step="0.05" value="${sel.fade}"></div>
+  <div class="row"><span>footprint</span>${[0,1,2,3].map(i=>`<input type="number" class="fp" data-i="${i}" placeholder="${fp?fp[i]:'?'}" value="${v[i]}">`).join('')}</div>
+  <small style="color:var(--mut)">Footprint = tile rect c0,r0,c1,r1 used for “behind” tests. Blank = auto from the obstacle under this occluder${fp?'':' (none found – draw an obstacle there)'}.</small>`;
+  $('#iName').onchange=e=>{sel.name=e.target.value.replace(/[^\w-]/g,'_')||sel.name;list();};
+  $('#iFade').onchange=e=>{sel.fade=+e.target.value;};
+  document.querySelectorAll('.fp').forEach(el=>el.onchange=()=>{const a=[...document.querySelectorAll('.fp')].map(x=>x.value);sel.fp=a.every(x=>x==='')?null:a;});}}
+function status(extra){const tot=S.cols*S.rows;$('#status').textContent=`${R.walk}/${tot} tiles walkable`+(extra?'  ·  '+extra:'')+(S.spawn&&R.B[S.spawn[1]]&&R.B[S.spawn[1]][S.spawn[0]]?'  ·  ⚠ spawn is on a blocked tile':'');}
+$('#cols').onchange=$('#rows').onchange=()=>{push();S.cols=Math.max(4,+$('#cols').value||36);S.rows=Math.max(4,+$('#rows').value||24);refresh();status();};
+function makeOutline(n){if(n<=4||!Hm){S.outline=null;return;}
+ const cx=S.cols/2,cy=S.rows/2,a0=n%2?-Math.PI/2:0;
+ S.outline=Array.from({length:n},(_,i)=>{const a=a0+2*Math.PI*i/n;return g2s(cx+Math.cos(a)*cx,cy+Math.sin(a)*cy);});}
+function syncOutUI(){$('#nCorn').value=S.outline?S.outline.length:4;$('#outWalk').checked=S.outWalk!==false;}
+$('#nCorn').onchange=()=>{const n=Math.max(4,Math.min(24,Math.round(+$('#nCorn').value)||4));push();makeOutline(n);syncOutUI();refresh();status();};
+document.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{$('#nCorn').value=b.dataset.n;$('#nCorn').onchange();setTool('corners');});
+$('#outWalk').onchange=()=>{S.outWalk=$('#outWalk').checked;refresh();status();};
+['showGrid','showWalk','strict'].forEach(id=>$('#'+id).onchange=()=>refresh());
+
+/* ---------- load / export ---------- */
+function setImage(url){const i=new Image();i.onload=()=>{img=i;W=i.naturalWidth;H=i.naturalHeight;$('#empty').style.display='none';
+  if(S.corners[1][0]<=1)S.corners=[[.5*W,.17*H],[.95*W,.51*H],[.5*W,.88*H],[.06*W,.51*H]];
+  resize();fit();view.fitted=1;setTool('corners');refresh();status();};i.src=url;}
+$('#bImg').onclick=()=>$('#fImg').click();$('#bJson').onclick=()=>$('#fJson').click();
+$('#fImg').onchange=e=>e.target.files[0]&&setImage(URL.createObjectURL(e.target.files[0]));
+function loadJSON(txt){const d=JSON.parse(txt);push();S.cols=d.cols;S.rows=d.rows;S.corners=d.corners;S.spawn=d.spawn||null;S.outline=d.outline||null;S.outWalk=d.outWalk!==false;
+ if(d.editor&&d.editor.shapes){S.shapes=d.editor.shapes;S.nid=Math.max(0,...S.shapes.map(s=>s.id||0))+1;}
+ else alert('This JSON has no editor data (it wasn’t made with this editor). Grid and corners loaded; draw the shapes again.');
+ $('#cols').value=S.cols;$('#rows').value=S.rows;syncOutUI();refresh();status();}
+$('#fJson').onchange=e=>e.target.files[0]&&e.target.files[0].text().then(loadJSON);
+addEventListener('dragover',e=>e.preventDefault());
+addEventListener('drop',e=>{e.preventDefault();const f=e.dataTransfer.files[0];if(!f)return;
+ if(f.name.endsWith('.json'))f.text().then(loadJSON);else setImage(URL.createObjectURL(f));});
+const dl=(blob,name)=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);};
+$('#bExp').onclick=()=>{if(!img)return;
+ const occ=S.shapes.filter(s=>s.type==='occ'&&s.pts.length>2),bad=occ.filter(s=>!footprint(s));
+ if(bad.length&&!confirm('Occluder(s) without a footprint: '+bad.map(s=>s.name).join(', ')+'\nDraw an obstacle under them (or enter a footprint). Export anyway?'))return;
+ let sp=S.spawn;if(!sp){let best=1e9;for(let r=0;r<S.rows;r++)for(let c=0;c<S.cols;c++)if(!R.B[r][c]){const q=Math.hypot(c-S.cols/2,r-S.rows/2);if(q<best){best=q;sp=[c,r];}}}
+ const out={cols:S.cols,rows:S.rows,corners:S.corners,outline:S.outline,outWalk:S.outWalk,blocked:R.B,spawn:sp||[0,0],tile:{w:1,h:1},
+  occluders:occ.map(s=>({name:s.name,footprint:footprint(s),fade:s.fade,image:s.name+'_front.png',silhouette:s.pts.map(p=>p.map(v=>Math.round(v*10)/10))})),
+  editor:{image:{w:W,h:H},shapes:S.shapes}};
+ dl(new Blob([JSON.stringify(out)],{type:'application/json'}),'map_collision.json');};
+$('#bPng').onclick=async()=>{if(!img)return;const occ=S.shapes.filter(s=>s.type==='occ'&&s.pts.length>2);
+ if(!occ.length){alert('No occluder shapes yet.');return;}
+ for(const s of occ){const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+  x.beginPath();s.pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.closePath();x.clip();x.drawImage(img,0,0);
+  try{const b=await new Promise((ok,no)=>c.toBlob(b=>b?ok(b):no(),'image/png'));dl(b,s.name+'_front.png');}
+  catch(err){alert('Could not export PNG (image must be loaded with the Load image button, not from a URL).');return;}
+  await new Promise(r=>setTimeout(r,400));}};
+setTool('select');
+</script></body></html>

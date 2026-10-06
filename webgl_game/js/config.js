@@ -263,7 +263,9 @@ const GAME_CONFIG = {
   playerDashDuration: 0.22,
   playerDashCooldown: 1.2,
   playerMaxHealth: 3,
-  laserSpeed: 650,
+  laserSpeed: 487.5, // Decreased to 75% (was 650)
+  enemyLaserSpeed: 315, // Decreased to 75% (was 420)
+  bossLaserSpeed: 232.5, // Decreased to 75% (was 310)
   laserLifetime: 1.6,
   laserCooldown: 0.22,
   whiteLightRadius: 50,
