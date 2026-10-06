@@ -714,6 +714,9 @@ class BlackBoss extends Enemy {
         // Notify game engine
         if (window.game) {
           window.game.physicsInverted = true;
+          if (window.game.unlockHelpCapability) {
+            window.game.unlockHelpCapability('inversion');
+          }
           window.game.particles.spawnComicText(this.x, this.y - 120, "PHYSICS INVERTED!", "#00F0FF");
           if (window.game.waves && window.game.waves.onBossPhysicsInversionActivated) {
             window.game.waves.onBossPhysicsInversionActivated();

@@ -323,6 +323,9 @@ class WaveDirector {
 
   onBlackBarrelDestroyed() {
     this.cleared = true;
+    if (this.game.unlockHelpCapability) {
+      this.game.unlockHelpCapability('dash');
+    }
     if (this.game.showStopTutorial) {
       this.game.showStopTutorial(
         'l1_dash_unlocked',

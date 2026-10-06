@@ -10,6 +10,20 @@
   <div id="gameContainer">
     <canvas id="gameCanvas" width="1280" height="720"></canvas>
 
+    <!-- In-Game Top-Right HUD Action Controls (Pause & Help) -->
+    <div id="inGameTopHud" class="comic-hud-action-bar">
+      <button id="inGamePauseBtn" class="comic-hud-hud-btn pause-hud-btn" title="Pause Mission [ESC / P]">
+        <span class="hud-btn-key">ESC</span>
+        <span class="hud-btn-icon">&#x23F8;&#xFE0F;</span>
+        <span class="hud-btn-text">PAUSE</span>
+      </button>
+      <button id="inGameHelpBtn" class="comic-hud-hud-btn help-hud-btn" title="Open RGB Venn Diagram Help [H]">
+        <span class="hud-btn-key">H</span>
+        <span class="hud-btn-icon">&#x26A1;</span>
+        <span class="hud-btn-text">HELP</span>
+      </button>
+    </div>
+
     <!-- Star Wars Authentic Comic-Strip Level Menu Overlay -->
     <div id="comicMenu" class="comic-menu-overlay">
       <!-- Comic Header Strip (Star Wars 1970s Marvel style) -->
@@ -196,6 +210,7 @@
         <div><span>[MOUSE]</span> AIM &amp; SHOOT</div>
         <div><span>[1-6 / Q-E / SCROLL]</span> LASER COLOR</div>
         <!-- <div><span>[SPACE / RMB]</span> DASH</div> -->
+        <div><span>[H]</span> COLOR GUIDE</div>
         <div><span>[F]</span> FULLSCREEN</div>
         <div><span>[M]</span> AUDIO</div>
       </div>
@@ -264,36 +279,258 @@
         <!-- Action Buttons -->
         <div class="pause-modal-actions">
           <button id="pauseResumeBtn" class="comic-btn">RESUME</button>
-          <button id="pauseInstructionsBtn" class="comic-btn" style="background: #00F0FF; color: #000; box-shadow: 4px 4px 0 #FFE600;">&#x1F4DC; INSTRUCTIONS</button>
           <button id="pauseRestartBtn" class="comic-btn secondary">RESTART</button>
           <button id="pauseMenuBtn" class="comic-btn secondary">COMIC STRIP</button>
         </div>
+      </div>
+    </div>
 
-        <!-- Level Hints & Color Counter Reference (At the bottom of Escape menu) -->
-        <div class="pause-hints-section">
-          <div class="pause-hints-header">&#x1F4A1; LEVEL 1 TACTICAL HINTS &amp; COLOR COUNTERS</div>
-          <div class="hints-grid">
-            <div class="hint-card">
-              <div class="hint-title" style="color: #00F0FF;">&#x25C6; CYAN TROOPS</div>
-              <p>Eliminate with <b>RED LASER [1]</b>.<br>Drops <span style="color: #FF4D66;">RED ORBS</span>.</p>
+    <!-- RGB Venn Diagram Tactical Help Modal Overlay -->
+    <div id="helpVennModal" class="help-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle">
+      <div class="comic-modal-box help-modal-box">
+        <!-- Header Strip -->
+        <div class="help-modal-header">
+          <div class="help-header-badges">
+            <span class="help-badge-tag" id="helpMissionBadge">&#x26A1; MISSION 01 INTEL</span>
+            <span class="help-badge-key">KEY [H]</span>
+            <span class="help-status-badge">&#x23F8;&#xFE0F; GAME PAUSED</span>
+          </div>
+          <h2 id="helpModalTitle" class="help-modal-title">SPECTRUM COMBAT CODEX</h2>
+          <p class="help-modal-subtitle" id="helpModalSubtitle">RGB ADDITIVE LIGHT MATRIX &bull; ENEMY WEAPON COUNTER GUIDE</p>
+          <button id="helpModalCloseX" class="help-close-x" aria-label="Close Help Modal" title="Close [ESC]">&times;</button>
+        </div>
+
+        <!-- Main 2-Column Content Grid -->
+        <div class="help-grid-layout">
+          <!-- Left Column: Venn Diagram & Tactical Readout -->
+          <div class="help-venn-column">
+            <div class="venn-diagram-container">
+              <svg id="rgbVennSvg" class="rgb-venn-svg" viewBox="0 0 520 450" preserveAspectRatio="xMidYMid meet">
+                <defs>
+                  <!-- Glowing Filters -->
+                  <filter id="vennGlow" x="-30%" y="-30%" width="160%" height="160%">
+                    <feGaussianBlur stdDeviation="6" result="blur" />
+                    <feMerge>
+                      <feMergeNode in="blur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                  <filter id="laserBeamGlow" x="-40%" y="-40%" width="180%" height="180%">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
+                    <feMerge>
+                      <feMergeNode in="blur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+
+                  <!-- Radial Gradients for Additive Primaries -->
+                  <radialGradient id="gradRed" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#FF385C" stop-opacity="0.95" />
+                    <stop offset="70%" stop-color="#FF1A40" stop-opacity="0.8" />
+                    <stop offset="100%" stop-color="#D60029" stop-opacity="0.25" />
+                  </radialGradient>
+                  <radialGradient id="gradGreen" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#34F56E" stop-opacity="0.95" />
+                    <stop offset="70%" stop-color="#1FE055" stop-opacity="0.8" />
+                    <stop offset="100%" stop-color="#0A9E32" stop-opacity="0.25" />
+                  </radialGradient>
+                  <radialGradient id="gradBlue" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#3B92FF" stop-opacity="0.95" />
+                    <stop offset="70%" stop-color="#217AFF" stop-opacity="0.8" />
+                    <stop offset="100%" stop-color="#0A50D6" stop-opacity="0.25" />
+                  </radialGradient>
+                  <radialGradient id="gradWhiteCore" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#FFFFFF" stop-opacity="1" />
+                    <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.95" />
+                    <stop offset="100%" stop-color="#FFE600" stop-opacity="0.2" />
+                  </radialGradient>
+                </defs>
+
+                <!-- Outer Radar Housing -->
+                <rect x="5" y="5" width="510" height="440" rx="16" fill="#080C1B" stroke="#1D2748" stroke-width="2" />
+                <circle cx="260" cy="240" r="208" fill="#0A0F24" stroke="#192342" stroke-width="1.5" stroke-dasharray="6 8" />
+                <circle cx="260" cy="240" r="160" fill="none" stroke="#1C2748" stroke-width="1" stroke-dasharray="3 5" />
+
+                <!-- Additive Primary Circles with Screen Blend -->
+                <g class="venn-additive-circles" style="isolation: isolate;">
+                  <!-- RED Circle (Top) -->
+                  <circle id="vennCircleR" cx="260" cy="178" r="120" fill="url(#gradRed)" style="mix-blend-mode: screen;" />
+                  <!-- GREEN Circle (Bottom-Left) -->
+                  <circle id="vennCircleG" cx="206.3" cy="271" r="120" fill="url(#gradGreen)" style="mix-blend-mode: screen;" />
+                  <!-- BLUE Circle (Bottom-Right) -->
+                  <circle id="vennCircleB" cx="313.7" cy="271" r="120" fill="url(#gradBlue)" style="mix-blend-mode: screen;" />
+                </g>
+
+                <!-- Crisp Glowing Boundaries of the 3 Circles -->
+                <circle cx="260" cy="178" r="120" fill="none" stroke="#FF4D6D" stroke-width="2.5" opacity="0.75" />
+                <circle cx="206.3" cy="271" r="120" fill="none" stroke="#2CE070" stroke-width="2.5" opacity="0.75" />
+                <circle cx="313.7" cy="271" r="120" fill="none" stroke="#4D96FF" stroke-width="2.5" opacity="0.75" />
+
+                <!-- Collinear Counter Laser Beams (Straight through Center White) -->
+                <!-- Beam 1: RED <-> CYAN -->
+                <line id="beamRedCyan" class="counter-beam-line" x1="260" y1="125" x2="260" y2="300" stroke="#00F0FF" stroke-width="3" stroke-dasharray="6 4" filter="url(#laserBeamGlow)" />
+                <!-- Beam 2: GREEN <-> MAGENTA -->
+                <line id="beamGreenMagenta" class="counter-beam-line" x1="165" y1="295" x2="308" y2="205" stroke="#FF2AD4" stroke-width="3" stroke-dasharray="6 4" filter="url(#laserBeamGlow)" />
+                <!-- Beam 3: BLUE <-> YELLOW -->
+                <line id="beamBlueYellow" class="counter-beam-line" x1="355" y1="295" x2="212" y2="205" stroke="#FFE600" stroke-width="3" stroke-dasharray="6 4" filter="url(#laserBeamGlow)" />
+
+                <!-- White Light Core Intersection (R + G + B = White) -->
+                <circle cx="260" cy="240" r="30" fill="url(#gradWhiteCore)" filter="url(#vennGlow)" />
+                <circle cx="260" cy="240" r="28" fill="#FFFFFF" stroke="#FFE600" stroke-width="2" />
+
+                <!-- Interactive Color Node Badges -->
+                <!-- 1. RED Node (Primary Top) -->
+                <g id="nodeRed" class="venn-node" data-color="RED" data-counter="CYAN" data-key="1">
+                  <circle cx="260" cy="98" r="26" fill="#180C14" stroke="#FF2A4D" stroke-width="3" filter="url(#vennGlow)" />
+                  <text x="260" y="93" class="node-key-txt" fill="#FF2A4D">[1]</text>
+                  <text x="260" y="108" class="node-name-txt" fill="#FFFFFF">RED</text>
+                  <text x="260" y="65" class="node-sub-txt" fill="#FF4D6D">PRIMARY</text>
+                </g>
+
+                <!-- 2. GREEN Node (Primary Bottom-Left) -->
+                <g id="nodeGreen" class="venn-node" data-color="GREEN" data-counter="MAGENTA" data-key="2">
+                  <circle cx="140" cy="318" r="26" fill="#0A1810" stroke="#22E058" stroke-width="3" filter="url(#vennGlow)" />
+                  <text x="140" y="313" class="node-key-txt" fill="#22E058">[2]</text>
+                  <text x="140" y="328" class="node-name-txt" fill="#FFFFFF">GREEN</text>
+                  <text x="140" y="354" class="node-sub-txt" fill="#2CE070">PRIMARY</text>
+                </g>
+
+                <!-- 3. BLUE Node (Primary Bottom-Right) -->
+                <g id="nodeBlue" class="venn-node" data-color="BLUE" data-counter="YELLOW" data-key="3">
+                  <circle cx="380" cy="318" r="26" fill="#0A1428" stroke="#2A85FF" stroke-width="3" filter="url(#vennGlow)" />
+                  <text x="380" y="313" class="node-key-txt" fill="#2A85FF">[3]</text>
+                  <text x="380" y="328" class="node-name-txt" fill="#FFFFFF">BLUE</text>
+                  <text x="380" y="354" class="node-sub-txt" fill="#4D96FF">PRIMARY</text>
+                </g>
+
+                <!-- 4. CYAN Overlap (Green + Blue = Cyan at Bottom) -->
+                <g id="nodeCyan" class="venn-node" data-color="CYAN" data-counter="RED" data-key="4">
+                  <circle cx="260" cy="326" r="25" fill="#061E24" stroke="#00F0FF" stroke-width="3" filter="url(#vennGlow)" />
+                  <text x="260" y="321" class="node-key-txt" fill="#00F0FF">[4]</text>
+                  <text x="260" y="335" class="node-name-txt" fill="#FFFFFF">CYAN</text>
+                  <text x="260" y="362" class="node-sub-txt" fill="#00F0FF">G + B</text>
+                </g>
+
+                <!-- 5. MAGENTA Overlap (Red + Blue = Magenta at Upper-Right) -->
+                <g id="nodeMagenta" class="venn-node" data-color="MAGENTA" data-counter="GREEN" data-key="5">
+                  <circle cx="330" cy="195" r="25" fill="#240A20" stroke="#FF2AD4" stroke-width="3" filter="url(#vennGlow)" />
+                  <text x="330" y="190" class="node-key-txt" fill="#FF2AD4">[5]</text>
+                  <text x="330" y="204" class="node-name-txt" fill="#FFFFFF">MAGENTA</text>
+                  <text x="330" y="162" class="node-sub-txt" fill="#FF2AD4">R + B</text>
+                </g>
+
+                <!-- 6. YELLOW Overlap (Red + Green = Yellow at Upper-Left) -->
+                <g id="nodeYellow" class="venn-node" data-color="YELLOW" data-counter="BLUE" data-key="6">
+                  <circle cx="190" cy="195" r="25" fill="#242006" stroke="#FFE600" stroke-width="3" filter="url(#vennGlow)" />
+                  <text x="190" y="190" class="node-key-txt" fill="#FFE600">[6]</text>
+                  <text x="190" y="204" class="node-name-txt" fill="#FFFFFF">YELLOW</text>
+                  <text x="190" y="162" class="node-sub-txt" fill="#FFE600">R + G</text>
+                </g>
+
+                <!-- 7. WHITE Center Core (Red + Green + Blue = White) -->
+                <g id="nodeWhite" class="venn-node" data-color="WHITE" data-counter="BLACK" data-key="7">
+                  <text x="260" y="235" class="node-key-txt" fill="#000000">[7]</text>
+                  <text x="260" y="248" class="node-name-txt" fill="#000000" font-weight="900">WHITE</text>
+                  <text x="260" y="278" class="node-sub-txt" fill="#FFFFFF">R+G+B</text>
+                </g>
+
+                <!-- Black Boss Radar Node (Top-Right) -->
+                <g id="nodeBlackBoss" class="venn-boss-node" data-color="BLACK" data-counter="WHITE">
+                  <rect x="360" y="18" width="144" height="42" rx="8" fill="#10111A" stroke="#FF2A4D" stroke-width="2"/>
+                  <text x="432" y="34" class="boss-node-title" fill="#FF2A4D">&#x2605; BLACK BOSS &#x2605;</text>
+                  <text x="432" y="49" class="boss-node-sub" fill="#FFE600">WEAK TO WHITE [7]</text>
+                </g>
+              </svg>
             </div>
-            <div class="hint-card">
-              <div class="hint-title" style="color: #FF33DD;">&#x25C6; MAGENTA TROOPS</div>
-              <p>Eliminate with <b>GREEN LASER [2]</b>.<br>Drops <span style="color: #2CE070;">GREEN ORBS</span>.</p>
-            </div>
-            <div class="hint-card">
-              <div class="hint-title" style="color: #FFE600;">&#x25C6; YELLOW TROOPS</div>
-              <p>Eliminate with <b>BLUE LASER [3]</b>.<br>Drops <span style="color: #4D88FF;">BLUE ORBS</span>.</p>
-            </div>
-            <div class="hint-card">
-              <div class="hint-title" style="color: #FFFFFF;">&#x25C6; ORB CONVERSION</div>
-              <p>Shoot orbs with <b>complementary laser</b> to craft ammo crystals, or walk over them!</p>
-            </div>
-            <div class="hint-card full-span">
-              <div class="hint-title" style="color: #FFE600;">&#x26AA; WHITE LIGHT RECHARGE SANCTUARY</div>
-              <p>Step onto the glowing white circle at the top-center to instantly reload all depleted lasers!</p>
+
+            <!-- Dynamic Tactical Callout Readout Bar -->
+            <div id="tacticalCalloutBar" class="tactical-callout-bar">
+              <div class="callout-icon">&#x26A1;</div>
+              <div id="tacticalCalloutText" class="callout-text">
+                <b>THE OPPOSITE RULE:</b> Shoot the laser directly <u>opposite</u> across the Venn diagram to destroy target enemies!
+              </div>
             </div>
           </div>
+
+          <!-- Right Column: Interactive Weapon Counter Matrix Cards -->
+          <div class="help-matrix-column">
+            <!-- Section 1: Level 1 Counters -->
+            <div class="matrix-card-section" id="sectionMission1">
+              <div class="matrix-section-title">&#x1F4A0; MISSION 01 COUNTERS (CMY ENEMIES)</div>
+              <div class="counter-card" data-pair="CYAN" id="cardCyan">
+                <div class="enemy-pill cyan-pill">&#x25C6; CYAN TROOPS</div>
+                <div class="arrow-counter">&rarr;</div>
+                <div class="weapon-pill red-pill">&#x26A1; SHOOT RED [1]</div>
+              </div>
+              <div class="counter-card" data-pair="MAGENTA" id="cardMagenta">
+                <div class="enemy-pill magenta-pill">&#x25C6; MAGENTA TROOPS</div>
+                <div class="arrow-counter">&rarr;</div>
+                <div class="weapon-pill green-pill">&#x26A1; SHOOT GREEN [2]</div>
+              </div>
+              <div class="counter-card" data-pair="YELLOW" id="cardYellow">
+                <div class="enemy-pill yellow-pill">&#x25C6; YELLOW TROOPS</div>
+                <div class="arrow-counter">&rarr;</div>
+                <div class="weapon-pill blue-pill">&#x26A1; SHOOT BLUE [3]</div>
+              </div>
+            </div>
+
+            <!-- Section 2: Level 2 Counters -->
+            <div class="matrix-card-section" id="sectionMission2">
+              <div class="matrix-section-title">&#x1F534; MISSION 02 COUNTERS (RGB ENEMIES)</div>
+              <div class="counter-card" data-pair="RED" id="cardRed">
+                <div class="enemy-pill red-pill">&#x25C6; RED TROOPS</div>
+                <div class="arrow-counter">&rarr;</div>
+                <div class="weapon-pill cyan-pill">&#x26A1; SHOOT CYAN [4]</div>
+              </div>
+              <div class="counter-card" data-pair="GREEN" id="cardGreen">
+                <div class="enemy-pill green-pill">&#x25C6; GREEN TROOPS</div>
+                <div class="arrow-counter">&rarr;</div>
+                <div class="weapon-pill magenta-pill">&#x26A1; SHOOT MAGENTA [5]</div>
+              </div>
+              <div class="counter-card" data-pair="BLUE" id="cardBlue">
+                <div class="enemy-pill blue-pill">&#x25C6; BLUE TROOPS</div>
+                <div class="arrow-counter">&rarr;</div>
+                <div class="weapon-pill yellow-pill">&#x26A1; SHOOT YELLOW [6]</div>
+              </div>
+            </div>
+
+            <!-- Section 3: Boss Counter -->
+            <div class="matrix-card-section" id="sectionMission3">
+              <div class="matrix-section-title">&#x1F47E; FINAL BOSS WEAKNESS (VOID OVERLORD)</div>
+              <div class="counter-card boss-card" data-pair="WHITE" id="cardBoss">
+                <div class="enemy-pill black-pill">&#x2605; THE BLACK BOSS</div>
+                <div class="arrow-counter">&rarr;</div>
+                <div class="weapon-pill white-pill">&#x26A1; SHOOT WHITE [7]</div>
+              </div>
+            </div>
+
+            <!-- Dynamic Unlocked Combat Abilities & Discoveries -->
+            <div class="matrix-card-section dynamic-capabilities-section" id="capabilitiesSection">
+              <div class="matrix-section-title">&#x26A1; UNLOCKED CAPABILITIES &amp; COMBAT ABILITIES</div>
+              <div id="helpCapabilitiesList" class="capabilities-list">
+                <!-- Dynamically populated by JS: Dash, Hitting Orbs, White Ammo, Sanctuary, Inversion -->
+              </div>
+            </div>
+
+            <!-- Strategic Rules Panel -->
+            <div class="combat-rules-panel">
+              <div class="combat-rule-item">
+                <span class="rule-icon">&#x26A0;&#xFE0F;</span>
+                <div class="rule-text"><b>TRANSFORMATION:</b> Hitting an enemy with the <i>wrong</i> laser transforms them instead of killing them!</div>
+              </div>
+              <div class="combat-rule-item">
+                <span class="rule-icon">&#x26AA;</span>
+                <div class="rule-text"><b>RECHARGE SANCTUARY:</b> Step onto the white glowing sanctuary circle at top-center to reload all 7 lasers!</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="help-modal-actions">
+          <button id="helpResumeBtn" class="comic-btn help-resume-btn pulse-glow">
+            <span class="btn-icon">&#x25B6;</span> RESUME MISSION [H / ESC] <span class="btn-icon">&#x25B6;</span>
+          </button>
         </div>
       </div>
     </div>

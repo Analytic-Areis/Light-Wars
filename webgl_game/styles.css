@@ -1358,3 +1358,774 @@ body, html {
   border: 1px solid #364269;
   letter-spacing: 0.8px;
 }
+
+/* ========================================================
+   RGB VENN DIAGRAM HELP MODAL & IN-GAME HUD HELP BUTTON
+   ======================================================== */
+
+/* Top-Right HUD Action Container (Pause & Help Buttons) */
+.comic-hud-action-bar {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  z-index: 55;
+  display: none;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Floating In-Game HUD Buttons (Common Style) */
+.comic-hud-hud-btn,
+.comic-hud-help-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #101526;
+  border: 3px solid #FFE600;
+  box-shadow: 4px 4px 0 #FF2A4D, 6px 6px 0 #000;
+  padding: 6px 14px;
+  color: #FFE600;
+  font-family: 'Bangers', cursive;
+  font-size: 17px;
+  letter-spacing: 1.2px;
+  cursor: pointer;
+  outline: none;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+  user-select: none;
+}
+
+.comic-hud-hud-btn:hover,
+.comic-hud-help-btn:hover {
+  background: #19223D;
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #FF2A4D, 9px 9px 0 #000;
+  border-color: #00F0FF;
+  color: #00F0FF;
+}
+
+.comic-hud-hud-btn:active,
+.comic-hud-help-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 #FF2A4D, 3px 3px 0 #000;
+}
+
+/* Key Indicator Pill inside HUD buttons */
+.hud-btn-key,
+.hud-help-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  background: #FFE600;
+  color: #000;
+  border-radius: 4px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px;
+  font-weight: 900;
+  border: 1.5px solid #000;
+  transition: background 0.16s ease;
+}
+
+.comic-hud-hud-btn:hover .hud-btn-key,
+.comic-hud-help-btn:hover .hud-help-key {
+  background: #00F0FF;
+}
+
+.hud-btn-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.hud-btn-text,
+.hud-help-text {
+  font-family: 'Bangers', cursive;
+  font-size: 17px;
+  letter-spacing: 1px;
+}
+
+/* Pause Button specific accents */
+.pause-hud-btn {
+  border-color: #00F0FF;
+  box-shadow: 4px 4px 0 #2A85FF, 6px 6px 0 #000;
+  color: #00F0FF;
+}
+
+.pause-hud-btn .hud-btn-key {
+  background: #00F0FF;
+}
+
+.pause-hud-btn:hover {
+  border-color: #FFE600;
+  color: #FFE600;
+  box-shadow: 6px 6px 0 #2A85FF, 9px 9px 0 #000;
+}
+
+.pause-hud-btn:hover .hud-btn-key {
+  background: #FFE600;
+}
+
+/* Help Modal Overlay (Smooth Backdrop Animation) */
+.help-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  background: rgba(3, 5, 12, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  pointer-events: none;
+  cursor: default;
+  transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), backdrop-filter 0.28s ease;
+  will-change: opacity, backdrop-filter;
+}
+
+.help-modal-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Help Modal Box (Smooth Spring Scale Entrance) */
+.help-modal-box {
+  position: relative;
+  max-width: 980px;
+  width: 95%;
+  max-height: 92vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: radial-gradient(circle at 50% 12%, #17213F 0%, #0C1123 60%, #060914 100%);
+  border: 5px solid #FFE600;
+  box-shadow: 0 0 35px rgba(0, 240, 255, 0.28), 9px 9px 0 #FF2A4D, 14px 14px 0 #000;
+  padding: 22px 28px;
+  transform: scale(0.9) translateY(18px);
+  opacity: 0;
+  transition: transform 0.34s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.26s ease;
+  will-change: transform, opacity;
+}
+
+.help-modal-overlay.visible .help-modal-box {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+
+/* Header & Badges */
+.help-modal-header {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.help-header-badges {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.help-badge-tag {
+  background: #FFE600;
+  color: #000;
+  font-weight: 900;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+}
+
+.help-badge-key {
+  background: #00F0FF;
+  color: #000;
+  font-weight: 900;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.help-status-badge {
+  background: rgba(255, 42, 77, 0.25);
+  color: #FF4D6D;
+  border: 1px solid #FF2A4D;
+  font-weight: 800;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.help-modal-title {
+  font-family: 'Bangers', cursive;
+  font-size: 38px;
+  color: #FFE600;
+  text-shadow: 3px 3px 0 #000;
+  letter-spacing: 2px;
+  margin: 1px 0 2px 0;
+}
+
+.help-modal-subtitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: #A2B5E2;
+  letter-spacing: 0.8px;
+}
+
+.help-close-x {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #111628;
+  border: 2px solid #FFE600;
+  border-radius: 50%;
+  color: #FFE600;
+  width: 34px;
+  height: 34px;
+  font-size: 24px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  line-height: 1;
+  transition: transform 0.16s ease, background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+  box-shadow: 2px 2px 0 #000;
+}
+
+.help-close-x:hover {
+  background: #FF2A4D;
+  border-color: #FFF;
+  color: #FFF;
+  transform: scale(1.1) rotate(90deg);
+}
+
+/* 2-Column Grid Layout */
+.help-grid-layout {
+  display: grid;
+  grid-template-columns: 1.12fr 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .help-grid-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Left Column: Venn Diagram Wrap */
+.help-venn-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.venn-diagram-container {
+  width: 100%;
+  background: #070B18;
+  border: 2.5px solid #233054;
+  border-radius: 10px;
+  padding: 6px;
+  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.85);
+  position: relative;
+  overflow: hidden;
+}
+
+.rgb-venn-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  transform-origin: center center;
+  transition: transform 0.3s ease;
+}
+
+.help-modal-overlay.visible .rgb-venn-svg {
+  animation: vennSvgBloom 0.44s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes vennSvgBloom {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Laser Counter Beams (Collinear Lines) */
+.counter-beam-line {
+  stroke-dasharray: 6 4;
+  opacity: 0.35;
+  transition: opacity 0.22s ease, stroke-width 0.22s ease, filter 0.22s ease;
+  animation: beamFlow 1.4s linear infinite;
+}
+
+@keyframes beamFlow {
+  0% {
+    stroke-dashoffset: 20;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.counter-beam-line.is-active-beam {
+  opacity: 1 !important;
+  stroke-width: 5 !important;
+  stroke-dasharray: 8 3 !important;
+  filter: drop-shadow(0 0 8px currentColor) !important;
+}
+
+/* Venn Nodes */
+.venn-node {
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: center center;
+}
+
+.venn-node:hover,
+.venn-node.is-active-node {
+  transform: scale(1.15);
+  filter: drop-shadow(0 0 10px #FFE600);
+}
+
+.node-key-txt {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  font-weight: 900;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+.node-name-txt {
+  font-family: 'Bangers', cursive;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+.node-sub-txt {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  text-anchor: middle;
+  dominant-baseline: central;
+  letter-spacing: 0.5px;
+  pointer-events: none;
+}
+
+.venn-boss-node {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  transform-origin: center center;
+}
+
+.venn-boss-node:hover,
+.venn-boss-node.is-active-node {
+  transform: scale(1.06);
+}
+
+.boss-node-title {
+  font-family: 'Bangers', cursive;
+  font-size: 13px;
+  letter-spacing: 0.8px;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.boss-node-sub {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 9px;
+  font-weight: 800;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+/* Dynamic Tactical Callout Bar */
+.tactical-callout-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #0B1020;
+  border: 2px solid #00F0FF;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-top: 10px;
+  min-height: 48px;
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.22);
+}
+
+.callout-icon {
+  font-size: 22px;
+  color: #FFE600;
+  flex-shrink: 0;
+  animation: calloutPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes calloutPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.22); filter: drop-shadow(0 0 6px #FFE600); }
+}
+
+.callout-text {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #DDE8FC;
+  text-align: left;
+}
+
+/* Right Column: Weapon Counter Matrix Cards */
+.help-matrix-column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.matrix-card-section {
+  background: #0B0F20;
+  border: 2px solid #1F2B4B;
+  border-radius: 8px;
+  padding: 9px 12px;
+}
+
+.matrix-section-title {
+  font-family: 'Bangers', cursive;
+  font-size: 14px;
+  color: #FFE600;
+  letter-spacing: 0.8px;
+  margin-bottom: 7px;
+  text-align: left;
+}
+
+.counter-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #10162B;
+  border: 2px solid #233052;
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-bottom: 5px;
+  cursor: pointer;
+  transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+}
+
+.counter-card:hover,
+.counter-card.is-highlighted {
+  background: #17213E;
+  border-color: #00F0FF;
+  transform: translateX(4px);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.35);
+}
+
+.arrow-counter {
+  color: #8F9EB8;
+  font-weight: 900;
+  font-size: 13px;
+  padding: 0 4px;
+}
+
+/* Pills */
+.enemy-pill {
+  font-size: 11px;
+  font-weight: 900;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1.5px solid currentColor;
+}
+
+.weapon-pill {
+  font-size: 11px;
+  font-weight: 900;
+  padding: 3px 9px;
+  border-radius: 4px;
+  border: 1.5px solid currentColor;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.cyan-pill {
+  color: #00F0FF;
+  border-color: #00F0FF;
+  background: rgba(0, 240, 255, 0.12);
+}
+
+.magenta-pill {
+  color: #FF2AD4;
+  border-color: #FF2AD4;
+  background: rgba(255, 42, 212, 0.12);
+}
+
+.yellow-pill {
+  color: #FFE600;
+  border-color: #FFE600;
+  background: rgba(255, 230, 0, 0.12);
+}
+
+.red-pill {
+  color: #FF2A4D;
+  border-color: #FF2A4D;
+  background: rgba(255, 42, 77, 0.15);
+}
+
+.green-pill {
+  color: #22E058;
+  border-color: #22E058;
+  background: rgba(34, 224, 88, 0.12);
+}
+
+.blue-pill {
+  color: #2A85FF;
+  border-color: #2A85FF;
+  background: rgba(42, 133, 255, 0.15);
+}
+
+.white-pill {
+  color: #FFFFFF;
+  border-color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.black-pill {
+  color: #FF4D6D;
+  border-color: #FF2A4D;
+  background: #141522;
+}
+
+/* Combat rules panel */
+.combat-rules-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #090C1A;
+  border: 1.5px dashed #2A385C;
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.combat-rule-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 11px;
+  color: #ADC0E8;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.rule-icon {
+  font-size: 13px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Footer Actions */
+.help-modal-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 18px;
+  padding-top: 10px;
+  position: relative;
+  z-index: 5;
+  width: 100%;
+}
+
+.help-resume-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: 'Bangers', cursive;
+  font-size: 21px;
+  color: #000;
+  background: linear-gradient(180deg, #FFF033 0%, #FFE600 55%, #FFCC00 100%);
+  padding: 9px 28px;
+  border: 3.5px solid #000;
+  box-shadow: 5px 5px 0 #FF2A4D, 8px 8px 0 #000;
+  cursor: pointer;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  transition: all 0.16s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.help-resume-btn:hover {
+  transform: translate(-2px, -2px) scale(1.03);
+  box-shadow: 7px 7px 0 #FF2A4D, 11px 11px 0 #000;
+  background: #FFF766;
+}
+
+.help-resume-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 3px 3px 0 #FF2A4D, 5px 5px 0 #000;
+}
+
+/* Dynamic Capabilities Section in Help Modal */
+.dynamic-capabilities-section {
+  border-color: #2D3E6B;
+  background: #0A0E1E;
+}
+
+.capabilities-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.capability-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: #0F1528;
+  border: 1.5px solid #233156;
+  border-radius: 6px;
+  padding: 7px 10px;
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+  text-align: left;
+}
+
+.capability-entry.is-unlocked {
+  border-color: #2CE070;
+  background: #0E1A2B;
+  box-shadow: 0 0 10px rgba(44, 224, 112, 0.15);
+}
+
+.capability-entry.is-locked {
+  opacity: 0.65;
+  border-style: dashed;
+  border-color: #28334E;
+}
+
+.capability-entry.is-newly-unlocked {
+  border-color: #FFE600;
+  animation: capUnlockPulse 1.6s ease-in-out infinite;
+  box-shadow: 0 0 14px rgba(255, 230, 0, 0.35);
+}
+
+@keyframes capUnlockPulse {
+  0%, 100% { border-color: #FFE600; box-shadow: 0 0 8px rgba(255, 230, 0, 0.3); }
+  50% { border-color: #00F0FF; box-shadow: 0 0 18px rgba(0, 240, 255, 0.6); }
+}
+
+.capability-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.capability-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.capability-icon {
+  font-size: 14px;
+}
+
+.capability-name {
+  font-family: 'Bangers', cursive;
+  font-size: 14px;
+  color: #FFF;
+  letter-spacing: 0.5px;
+}
+
+.capability-status-tag {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 9.5px;
+  font-weight: 900;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.capability-status-tag.unlocked {
+  background: rgba(44, 224, 112, 0.2);
+  color: #2CE070;
+  border: 1px solid #2CE070;
+}
+
+.capability-status-tag.locked {
+  background: rgba(140, 155, 185, 0.15);
+  color: #8C9BB9;
+  border: 1px solid #3A4662;
+}
+
+.capability-status-tag.new-tag {
+  background: #FFE600;
+  color: #000;
+  font-weight: 900;
+}
+
+.capability-desc {
+  font-size: 11px;
+  line-height: 1.35;
+  color: #BACEEA;
+  margin-top: 1px;
+}
+
+.capability-desc b {
+  color: #FFE600;
+}
+
+.capability-key-pill {
+  display: inline-block;
+  background: #1C2644;
+  color: #00F0FF;
+  border: 1px solid #00F0FF;
+  border-radius: 3px;
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 900;
+  margin-right: 4px;
+}
+
+/* Pulsing HUD help button when new capabilities are unlocked */
+.comic-hud-help-btn.has-new-unlock {
+  animation: hudBtnNewIntelPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes hudBtnNewIntelPulse {
+  0%, 100% {
+    box-shadow: 4px 4px 0 #FF2A4D, 6px 6px 0 #000;
+    border-color: #FFE600;
+  }
+  50% {
+    box-shadow: 0 0 16px #00F0FF, 6px 6px 0 #FF2A4D, 9px 9px 0 #000;
+    border-color: #00F0FF;
+    transform: scale(1.08) translateY(-2px);
+  }
+}
+
+.comic-hud-help-btn.has-new-unlock::after {
+  content: '★';
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #FF2A4D;
+  color: #FFE600;
+  border: 1.5px solid #000;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: starSpin 2s linear infinite;
+}
+
+@keyframes starSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+

@@ -56,7 +56,15 @@ class LightWarsGame {
     this.resetProgressOnLaunch();
 
     this.devMode = false;
-    this.savedProgressBackup = null;
+    // Unlocked Capabilities for dynamic Help Codex progression
+    this.unlockedCapabilities = {
+      recharge: true,
+      orbCrafting: false,
+      dash: false,
+      whiteAmmo: false,
+      inversion: false
+    };
+    this._newlyUnlockedCapabilities = new Set();
 
     this.initWindow();
     this.bindEvents();
@@ -126,7 +134,9 @@ class LightWarsGame {
       }
       if (e.code === 'Escape') {
         if (e.repeat) return; // Prevent glitching/toggling when holding down Escape
-        if (this.state === 'TUTORIAL') {
+        if (this.isHelpModalOpen()) {
+          this.toggleHelpModal(false);
+        } else if (this.state === 'TUTORIAL') {
           this.dismissTutorial();
         } else if (this.state === 'PLAYING') {
           this.togglePauseMenu(true);
@@ -135,9 +145,20 @@ class LightWarsGame {
         }
       }
       if ((e.code === 'Enter' || e.code === 'Space') && this.state === 'TUTORIAL') {
+        if (this.isHelpModalOpen()) return;
         this.dismissTutorial();
       }
-      if (e.code === 'KeyH' || e.code === 'KeyI') {
+      if (e.code === 'KeyH') {
+        if (e.repeat) return;
+        // When on escape pause menu, pressing H must not display anything!
+        const pauseModal = document.getElementById('escapePauseModal');
+        if (pauseModal && pauseModal.style.display === 'flex') {
+          return;
+        }
+        // When on noobiwan chat, display help tab and pressing H again removes it and continues where you left off
+        this.toggleHelpModal();
+      }
+      if (e.code === 'KeyI') {
         if (e.repeat) return;
         if (this.state === 'TUTORIAL') {
           this.dismissTutorial();
@@ -147,7 +168,11 @@ class LightWarsGame {
       }
       if (e.code === 'KeyP' && (this.state === 'PLAYING' || this.state === 'PAUSED')) {
         if (e.repeat) return;
-        this.togglePauseMenu(this.state === 'PLAYING');
+        if (this.isHelpModalOpen()) {
+          this.toggleHelpModal(false);
+        } else {
+          this.togglePauseMenu(this.state === 'PLAYING');
+        }
       }
     });
 
@@ -383,13 +408,56 @@ class LightWarsGame {
       });
     }
 
-    const pauseInstructionsBtn = document.getElementById('pauseInstructionsBtn');
-    if (pauseInstructionsBtn) {
-      pauseInstructionsBtn.addEventListener('click', () => {
-        this.togglePauseMenu(false);
-        this.showInstructionsModal();
+    // In-Game HUD Action Buttons (Pause & Help)
+    const inGamePauseBtn = document.getElementById('inGamePauseBtn');
+    if (inGamePauseBtn) {
+      inGamePauseBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.isHelpModalOpen()) {
+          this.toggleHelpModal(false);
+        }
+        if (this.state === 'PLAYING') {
+          this.togglePauseMenu(true);
+        } else if (this.state === 'PAUSED') {
+          this.togglePauseMenu(false);
+        }
       });
     }
+
+    const inGameHelpBtn = document.getElementById('inGameHelpBtn');
+    if (inGameHelpBtn) {
+      inGameHelpBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleHelpModal(true);
+      });
+    }
+
+    // Help Modal Close / Resume Buttons
+    const helpResumeBtn = document.getElementById('helpResumeBtn');
+    if (helpResumeBtn) {
+      helpResumeBtn.addEventListener('click', () => {
+        this.toggleHelpModal(false);
+      });
+    }
+
+    const helpCloseX = document.getElementById('helpModalCloseX');
+    if (helpCloseX) {
+      helpCloseX.addEventListener('click', () => {
+        this.toggleHelpModal(false);
+      });
+    }
+
+    const helpModal = document.getElementById('helpVennModal');
+    if (helpModal) {
+      helpModal.addEventListener('click', (e) => {
+        if (e.target === helpModal) {
+          this.toggleHelpModal(false);
+        }
+      });
+    }
+
+    this.setupVennDiagramInteractions();
+    this.renderHelpCapabilities();
 
     this.updateComicMenuLockState();
     this.updateComicMenuBossState();
@@ -420,6 +488,472 @@ class LightWarsGame {
         this.state = 'PLAYING';
       }
     }
+  }
+
+  isHelpModalOpen() {
+    const modal = document.getElementById('helpVennModal');
+    return modal && modal.classList.contains('visible');
+  }
+
+  toggleHelpModal(show) {
+    const modal = document.getElementById('helpVennModal');
+    if (!modal) return;
+
+    // Strict requirement: "take care that pressing H when on escape shouldnt display anything"
+    const pauseModal = document.getElementById('escapePauseModal');
+    if (pauseModal && pauseModal.style.display === 'flex') {
+      return; // Do nothing when escape pause menu is open!
+    }
+
+    const isCurrentlyOpen = modal.classList.contains('visible');
+    const shouldOpen = (show !== undefined) ? show : !isCurrentlyOpen;
+
+    if (shouldOpen) {
+      if (isCurrentlyOpen) return;
+
+      // Remember pre-help state to restore upon closing (e.g. 'PLAYING' or 'TUTORIAL')
+      this._savedPreHelpState = this.state || 'PLAYING';
+
+      // Immediately PAUSE the game simulation
+      this.state = 'PAUSED';
+      this.input.isMouseDown = false;
+      this.input.keys = {};
+
+      // Clear any pending newly unlocked badge on HUD button
+      const helpBtn = document.getElementById('inGameHelpBtn');
+      if (helpBtn) {
+        helpBtn.classList.remove('has-new-unlock');
+      }
+      if (this._newlyUnlockedCapabilities) {
+        this._newlyUnlockedCapabilities.clear();
+      }
+
+      // Update Help Codex sections & Venn diagram stage-gated to current mission level
+      this.updateHelpForCurrentLevel();
+
+      // Re-render capability list so all unlocks are fresh
+      this.renderHelpCapabilities();
+
+      if (window.LightWars.sound && window.LightWars.sound.playDialogueAdvance) {
+        window.LightWars.sound.playDialogueAdvance();
+      }
+
+      // Smooth opening animation sequence
+      modal.style.display = 'flex';
+      void modal.offsetWidth; // Force layout reflow so CSS transition begins smoothly from 0
+      requestAnimationFrame(() => {
+        modal.classList.add('visible');
+      });
+    } else {
+      if (!isCurrentlyOpen) return;
+
+      // Smooth closing sequence
+      modal.classList.remove('visible');
+
+      if (window.LightWars.sound && window.LightWars.sound.playDialogueAdvance) {
+        window.LightWars.sound.playDialogueAdvance();
+      }
+
+      // Wait for CSS transition (280ms) before hiding display
+      setTimeout(() => {
+        modal.style.display = 'none';
+
+        // Requirement: "and when on noobiwan chat it should display that help tab and pressing H again should remove it and continue where u left off"
+        this.state = this._savedPreHelpState || 'PLAYING';
+      }, 280);
+    }
+  }
+
+  getCurrentMissionLevel() {
+    if (this.waves && typeof this.waves.level === 'number' && this.waves.level > 0) {
+      return this.waves.level;
+    }
+    if (typeof this._lastLevel === 'number' && this._lastLevel > 0) {
+      return this._lastLevel;
+    }
+    return 1;
+  }
+
+  updateHelpForCurrentLevel() {
+    const lvl = this.getCurrentMissionLevel();
+
+    // Stage-gate Right Column sections
+    // Requirement: "dont show mission 2,3 in Help in 1, first show 1 in m1 then 2 in m2 then 3 in m3"
+    const sec1 = document.getElementById('sectionMission1');
+    const sec2 = document.getElementById('sectionMission2');
+    const sec3 = document.getElementById('sectionMission3');
+    const badge = document.getElementById('helpMissionBadge');
+    const subtitle = document.getElementById('helpModalSubtitle');
+
+    if (sec1) sec1.style.display = 'block'; // Always visible in all missions
+    if (sec2) sec2.style.display = (lvl >= 2) ? 'block' : 'none'; // Only in Mission 2 & 3
+    if (sec3) sec3.style.display = (lvl >= 3) ? 'block' : 'none'; // Only in Mission 3
+
+    // Update Header Badge & Subtitle
+    if (badge) {
+      if (lvl === 1) {
+        badge.textContent = '⚡ MISSION 01 INTEL';
+      } else if (lvl === 2) {
+        badge.textContent = '⚡ MISSION 02 INTEL';
+      } else {
+        badge.textContent = '⚡ MISSION 03 INTEL';
+      }
+    }
+
+    if (subtitle) {
+      if (lvl === 1) {
+        subtitle.textContent = 'MISSION 01: ADDITIVE SPECTRUM & CMY TROOP COUNTERS';
+      } else if (lvl === 2) {
+        subtitle.textContent = 'MISSION 02: ADVANCED RGB TROOPS & COMBAT SYNTHESIS';
+      } else {
+        subtitle.textContent = 'MISSION 03: VOID OVERLORD & WHITE LIGHT CONVERGENCE';
+      }
+    }
+
+    // Stage-gate SVG Venn diagram elements
+    // In Level 1 and 2, hide Black Boss node in SVG
+    const nodeBoss = document.getElementById('nodeBlackBoss');
+    if (nodeBoss) {
+      nodeBoss.style.display = (lvl >= 3) ? 'inline' : 'none';
+    }
+
+    // Center white node text in SVG: in Level 1 & 2 show SANCTUARY, in Level 3 show [7] WHITE
+    const nodeWhite = document.getElementById('nodeWhite');
+    if (nodeWhite) {
+      const keyTxt = nodeWhite.querySelector('.node-key-txt');
+      const nameTxt = nodeWhite.querySelector('.node-name-txt');
+      const subTxt = nodeWhite.querySelector('.node-sub-txt');
+      if (lvl < 3) {
+        if (keyTxt) keyTxt.textContent = '⚪';
+        if (nameTxt) nameTxt.textContent = 'SANCTUARY';
+        if (subTxt) subTxt.textContent = 'RECHARGE';
+      } else {
+        if (keyTxt) keyTxt.textContent = '[7]';
+        if (nameTxt) nameTxt.textContent = 'WHITE';
+        if (subTxt) subTxt.textContent = 'R+G+B';
+      }
+    }
+  }
+
+  unlockHelpCapability(key) {
+    if (!this.unlockedCapabilities) {
+      this.unlockedCapabilities = {
+        recharge: true,
+        orbCrafting: false,
+        dash: false,
+        whiteAmmo: false,
+        inversion: false
+      };
+      this._newlyUnlockedCapabilities = new Set();
+    }
+
+    if (!this.unlockedCapabilities[key]) {
+      this.unlockedCapabilities[key] = true;
+      if (!this._newlyUnlockedCapabilities) this._newlyUnlockedCapabilities = new Set();
+      this._newlyUnlockedCapabilities.add(key);
+
+      // Re-render capability list in Help modal immediately
+      this.renderHelpCapabilities();
+
+      // Trigger notification badge & pulse on in-game [H] Help button
+      const helpBtn = document.getElementById('inGameHelpBtn');
+      if (helpBtn) {
+        helpBtn.classList.add('has-new-unlock');
+        helpBtn.title = 'New Combat Intel Unlocked! Press [H] to view.';
+      }
+
+      // Spawn celebratory in-game comic text if game is currently playing
+      if (this.state === 'PLAYING' && this.particles && this.player) {
+        const labels = {
+          dash: 'DASH UNLOCKED! [H]',
+          orbCrafting: 'ORB CRAFTING UNLOCKED! [H]',
+          whiteAmmo: 'WHITE AMMO UNLOCKED! [H]',
+          inversion: 'INVERSION INTEL ADDED! [H]'
+        };
+        const text = labels[key] || 'NEW INTEL UNLOCKED! [H]';
+        this.particles.spawnComicText(this.player.x, this.player.y - 80, text, '#00F0FF');
+      }
+    }
+  }
+
+  renderHelpCapabilities() {
+    const container = document.getElementById('helpCapabilitiesList');
+    if (!container) return;
+
+    if (!this.unlockedCapabilities) {
+      this.unlockedCapabilities = {
+        recharge: true,
+        orbCrafting: false,
+        dash: false,
+        whiteAmmo: false,
+        inversion: false
+      };
+      this._newlyUnlockedCapabilities = new Set();
+    }
+
+    const currentLvl = this.getCurrentMissionLevel();
+
+    // Dynamic sync with game progression
+    if (this.player && this.player.dashUnlocked) {
+      this.unlockedCapabilities.dash = true;
+    }
+    if (localStorage.getItem('lightwars_dash_unlocked') === 'true' || this.devMode) {
+      this.unlockedCapabilities.dash = true;
+    }
+    if (currentLvl >= 2) {
+      this.unlockedCapabilities.orbCrafting = true;
+      this.unlockedCapabilities.dash = true;
+    }
+    if (currentLvl >= 3) {
+      this.unlockedCapabilities.whiteAmmo = true;
+      this.unlockedCapabilities.inversion = true;
+    }
+    if (this.waves && this.waves.stats && this.waves.stats.orbsCrafted > 0) {
+      this.unlockedCapabilities.orbCrafting = true;
+    }
+
+    const allItems = [
+      {
+        id: 'recharge',
+        minLevel: 1,
+        icon: '⚪',
+        name: 'WHITE LIGHT RECHARGE SANCTUARY',
+        key: 'TOP-CENTER SANCTUARY',
+        desc: 'Step into the glowing white circle at the top of the map to <b>instantly reload all ammo</b> and regenerate shields.',
+        unlocked: true,
+        lockHint: ''
+      },
+      {
+        id: 'orbCrafting',
+        minLevel: 1,
+        icon: '💎',
+        name: 'ORB AMMO SYNTHESIS (HITTING ORBS)',
+        key: 'SHOOT WITH COMPLEMENTARY LASER',
+        desc: 'Shoot dropped enemy energy orbs with <b>complementary lasers</b> to synthesize high-tier <b>Ammo Crystals</b>! Walk over crystals to collect ammo.',
+        unlocked: !!this.unlockedCapabilities.orbCrafting,
+        lockHint: 'Defeat troops to drop orbs and discover synthesis.'
+      },
+      {
+        id: 'dash',
+        minLevel: 1,
+        icon: '⚡',
+        name: 'HIGH-SPEED DASH WARP',
+        key: 'SPACE / RMB',
+        desc: 'Warp at high velocity to <b>dodge enemy lasers</b>, slip through crossfire, and evade dangerous barrel concussions!',
+        unlocked: !!this.unlockedCapabilities.dash,
+        lockHint: 'Destroy the Black Orb in Level 1 to unlock Dash.'
+      },
+      {
+        id: 'whiteAmmo',
+        minLevel: 3,
+        icon: '✨',
+        name: 'WHITE LASER CONVERGENCE [7]',
+        key: 'SYNTHESIZE IN ORB (L3)',
+        desc: 'Shoot complementary lasers into an orb (Red into Cyan orb) to synthesize <b>White Ammo [7]</b>. The Black Boss requires <b>3 White laser strikes</b> to defeat.',
+        unlocked: !!this.unlockedCapabilities.whiteAmmo,
+        lockHint: 'Classified: Unlocked in Mission 03 Boss fight.'
+      },
+      {
+        id: 'inversion',
+        minLevel: 3,
+        icon: '🔄',
+        name: 'REALITY INVERSION COMBAT',
+        key: 'MATCH ENEMY COLOR',
+        desc: 'When the Black Boss distorts reality, light physics inverts for 10s! <b>Same-color lasers destroy enemies</b> (Cyan kills Cyan, Red kills Red).',
+        unlocked: !!this.unlockedCapabilities.inversion,
+        lockHint: 'Classified: Encountered in Mission 03.'
+      }
+    ];
+
+    // Filter capabilities based on mission level so future mission spoilers are not shown early
+    const items = allItems.filter(item => currentLvl >= item.minLevel);
+
+    container.innerHTML = items.map(item => {
+      const isNew = this._newlyUnlockedCapabilities && this._newlyUnlockedCapabilities.has(item.id);
+      const entryClass = item.unlocked 
+        ? `capability-entry is-unlocked ${isNew ? 'is-newly-unlocked' : ''}`
+        : 'capability-entry is-locked';
+
+      const statusTag = isNew
+        ? `<span class="capability-status-tag new-tag">★ NEW UNLOCK!</span>`
+        : (item.unlocked 
+            ? `<span class="capability-status-tag unlocked">&#x2714; UNLOCKED</span>` 
+            : `<span class="capability-status-tag locked">&#x1F512; LOCKED</span>`);
+
+      const keyPill = item.unlocked && item.key
+        ? `<span class="capability-key-pill">[${item.key}]</span>`
+        : '';
+
+      const descText = item.unlocked ? item.desc : `<i>${item.lockHint}</i>`;
+
+      return `
+        <div class="${entryClass}">
+          <div class="capability-header">
+            <div class="capability-title-wrap">
+              <span class="capability-icon">${item.icon}</span>
+              <span class="capability-name">${item.name}</span>
+            </div>
+            ${statusTag}
+          </div>
+          <div class="capability-desc">
+            ${keyPill}${descText}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  setupVennDiagramInteractions() {
+    const pairs = {
+      'CYAN': {
+        enemy: 'CYAN',
+        weapon: 'RED',
+        beamId: 'beamRedCyan',
+        nodeIds: ['nodeCyan', 'nodeRed'],
+        cardId: 'cardCyan',
+        text: '🎯 <b>CYAN TROOPS</b> (Green + Blue) &rarr; Shoot <b>RED LASER [1]</b>! (Red is directly opposite Cyan across the Venn diagram).'
+      },
+      'MAGENTA': {
+        enemy: 'MAGENTA',
+        weapon: 'GREEN',
+        beamId: 'beamGreenMagenta',
+        nodeIds: ['nodeMagenta', 'nodeGreen'],
+        cardId: 'cardMagenta',
+        text: '🎯 <b>MAGENTA TROOPS</b> (Red + Blue) &rarr; Shoot <b>GREEN LASER [2]</b>! (Green is directly opposite Magenta across the Venn diagram).'
+      },
+      'YELLOW': {
+        enemy: 'YELLOW',
+        weapon: 'BLUE',
+        beamId: 'beamBlueYellow',
+        nodeIds: ['nodeYellow', 'nodeBlue'],
+        cardId: 'cardYellow',
+        text: '🎯 <b>YELLOW TROOPS</b> (Red + Green) &rarr; Shoot <b>BLUE LASER [3]</b>! (Blue is directly opposite Yellow across the Venn diagram).'
+      },
+      'RED': {
+        enemy: 'RED',
+        weapon: 'CYAN',
+        beamId: 'beamRedCyan',
+        nodeIds: ['nodeRed', 'nodeCyan'],
+        cardId: 'cardRed',
+        text: '🎯 <b>RED TROOPS</b> &rarr; Shoot <b>CYAN LASER [4]</b>! (Cyan is Green + Blue, directly opposite Red).'
+      },
+      'GREEN': {
+        enemy: 'GREEN',
+        weapon: 'MAGENTA',
+        beamId: 'beamGreenMagenta',
+        nodeIds: ['nodeGreen', 'nodeMagenta'],
+        cardId: 'cardGreen',
+        text: '🎯 <b>GREEN TROOPS</b> &rarr; Shoot <b>MAGENTA LASER [5]</b>! (Magenta is Red + Blue, directly opposite Green).'
+      },
+      'BLUE': {
+        enemy: 'BLUE',
+        weapon: 'YELLOW',
+        beamId: 'beamBlueYellow',
+        nodeIds: ['nodeBlue', 'nodeYellow'],
+        cardId: 'cardBlue',
+        text: '🎯 <b>BLUE TROOPS</b> &rarr; Shoot <b>YELLOW LASER [6]</b>! (Yellow is Red + Green, directly opposite Blue).'
+      },
+      'WHITE': {
+        enemy: 'BLACK',
+        weapon: 'WHITE',
+        beamId: null,
+        nodeIds: ['nodeWhite', 'nodeBlackBoss'],
+        cardId: 'cardBoss',
+        text: '🌑 <b>THE BLACK BOSS</b> devours all standard wavelengths! Only <b>WHITE LASER [7]</b> (R+G+B convergence) can damage his void core!'
+      }
+    };
+
+    const calloutEl = document.getElementById('tacticalCalloutText');
+    const defaultText = '<b>THE OPPOSITE RULE:</b> Shoot the laser directly <u>opposite</u> across the Venn diagram to destroy target enemies!';
+
+    const activatePair = (key) => {
+      const data = pairs[key];
+      if (!data) return;
+
+      const card = document.getElementById(data.cardId);
+      // If card belongs to a hidden mission section, don't activate or spoil it
+      if (card && card.closest('.matrix-card-section') && card.closest('.matrix-card-section').style.display === 'none') {
+        return;
+      }
+      if (key === 'WHITE' && this.getCurrentMissionLevel() < 3) {
+        return;
+      }
+
+      // Highlight card
+      document.querySelectorAll('.counter-card').forEach(c => c.classList.remove('is-highlighted'));
+      if (card) card.classList.add('is-highlighted');
+
+      // Highlight SVG nodes
+      document.querySelectorAll('.venn-node, .venn-boss-node').forEach(n => n.classList.remove('is-active-node'));
+      data.nodeIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.style.display !== 'none') el.classList.add('is-active-node');
+      });
+
+      // Highlight beam
+      document.querySelectorAll('.counter-beam-line').forEach(b => b.classList.remove('is-active-beam'));
+      if (data.beamId) {
+        const beam = document.getElementById(data.beamId);
+        if (beam) beam.classList.add('is-active-beam');
+      }
+
+      // Update callout text
+      if (calloutEl) calloutEl.innerHTML = data.text;
+    };
+
+    const deactivateAll = () => {
+      document.querySelectorAll('.counter-card').forEach(c => c.classList.remove('is-highlighted'));
+      document.querySelectorAll('.venn-node, .venn-boss-node').forEach(n => n.classList.remove('is-active-node'));
+      document.querySelectorAll('.counter-beam-line').forEach(b => b.classList.remove('is-active-beam'));
+      if (calloutEl) calloutEl.innerHTML = defaultText;
+    };
+
+    // Attach to cards
+    Object.keys(pairs).forEach(key => {
+      const card = document.getElementById(pairs[key].cardId);
+      if (card) {
+        card.addEventListener('mouseenter', () => activatePair(key));
+        card.addEventListener('mouseleave', deactivateAll);
+        card.addEventListener('click', () => activatePair(key));
+      }
+    });
+
+    // Attach to Venn SVG nodes
+    const nodeToKey = {
+      'nodeCyan': 'CYAN',
+      'nodeMagenta': 'MAGENTA',
+      'nodeYellow': 'YELLOW',
+      'nodeRed': 'RED',
+      'nodeGreen': 'GREEN',
+      'nodeBlue': 'BLUE',
+      'nodeWhite': 'WHITE',
+      'nodeBlackBoss': 'WHITE'
+    };
+
+    Object.keys(nodeToKey).forEach(nodeId => {
+      const el = document.getElementById(nodeId);
+      if (el) {
+        el.addEventListener('mouseenter', () => activatePair(nodeToKey[nodeId]));
+        el.addEventListener('mouseleave', deactivateAll);
+        el.addEventListener('click', () => activatePair(nodeToKey[nodeId]));
+      }
+    });
+
+    // Beams hover
+    const beamToKey = {
+      'beamRedCyan': 'CYAN',
+      'beamGreenMagenta': 'MAGENTA',
+      'beamBlueYellow': 'YELLOW'
+    };
+    Object.keys(beamToKey).forEach(beamId => {
+      const el = document.getElementById(beamId);
+      if (el) {
+        el.style.cursor = 'pointer';
+        el.addEventListener('mouseenter', () => activatePair(beamToKey[beamId]));
+        el.addEventListener('mouseleave', deactivateAll);
+        el.addEventListener('click', () => activatePair(beamToKey[beamId]));
+      }
+    });
   }
 
   showTutorialSequence(cards, onComplete) {
@@ -856,12 +1390,20 @@ class LightWarsGame {
     document.getElementById('comicMenu').style.display = 'flex';
     document.getElementById('levelClearModal').style.display = 'none';
     document.getElementById('gameOverModal').style.display = 'none';
+    const topHud = document.getElementById('inGameTopHud');
+    if (topHud) topHud.style.display = 'none';
+    const helpBtn = document.getElementById('inGameHelpBtn');
+    if (helpBtn) helpBtn.style.display = 'none';
   }
 
   _resetGameEntities() {
     document.getElementById('comicMenu').style.display = 'none';
     document.getElementById('levelClearModal').style.display = 'none';
     document.getElementById('gameOverModal').style.display = 'none';
+    const topHud = document.getElementById('inGameTopHud');
+    if (topHud) topHud.style.display = 'flex';
+    const helpBtn = document.getElementById('inGameHelpBtn');
+    if (helpBtn) helpBtn.style.display = 'inline-flex';
 
     const spawnX = (this.arena.spawn && this.arena.spawn.x !== undefined) ? this.arena.spawn.x : (this.arena.whiteLight ? this.arena.whiteLight.x : 2920);
     const spawnY = (this.arena.spawn && this.arena.spawn.y !== undefined) ? this.arena.spawn.y : (this.arena.whiteLight ? this.arena.whiteLight.y : 1640);
@@ -907,6 +1449,8 @@ class LightWarsGame {
     if ((this.devMode || localStorage.getItem('lightwars_dash_unlocked') === 'true') && this.player) {
       this.player.dashUnlocked = true;
     }
+    this.unlockHelpCapability('dash');
+    this.unlockHelpCapability('orbCrafting');
     this.waves.startLevel2();
     this.state = 'PLAYING';
     if (window.LightWars.sound) {
@@ -926,6 +1470,10 @@ class LightWarsGame {
     if (this.player) {
       this.player.dashUnlocked = true;
     }
+    this.unlockHelpCapability('dash');
+    this.unlockHelpCapability('orbCrafting');
+    this.unlockHelpCapability('whiteAmmo');
+    this.unlockHelpCapability('inversion');
     this.waves.startLevel3();
     this.state = 'PLAYING';
     if (window.LightWars.sound) {
@@ -1070,6 +1618,7 @@ class LightWarsGame {
     const orb = new window.LightWars.Orb(x, y, colorId);
     this.orbs.push(orb);
     window.LightWars.sound.playOrbSpawn();
+    this.unlockHelpCapability('orbCrafting');
 
     // Stop Tutorial: First Orb dropped
     if (this._lastLevel === 1) {
@@ -1133,6 +1682,10 @@ class LightWarsGame {
     document.getElementById('clearKills').innerText = this.waves.stats.enemiesKilled;
     document.getElementById('clearOrbs').innerText = this.waves.stats.orbsCrafted;
     document.getElementById('levelClearModal').style.display = 'flex';
+    const topHud = document.getElementById('inGameTopHud');
+    if (topHud) topHud.style.display = 'none';
+    const helpBtn = document.getElementById('inGameHelpBtn');
+    if (helpBtn) helpBtn.style.display = 'none';
     if (window.LightWars.sound) {
       window.LightWars.sound.stopMusic();
       window.LightWars.sound.playVictory();
@@ -1142,6 +1695,10 @@ class LightWarsGame {
   onGameOver() {
     this.state = 'GAME_OVER';
     document.getElementById('gameOverModal').style.display = 'flex';
+    const topHud = document.getElementById('inGameTopHud');
+    if (topHud) topHud.style.display = 'none';
+    const helpBtn = document.getElementById('inGameHelpBtn');
+    if (helpBtn) helpBtn.style.display = 'none';
     if (window.LightWars.sound) {
       window.LightWars.sound.stopMusic();
       window.LightWars.sound.playPlayerDeath();
@@ -1249,6 +1806,10 @@ class LightWarsGame {
               if (res.success) {
                 laser.alive = false;
                 laserConsumed = true;
+                this.unlockHelpCapability('orbCrafting');
+                if (res.resultColor === 'WHITE') {
+                  this.unlockHelpCapability('whiteAmmo');
+                }
 
                 // Audio & comic banner
                 if (window.LightWars.sound) window.LightWars.sound.playOrbConvert();
@@ -1365,6 +1926,7 @@ class LightWarsGame {
             if (b.isBlackBarrel) {
               if (this.player) this.player.dashUnlocked = true;
               localStorage.setItem('lightwars_dash_unlocked', 'true');
+              this.unlockHelpCapability('dash');
               if (window.LightWars.sound) window.LightWars.sound.playVictory();
               if (this.waves && this.waves.onBlackBarrelDestroyed) {
                 this.waves.onBlackBarrelDestroyed();
