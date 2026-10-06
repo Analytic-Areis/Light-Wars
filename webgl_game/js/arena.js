@@ -162,9 +162,14 @@ class Arena {
       config = window.LightWars.LEVEL2_MAP_CONFIG || window.LightWars.MAP_CONFIG || {};
     } else if (levelNum === 3) {
       config = window.LightWars.LEVEL3_MAP_CONFIG || window.LightWars.MAP_CONFIG || {};
+    } else if (levelNum === 4) {
+      config = window.LightWars.LEVEL4_MAP_CONFIG || window.LightWars.MAP_CONFIG || {};
+    } else if (levelNum === 5) {
+      config = window.LightWars.LEVEL5_MAP_CONFIG || window.LightWars.LEVEL4_MAP_CONFIG || window.LightWars.MAP_CONFIG || {};
     } else {
       config = window.LightWars.MAP_CONFIG || {};
     }
+
 
     this.scale = config.scale !== undefined ? config.scale : 1.0;
     this.width = config.width || 1536;

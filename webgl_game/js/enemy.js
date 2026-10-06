@@ -809,7 +809,12 @@ class BlackBoss extends Enemy {
       if (this.health <= 0) {
         this.health = 0;
         this.alive = false;
-        if (window.game) window.game.physicsInverted = false;
+        if (window.game) {
+          window.game.physicsInverted = false;
+          if (typeof window.game.killRemainingMinions === 'function') {
+            window.game.killRemainingMinions(this);
+          }
+        }
         return { action: 'KILL', bossDead: true };
       }
 
@@ -923,42 +928,8 @@ class BlackBoss extends Enemy {
       ctx.stroke();
     }
 
-    // Overhead Boss Health Bar (3 Hearts)
-    const heartSpacing = 16;
-    const startHeartX = -((this.maxHealth - 1) * heartSpacing) / 2;
-    const heartY = -55;
-
-    for (let i = 0; i < this.maxHealth; i++) {
-      const isFilled = i < this.health;
-      const hx = startHeartX + i * heartSpacing;
-      ctx.save();
-      ctx.translate(hx, heartY);
-      ctx.scale(0.5, 0.5);
-      ctx.fillStyle = isFilled ? '#FF2A4D' : '#33384D';
-      ctx.strokeStyle = '#FFFFFF';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(0, 4);
-      ctx.bezierCurveTo(0, 0, -6, -4, -10, -4);
-      ctx.bezierCurveTo(-16, -4, -16, 4, -16, 4);
-      ctx.bezierCurveTo(-16, 10, -8, 16, 0, 22);
-      ctx.bezierCurveTo(8, 16, 16, 10, 16, 4);
-      ctx.bezierCurveTo(16, 4, 16, -4, 10, -4);
-      ctx.bezierCurveTo(6, -4, 0, 0, 0, 4);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    // Boss Name Label
-    ctx.font = '900 11px "Impact", "Arial Black", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#FFE600';
-    ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 2.5;
-    ctx.strokeText("THE BLACK BOSS", 0, heartY - 8);
-    ctx.fillText("THE BLACK BOSS", 0, heartY - 8);
+    // Overhead Boss Health Bar and Name Label removed:
+    // They are now displayed in the top HUD banner box.
 
     ctx.restore();
   }

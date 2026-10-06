@@ -296,10 +296,48 @@ class LightWarsGame {
       });
     }
 
+    // Direct click-to-play on comic panel rows
+    const comicRow1 = document.getElementById('comicRow1');
+    if (comicRow1) {
+      comicRow1.addEventListener('click', (e) => {
+        if (e.target.closest('#startLevel1Btn')) return;
+        if (playBtn) playBtn.click();
+      });
+    }
+
+    const comicRow2 = document.getElementById('comicRow2');
+    if (comicRow2) {
+      comicRow2.addEventListener('click', (e) => {
+        if (e.target.closest('#startLevel2Btn')) return;
+        const lock = document.getElementById('row2LockOverlay');
+        if (lock && lock.style.display !== 'none') return;
+        if (play2Btn) play2Btn.click();
+      });
+    }
+
+    const comicRow3 = document.getElementById('comicRow3');
+    if (comicRow3) {
+      comicRow3.addEventListener('click', (e) => {
+        if (e.target.closest('#startLevel3Btn')) return;
+        const lock = document.getElementById('row3LockOverlay');
+        if (lock && lock.style.display !== 'none') return;
+        if (play3Btn && play3Btn.style.display !== 'none') play3Btn.click();
+      });
+    }
+
+    const play4Btn = document.getElementById('startLevel4Btn');
+    if (play4Btn) {
+      play4Btn.addEventListener('click', () => {
+        window.LightWars.sound.resume();
+        this.startLevel4();
+      });
+    }
+
     const restartBtn = document.getElementById('restartBtn');
     if (restartBtn) {
       restartBtn.addEventListener('click', () => {
-        if (this._lastLevel === 3) this.startLevel3();
+        if (this._lastLevel === 4) this.startLevel4();
+        else if (this._lastLevel === 3) this.startLevel3();
         else if (this._lastLevel === 2) this.startLevel2();
         else this.startLevel1();
       });
@@ -308,11 +346,13 @@ class LightWarsGame {
     const playAgainBtn = document.getElementById('playAgainBtn');
     if (playAgainBtn) {
       playAgainBtn.addEventListener('click', () => {
-        if (this._lastLevel === 3) this.startLevel3();
+        if (this._lastLevel === 4) this.startLevel4();
+        else if (this._lastLevel === 3) this.startLevel3();
         else if (this._lastLevel === 2) this.startLevel2();
         else this.startLevel1();
       });
     }
+
 
     const menuReturnBtn = document.getElementById('menuReturnBtn');
     if (menuReturnBtn) {
@@ -324,7 +364,23 @@ class LightWarsGame {
     const page2Btn = document.getElementById('goToPage2Btn');
     if (page2Btn) {
       page2Btn.addEventListener('click', () => {
-        alert('ISSUE #2 • THE WHITE BOSS AWAKENING\nComing in the next chapter of the chromatic war!');
+        this.transitionToPage2();
+      });
+    }
+
+    const backToPage1Btn = document.getElementById('backToPage1Btn');
+    if (backToPage1Btn) {
+      backToPage1Btn.addEventListener('click', () => {
+        this.transitionToPage1();
+      });
+    }
+
+    const page2Badge = document.getElementById('page2TeaserBadge');
+    if (page2Badge) {
+      page2Badge.addEventListener('click', () => {
+        if (this.devMode || localStorage.getItem('lightwars_black_boss_defeated') === 'true') {
+          this.transitionToPage2();
+        }
       });
     }
 
@@ -340,11 +396,13 @@ class LightWarsGame {
     if (pauseRestartBtn) {
       pauseRestartBtn.addEventListener('click', () => {
         this.togglePauseMenu(false);
-        if (this._lastLevel === 3) this.startLevel3();
+        if (this._lastLevel === 4) this.startLevel4();
+        else if (this._lastLevel === 3) this.startLevel3();
         else if (this._lastLevel === 2) this.startLevel2();
         else this.startLevel1();
       });
     }
+
 
     const pauseMenuBtn = document.getElementById('pauseMenuBtn');
     if (pauseMenuBtn) {
@@ -1031,10 +1089,34 @@ class LightWarsGame {
     const btnEl = document.getElementById('tutorialDismissBtn');
     const dotsEl = document.getElementById('tutorialDots');
 
-    if (badgeEl) badgeEl.innerHTML = card.badge || card.tag || '⚡ JEDI MASTER INTEL';
+    const isBossCard = !!(
+      (card.speakerImg && (card.speakerImg.includes('Black Boss') || card.speakerImg.includes('Splash') || card.speakerImg.includes('Fallen'))) ||
+      (card.id && (card.id.includes('boss') || card.id === 'l3_card0' || card.id === 'l3_card4' || card.id === 'l3_card5')) ||
+      card.isBoss
+    );
+
+    if (modal) {
+      if (isBossCard) {
+        modal.classList.add('is-boss-card');
+      } else {
+        modal.classList.remove('is-boss-card');
+      }
+    }
+
+    if (badgeEl) {
+      badgeEl.innerHTML = card.badge || card.tag || '⚡ JEDI MASTER INTEL';
+      badgeEl.style.background = '';
+      badgeEl.style.borderColor = '';
+    }
     if (titleEl) titleEl.innerHTML = card.title || 'MISSION BRIEFING';
     if (msgEl) msgEl.innerHTML = card.message || '';
-    if (btnEl) btnEl.innerHTML = card.btnText || 'CONTINUE NOOBI-WAN ▶';
+    if (btnEl) {
+      btnEl.innerHTML = card.btnText || (isBossCard ? 'RESPOND! ▶' : 'CONTINUE NOOBI-WAN ▶');
+      // Stick strictly with the established color: Yellow for Noobi, Red against Black
+      btnEl.style.background = '';
+      btnEl.style.boxShadow = '';
+      btnEl.style.color = '';
+    }
 
     // Swap speaker portrait — Black Boss cards supply speakerImg; default is Noobi-Wan
     const artImg = document.getElementById('noobiArtImg');
@@ -1049,6 +1131,9 @@ class LightWarsGame {
       const trackerText = card.tracker || ((card.totalSteps && card.totalSteps > 1) ? `CARD ${String(card.step).padStart(2, '0')} / ${String(card.totalSteps).padStart(2, '0')}` : '');
       if (trackerText) {
         trackerEl.innerHTML = trackerText;
+        trackerEl.style.background = '';
+        trackerEl.style.borderColor = '';
+        trackerEl.style.boxShadow = '';
         trackerEl.style.display = 'inline-block';
       } else {
         trackerEl.style.display = 'none';
@@ -1266,6 +1351,35 @@ class LightWarsGame {
     // Row 3 lock
     const row3Overlay = document.getElementById('row3LockOverlay');
     if (row3Overlay) row3Overlay.style.display = level2Cleared ? 'none' : 'flex';
+
+    // Page 2: Level 4 & Level 5 locks
+    const level4Cleared = this.devMode || (localStorage.getItem('lightwars_level4_cleared') === 'true');
+    const mission4StatusPill = document.getElementById('mission4StatusPill');
+    if (mission4StatusPill) {
+      if (level4Cleared) {
+        mission4StatusPill.textContent = 'CLEARED ★';
+        mission4StatusPill.className = 'comic-status-pill cleared';
+      } else {
+        mission4StatusPill.textContent = 'READY';
+        mission4StatusPill.className = 'comic-status-pill ready';
+      }
+    }
+
+    // Row 5 lock overlay (Level 5 locked)
+    const row5LockOverlay = document.getElementById('row5LockOverlay');
+    if (row5LockOverlay) {
+      row5LockOverlay.style.display = level4Cleared ? 'none' : 'flex';
+    }
+    const mission5StatusPill = document.getElementById('mission5StatusPill');
+    if (mission5StatusPill) {
+      if (level4Cleared) {
+        mission5StatusPill.textContent = 'READY';
+        mission5StatusPill.className = 'comic-status-pill ready';
+      } else {
+        mission5StatusPill.textContent = 'LOCKED';
+        mission5StatusPill.className = 'comic-status-pill locked';
+      }
+    }
   }
 
 
@@ -1355,6 +1469,24 @@ class LightWarsGame {
     this.updateComicMenuLockState();
     this.updateComicMenuBossState();
     document.getElementById('comicMenu').style.display = 'flex';
+
+    // If coming back from Level 4, show Page 2; otherwise default to Page 1
+    const page1 = document.getElementById('comicPage1');
+    const page2 = document.getElementById('comicPage2');
+    if (this._lastLevel === 4 && page2) {
+      if (page1) page1.style.display = 'none';
+      page2.style.display = 'flex';
+      page2.style.opacity = '1';
+      page2.style.transform = 'none';
+    } else {
+      if (page1) {
+        page1.style.display = 'flex';
+        page1.style.opacity = '1';
+        page1.style.transform = 'none';
+      }
+      if (page2) page2.style.display = 'none';
+    }
+
     document.getElementById('levelClearModal').style.display = 'none';
     document.getElementById('gameOverModal').style.display = 'none';
     const topHud = document.getElementById('inGameTopHud');
@@ -1462,6 +1594,146 @@ class LightWarsGame {
     }
   }
 
+  startLevel4() {
+    this._lastLevel = 4;
+    this.arena.loadLevel(4);
+    if (window.LightWars.occlusion) {
+      window.LightWars.occlusion.loadLevelWalls(4, this.arena);
+    }
+    this._resetGameEntities();
+    if (this.player) {
+      this.player.dashUnlocked = true;
+      this.player.invertUnlocked = true;
+    }
+    this.unlockHelpCapability('dash');
+    this.unlockHelpCapability('orbCrafting');
+    this.unlockHelpCapability('whiteAmmo');
+    this.unlockHelpCapability('inversion');
+    this.waves.startLevel4();
+    this.state = 'PLAYING';
+    if (window.LightWars.sound) {
+      window.LightWars.sound.startMusic('BOSS');
+    }
+  }
+
+  /**
+   * Animated page flip transition from Page 1 → Page 2 of the comic strip.
+   * Creates a fullscreen flash effect then swaps the visible comic page.
+   */
+  transitionToPage2() {
+    const page1 = document.getElementById('comicPage1');
+    const page2 = document.getElementById('comicPage2');
+    const pageTracker = document.querySelector('.sw-comic-page-tracker');
+
+    if (!page2) return; // Safety guard
+
+    // Update page badge
+    const currentBadge = document.querySelector('.page-badge.current');
+    if (currentBadge) currentBadge.textContent = 'PAGE 02';
+
+    const page2Badge = document.getElementById('page2TeaserBadge');
+    if (page2Badge) {
+      page2Badge.textContent = 'PAGE 02';
+      page2Badge.classList.remove('locked');
+      page2Badge.classList.add('current');
+    }
+
+    // Flash overlay animation
+    const flash = document.createElement('div');
+    flash.style.cssText = `
+      position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+      background: #FFFFFF;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    `;
+    document.body.appendChild(flash);
+
+    // Animate flash in
+    requestAnimationFrame(() => {
+      flash.style.opacity = '1';
+      setTimeout(() => {
+        // Swap pages
+        if (page1) {
+          page1.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+          page1.style.opacity = '0';
+          page1.style.transform = 'translateX(-40px)';
+          setTimeout(() => { page1.style.display = 'none'; }, 300);
+        }
+        page2.style.display = 'flex';
+        page2.style.opacity = '0';
+        page2.style.transform = 'translateX(40px)';
+        page2.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            page2.style.opacity = '1';
+            page2.style.transform = 'translateX(0)';
+          }, 20);
+        });
+
+        // Update issue badge
+        const issueBox = document.querySelector('.sw-comic-corner-box .corner-issue');
+        if (issueBox) issueBox.textContent = '#2';
+
+        // Flash out
+        flash.style.opacity = '0';
+        setTimeout(() => {
+          if (flash.parentNode) flash.parentNode.removeChild(flash);
+        }, 350);
+      }, 200);
+    });
+  }
+
+  /**
+   * Animated page flip transition back from Page 2 → Page 1.
+   */
+  transitionToPage1() {
+    const page1 = document.getElementById('comicPage1');
+    const page2 = document.getElementById('comicPage2');
+
+    const flash = document.createElement('div');
+    flash.style.cssText = `
+      position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+      background: #FFFFFF;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    `;
+    document.body.appendChild(flash);
+
+    requestAnimationFrame(() => {
+      flash.style.opacity = '1';
+      setTimeout(() => {
+        if (page2) {
+          page2.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+          page2.style.opacity = '0';
+          page2.style.transform = 'translateX(40px)';
+          setTimeout(() => { page2.style.display = 'none'; }, 300);
+        }
+        if (page1) {
+          page1.style.display = 'flex';
+          page1.style.opacity = '0';
+          page1.style.transform = 'translateX(-40px)';
+          page1.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              page1.style.opacity = '1';
+              page1.style.transform = 'translateX(0)';
+            }, 20);
+          });
+        }
+
+        const currentBadge = document.querySelector('.page-badge.current');
+        if (currentBadge) currentBadge.textContent = 'PAGE 01';
+
+        const issueBox = document.querySelector('.sw-comic-corner-box .corner-issue');
+        if (issueBox) issueBox.textContent = '#1';
+
+        flash.style.opacity = '0';
+        setTimeout(() => {
+          if (flash.parentNode) flash.parentNode.removeChild(flash);
+        }, 350);
+      }, 200);
+    });
+  }
 
   getSafeEnemySpawnPos(targetX, targetY) {
     if (!this.player || !this.arena) return { x: targetX, y: targetY };
@@ -1595,6 +1867,38 @@ class LightWarsGame {
     return boss;
   }
 
+  killRemainingMinions(bossEnemy = null) {
+    let killedAny = false;
+    for (let i = this.enemies.length - 1; i >= 0; i--) {
+      const e = this.enemies[i];
+      if (e === bossEnemy) {
+        e.alive = false;
+        continue;
+      }
+      if (!e || !e.alive) continue;
+      e.alive = false;
+      killedAny = true;
+      if (this.waves && this.waves.stats) {
+        this.waves.stats.enemiesKilled++;
+      }
+      if (this.particles) {
+        const hex = (window.LightWars.COLORS[e.colorId] && window.LightWars.COLORS[e.colorId].hex) || '#FFFFFF';
+        this.particles.spawnBurst(e.x, e.y - 50, hex, 28);
+        const deathWord = window.LightWars.COMIC_DEATH_WORDS
+          ? window.LightWars.COMIC_DEATH_WORDS[Math.floor(Math.random() * window.LightWars.COMIC_DEATH_WORDS.length)]
+          : 'KABOOM!';
+        this.particles.spawnComicText(e.x, e.y - 70, deathWord, hex);
+      }
+    }
+    this.enemies = [];
+    if (this.lasers) {
+      this.lasers = this.lasers.filter(l => l.isPlayer);
+    }
+    if (killedAny && window.LightWars.sound) {
+      window.LightWars.sound.playKaboom();
+    }
+  }
+
   spawnOrb(x, y, colorId) {
     const orb = new window.LightWars.Orb(x, y, colorId);
     this.orbs.push(orb);
@@ -1697,6 +2001,8 @@ class LightWarsGame {
       localStorage.setItem('lightwars_level2_cleared', 'true');
     } else if (lvl === 3) {
       localStorage.setItem('lightwars_black_boss_defeated', 'true');
+    } else if (lvl === 4) {
+      localStorage.setItem('lightwars_level4_cleared', 'true');
     }
 
     // Update modal text
@@ -1708,8 +2014,10 @@ class LightWarsGame {
         msgEl.textContent = 'You eliminated the CMY invasion force and unlocked the DASH ability! The Spectrum War continues...';
       } else if (lvl === 2) {
         msgEl.textContent = 'You conquered the CMY and RGB legions! The Black Void Overlord awaits your challenge...';
-      } else {
+      } else if (lvl === 3) {
         msgEl.textContent = 'THE BLACK BOSS HAS FALLEN! You shattered the void using synthesized White light!';
+      } else if (lvl === 4) {
+        msgEl.textContent = 'INVERTED FRAME MASTERED! You conquered the chromatic legions with reverse spectrum mastery!';
       }
     }
 
@@ -1921,6 +2229,11 @@ class LightWarsGame {
               }
 
               this.waves.onEnemyDefeated(enemy, laser.colorId);
+
+              // When the Black Boss dies, eliminate all remaining enemies across the arena
+              if (enemy.isBoss) {
+                this.killRemainingMinions(enemy);
+              }
             } else if (outcome.action === 'BOSS_HIT') {
               // Boss took 1 white bullet hit
               this.camera.shake(12);
@@ -2230,7 +2543,7 @@ class LightWarsGame {
     }
 
     // 5. Draw Screenspace HUD
-    this.ui.drawHUD(this.ctx, this.canvas.width, this.canvas.height, this.player, this.waves);
+    this.ui.drawHUD(this.ctx, this.canvas.width, this.canvas.height, this.player, this.waves, this.enemies);
 
     // 6. Draw Custom Crosshair (Mini Orb matching currently selected player color)
     if (this.state === 'PLAYING' && this.player && this.player.alive && this.input.mouseInside) {

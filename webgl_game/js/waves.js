@@ -1,9 +1,10 @@
 /**
  * Light-Wars: Modular Wave Director
- * Coordinates levels 1, 2, and 3 via dedicated level directors:
+ * Coordinates levels 1, 2, 3, and 4 via dedicated level directors:
  *   - Level1Director (js/lvl1.js)
  *   - Level2Director (js/lvl2.js)
  *   - Level3Director (js/lvl3.js)
+ *   - Level4Director (js/lvl4.js)
  */
 
 class WaveDirector {
@@ -23,6 +24,7 @@ class WaveDirector {
     this.lvl1 = new window.LightWars.Level1Director(this);
     this.lvl2 = new window.LightWars.Level2Director(this);
     this.lvl3 = new window.LightWars.Level3Director(this);
+    this.lvl4 = new window.LightWars.Level4Director(this);
 
     // Current active level director
     this.currentDirector = this.lvl1;
@@ -30,6 +32,9 @@ class WaveDirector {
 
   // Helper to spawn enemy in arena screen coordinates
   spawnAt(col, row, colorId) {
+    if (this.lvl3 && (this.lvl3.isVictoryInProgress || (this.lvl3.bossRef && !this.lvl3.bossRef.alive))) {
+      return null;
+    }
     if (this.game.arena && this.game.arena.toScreen) {
       const pos = this.game.arena.toScreen(col + 0.5, row + 0.5);
       return this.game.spawnEnemy(pos.x, pos.y, colorId);
@@ -91,6 +96,11 @@ class WaveDirector {
   startLevel3() {
     this.currentDirector = this.lvl3;
     this.lvl3.start();
+  }
+
+  startLevel4() {
+    this.currentDirector = this.lvl4;
+    this.lvl4.start();
   }
 
   // ═════════════════════════════════════════════════════════════════════════════
@@ -156,3 +166,4 @@ class WaveDirector {
 
 window.LightWars = window.LightWars || {};
 window.LightWars.WaveDirector = WaveDirector;
+

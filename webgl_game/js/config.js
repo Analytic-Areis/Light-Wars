@@ -135,12 +135,12 @@ const ENEMY_INTERACTIONS_INVERTED = {
     RED: { action: 'KILL' },
     GREEN: { action: 'NONE' },
     BLUE: { action: 'NONE' },
-    CYAN: { action: 'TRANSFORM', target: 'YELLOW' },
+    CYAN: { action: 'NONE' },
     MAGENTA: { action: 'NONE' },
     YELLOW: { action: 'NONE' }
   },
   CYAN: {
-    RED: { action: 'TRANSFORM', target: 'BLUE' },
+    RED: { action: 'NONE' },
     GREEN: { action: 'NONE' },
     BLUE: { action: 'NONE' },
     CYAN: { action: 'KILL' },
@@ -152,12 +152,12 @@ const ENEMY_INTERACTIONS_INVERTED = {
     GREEN: { action: 'KILL' },
     BLUE: { action: 'NONE' },
     CYAN: { action: 'NONE' },
-    MAGENTA: { action: 'TRANSFORM', target: 'YELLOW' },
+    MAGENTA: { action: 'NONE' },
     YELLOW: { action: 'NONE' }
   },
   MAGENTA: {
     RED: { action: 'NONE' },
-    GREEN: { action: 'TRANSFORM', target: 'BLUE' },
+    GREEN: { action: 'NONE' },
     BLUE: { action: 'NONE' },
     CYAN: { action: 'NONE' },
     MAGENTA: { action: 'KILL' },
@@ -169,12 +169,12 @@ const ENEMY_INTERACTIONS_INVERTED = {
     BLUE: { action: 'KILL' },
     CYAN: { action: 'NONE' },
     MAGENTA: { action: 'NONE' },
-    YELLOW: { action: 'TRANSFORM', target: 'MAGENTA' }
+    YELLOW: { action: 'NONE' }
   },
   YELLOW: {
     RED: { action: 'NONE' },
     GREEN: { action: 'NONE' },
-    BLUE: { action: 'TRANSFORM', target: 'GREEN' },
+    BLUE: { action: 'NONE' },
     CYAN: { action: 'NONE' },
     MAGENTA: { action: 'NONE' },
     YELLOW: { action: 'KILL' }

@@ -77,15 +77,13 @@ class Level3Director {
         speakerImg: BOSS_ALIVE,
         speakerAlt: 'The Black Boss — Armoured Enforcer',
         message:
-          '<span style="color:#888;font-size:13px;letter-spacing:1px;">— TRANSMISSION INTERCEPTED —</span><br><br>' +
-          '<div style="font-size: 15px; font-weight: bold; color: #FF2A4D; border-left: 3px solid #FF2A4D; ' +
-          'padding: 8px 10px; background: rgba(255,42,77,0.12); border-radius: 4px; margin-bottom: 12px;">' +
-          '&ldquo;You dare challenge me, Fluke?! I am the Void Enforcer — the embodiment of absolute darkness. ' +
+          '<div style="font-size: 11px; letter-spacing: 1.5px; color: #666; font-weight: 800; margin-bottom: 3px;">— TRANSMISSION INTERCEPTED —</div>' +
+          '<div class="noobi-callout-box" style="margin: 2px 0 4px 0; padding: 5px 9px; font-size: 12.5px; line-height: 1.34; color: #E60039; border-left: 3.5px solid #FF0055; background: rgba(255,0,85,0.10); border-radius: 4px; font-weight: 700;">' +
+          '&ldquo;You dare challenge me, Fluke?! I am the Void Enforcer — absolute darkness itself. ' +
           'Every photon you fire crumbles at my feet. Your pitiful little lasers are nothing but flickering ' +
-          'candles before the abyss. You <em>cannot</em> defeat me. I am far stronger than you could ever ' +
-          'comprehend. Surrender now, or be consumed by the dark!&rdquo;' +
+          'candles before the abyss. You <em>cannot</em> defeat me. Surrender now, or be consumed by the dark!&rdquo;' +
           '</div>' +
-          '&nbsp;<span style="color:#888;font-size:13px;">— <b>THE BLACK BOSS</b>, Void Enforcer of the Spectrum War</span>',
+          '<div style="font-size: 11px; color: #555; font-weight: 600;">— <b style="color:#000;">THE BLACK BOSS</b>, Void Enforcer of the Spectrum War</div>',
         btnText: 'RESPOND! ▶'
       },
       {
@@ -100,8 +98,7 @@ class Level3Director {
         speakerAlt: 'Master Noobi-Wan',
         message:
           'Fluke, do not let his words shake you!<br><br>' +
-          '<div style="font-size: 15px; font-weight: bold; color: #00F0FF; border-left: 3px solid #00F0FF; ' +
-          'padding: 8px 10px; background: rgba(0,240,255,0.12); border-radius: 4px; margin-bottom: 12px;">' +
+          '<div class="noobi-callout-box" style="margin: 4px 0 6px 0; padding: 6px 10px; font-size: 13.5px; font-weight: bold; color: #FF007F; border-left: 3.5px solid #FF007F; background: rgba(255,0,127,0.14); border-radius: 4px;">' +
           '&ldquo;Don\'t listen to him — he is the same as all the others. He <em>will</em> die to his contrary color!&rdquo;' +
           '</div>' +
           '• Every entity in this war has a wavelength weakness — even the Black Boss.<br>' +
@@ -121,8 +118,7 @@ class Level3Director {
         speakerAlt: 'Master Noobi-Wan',
         message:
           'Listen carefully, Fluke — this is the key!<br><br>' +
-          '<div style="font-size: 15px; font-weight: bold; color: #FFFFFF; border-left: 3px solid #FFFFFF; ' +
-          'padding: 8px 10px; background: rgba(255,255,255,0.08); border-radius: 4px; margin-bottom: 12px;">' +
+          '<div class="noobi-callout-box" style="margin: 4px 0 6px 0; padding: 6px 10px; font-size: 13.5px; font-weight: bold; color: #FF2A6D; border-left: 3.5px solid #9400D3; background: rgba(160,32,240,0.14); border-radius: 4px;">' +
           '&ldquo;Shoot some orb with its contrary-color laser to form white crystals&rdquo;' +
           '</div>' +
           '• Shoot <span class="noobi-hl red">RED laser [1]</span> into a <span class="noobi-hl cyan">CYAN orb</span> (or Cyan into Red)<br>' +
@@ -182,6 +178,8 @@ class Level3Director {
   }
 
   spawnL3MinionSet(setType) {
+    if (this.isVictoryInProgress || (this.bossRef && !this.bossRef.alive)) return;
+
     const minionCoords = [
       { col: 8, row: 6 },
       { col: 24, row: 11 },
@@ -256,7 +254,7 @@ class Level3Director {
   }
 
   onBossHit(remainingHp) {
-    if (remainingHp <= 0) return;
+    if (remainingHp <= 0 || this.isVictoryInProgress || (this.bossRef && !this.bossRef.alive)) return;
     if (this._lastProcessedHp === remainingHp) return;
     this._lastProcessedHp = remainingHp;
 
@@ -299,12 +297,39 @@ class Level3Director {
 
   onEnemyDefeated(enemy, laserColorId) {
     // If boss dies, show dying cards 4 & 5 then proceed
-    if (enemy && enemy.isBoss) {
+    if (enemy && (enemy.isBoss || enemy === this.bossRef)) {
       if (this.isVictoryInProgress) return;
       this.isVictoryInProgress = true;
+      this.l3ReplenishPending = false;
+      this.waves.enemiesRemainingInPhase = 0;
 
       // Safely neutralize remaining minion projectiles
+      if (this.game.lasers) {
+        this.game.lasers = this.game.lasers.filter(l => l.isPlayer);
+      }
       this.game.enemyLasers = [];
+
+      // When the Black Boss dies, destroy all remaining enemies
+      if (typeof this.game.killRemainingMinions === 'function') {
+        this.game.killRemainingMinions(enemy);
+      } else {
+        const minions = this.game.enemies.filter(e => e !== enemy && e.alive);
+        for (const m of minions) {
+          m.alive = false;
+          if (this.waves && this.waves.stats) {
+            this.waves.stats.enemiesKilled++;
+          }
+          if (this.game.particles) {
+            const hex = (window.LightWars.COLORS[m.colorId] && window.LightWars.COLORS[m.colorId].hex) || '#FFFFFF';
+            this.game.particles.spawnBurst(m.x, m.y - 50, hex, 28);
+            const deathWord = window.LightWars.COMIC_DEATH_WORDS
+              ? window.LightWars.COMIC_DEATH_WORDS[Math.floor(Math.random() * window.LightWars.COMIC_DEATH_WORDS.length)]
+              : 'KABOOM!';
+            this.game.particles.spawnComicText(m.x, m.y - 70, deathWord, hex);
+          }
+        }
+        this.game.enemies = [];
+      }
 
       // Drop the Uno Reverse Card — InvertPowerup pickup at boss death position
       if (window.LightWars.InvertPowerup && this.game.powerups) {
@@ -333,6 +358,15 @@ class Level3Director {
   onInvertPowerupCollected() {
     if (this.isPowerupCollected) return;
     this.isPowerupCollected = true;
+    this.isVictoryInProgress = true;
+    this.l3ReplenishPending = false;
+
+    // Destroy all remaining enemies when powerup is collected
+    if (this.game && typeof this.game.killRemainingMinions === 'function') {
+      this.game.killRemainingMinions(this.bossRef);
+    } else if (this.game) {
+      this.game.enemies = [];
+    }
 
     // Give a clear gap/breather before the dying boss dialogue appears
     setTimeout(() => {
@@ -352,13 +386,12 @@ class Level3Director {
           speakerImg: BOSS_FALLEN,
           speakerAlt: 'The Black Boss — Fallen in the Shattered Dark',
           message:
-            '<span style="color:#888;font-size:13px;letter-spacing:1px;">— LAST TRANSMISSION —</span><br><br>' +
-            '<div style="font-size: 15px; font-weight: bold; color: #FF6030; border-left: 3px solid #FF6030; ' +
-            'padding: 8px 10px; background: rgba(255,96,48,0.12); border-radius: 4px; margin-bottom: 12px;">' +
+            '<div style="font-size: 11px; letter-spacing: 1.5px; color: #666; font-weight: 800; margin-bottom: 3px;">— LAST TRANSMISSION —</div>' +
+            '<div class="noobi-callout-box" style="margin: 2px 0 4px 0; padding: 5px 9px; font-size: 12.5px; line-height: 1.34; color: #E60039; border-left: 3.5px solid #FF0055; background: rgba(255,0,85,0.10); border-radius: 4px; font-weight: 700;">' +
             '&ldquo;…Are you thinking that everything is done? &hellip;Not yet, little warrior. ' +
             'This battle — <em>heh</em> — this was nothing. You haven\'t seen what lies ahead…&rdquo;' +
             '</div>' +
-            '&nbsp;<span style="color:#888;font-size:13px;">— <b>THE BLACK BOSS</b>, Void Enforcer — <em>defeated</em></span>',
+            '<div style="font-size: 11px; color: #555; font-weight: 600;">— <b style="color:#000;">THE BLACK BOSS</b>, Void Enforcer — <em>defeated</em></div>',
           btnText: 'LISTEN ▶'
         },
         {
@@ -372,15 +405,13 @@ class Level3Director {
           speakerImg: BOSS_FALLEN,
           speakerAlt: 'The Black Boss — Fallen in the Shattered Dark',
           message:
-            '<span style="color:#888;font-size:13px;letter-spacing:1px;">— DYING WORDS —</span><br><br>' +
-            '<div style="font-size: 15px; font-weight: bold; color: #FF6030; border-left: 3px solid #FF6030; ' +
-            'padding: 8px 10px; background: rgba(255,96,48,0.12); border-radius: 4px; margin-bottom: 12px;">' +
+            '<div style="font-size: 11px; letter-spacing: 1.5px; color: #666; font-weight: 800; margin-bottom: 3px;">— DYING WORDS —</div>' +
+            '<div class="noobi-callout-box" style="margin: 2px 0 4px 0; padding: 5px 9px; font-size: 12.5px; line-height: 1.34; color: #E60039; border-left: 3.5px solid #FF0055; background: rgba(255,0,85,0.10); border-radius: 4px; font-weight: 700;">' +
             '&ldquo;You think you\'ve won? You have only awakened a far greater wrath. ' +
             'Our true lord — the one who forged this war — you cannot hope to defeat him. ' +
-            'What I was to you&hellip; he is that thousandfold. No light you carry will be enough. ' +
-            'It is practically <em>impossible</em>&hellip;&rdquo;' +
+            'No light you carry will be enough!&rdquo;' +
             '</div>' +
-            '&nbsp;<span style="color:#888;font-size:13px;">— <b>THE BLACK BOSS</b>, last breath</span>',
+            '<div style="font-size: 11px; color: #555; font-weight: 600;">— <b style="color:#000;">THE BLACK BOSS</b>, last breath</div>',
           btnText: 'LISTEN ▶'
         },
         {
@@ -395,8 +426,7 @@ class Level3Director {
           speakerAlt: 'Master Noobi-Wan',
           message:
             'Hold on, Fluke — the chromatic disturbances haven\'t ceased!<br><br>' +
-            '<div style="font-size: 15px; font-weight: bold; color: #FFE600; border-left: 3px solid #FFE600; ' +
-            'padding: 8px 10px; background: rgba(255,230,0,0.12); border-radius: 4px; margin-bottom: 12px;">' +
+            '<div class="noobi-callout-box" style="margin: 4px 0 6px 0; padding: 6px 10px; font-size: 13.5px; font-weight: bold; color: #FF2A6D; border-left: 3.5px solid #9400D3; background: rgba(160,32,240,0.14); border-radius: 4px;">' +
             '&ldquo;Seems like another boss; we have to destroy him too. Let\'s move further!&rdquo;' +
             '</div>' +
             'Gather yourself. The spectrum is counting on you. Forward!',
@@ -414,8 +444,7 @@ class Level3Director {
           speakerAlt: 'Master Noobi-Wan',
           message:
             'Incredible, Fluke — you\'ve claimed his power!<br><br>' +
-            '<div style="font-size: 15px; font-weight: bold; color: #00F0FF; border-left: 3px solid #00F0FF; ' +
-            'padding: 8px 10px; background: rgba(0,240,255,0.12); border-radius: 4px; margin-bottom: 12px;">' +
+            '<div class="noobi-callout-box" style="margin: 4px 0 6px 0; padding: 6px 10px; font-size: 13.5px; font-weight: bold; color: #00A850; border-left: 3.5px solid #00E676; background: rgba(0,230,118,0.14); border-radius: 4px;">' +
             '&ldquo;By defeating the black boss, you gained his ability to invert frame. ' +
             'You can activate the ability using the key E, and it has a timeout of 25s!&rdquo;' +
             '</div>' +
@@ -439,6 +468,18 @@ class Level3Director {
   }
 
   update(dt) {
+    if (this.isVictoryInProgress || (this.bossRef && !this.bossRef.alive)) {
+      this.l3ReplenishPending = false;
+      if (this.game && this.game.enemies && this.game.enemies.some(e => e.alive)) {
+        if (typeof this.game.killRemainingMinions === 'function') {
+          this.game.killRemainingMinions(this.bossRef);
+        } else {
+          this.game.enemies = [];
+        }
+      }
+      return;
+    }
+
     if (this.l3ReplenishPending && !this.isVictoryInProgress) {
       this.l3ReplenishTimer -= dt;
       if (this.l3ReplenishTimer <= 0) {

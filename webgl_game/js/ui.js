@@ -20,7 +20,7 @@ class UIManager {
   }
 
   // Draw in-game HUD directly to screen overlay canvas / context
-  drawHUD(ctx, width, height, player, waveManager) {
+  drawHUD(ctx, width, height, player, waveManager, enemies = null) {
     if (!player) return;
 
     // 1. Health Bar (Brawl Stars Hearts)
@@ -177,28 +177,87 @@ class UIManager {
       ctx.restore();
     }
 
-    // 3. Current Objective & Wave Banner (Top Center)
+    // 3. Current Objective & Wave Banner OR Boss HUD (Top Center)
+    let activeBoss = null;
+    if (enemies && Array.isArray(enemies)) {
+      activeBoss = enemies.find(e => e && e.isBoss && e.alive);
+    }
+    if (!activeBoss && waveManager && waveManager.bossRef && waveManager.bossRef.alive) {
+      activeBoss = waveManager.bossRef;
+    }
+    if (!activeBoss && window.game && window.game.enemies) {
+      activeBoss = window.game.enemies.find(e => e && e.isBoss && e.alive);
+    }
+
     ctx.save();
-    ctx.fillStyle = 'rgba(10, 14, 25, 0.9)';
-    ctx.strokeStyle = '#00F0FF';
-    ctx.lineWidth = 2;
-    const bannerW = 540;
-    const bannerH = 55;
-    const bx = (width - bannerW) / 2;
-    const by = 18;
-    ctx.beginPath();
-    ctx.roundRect(bx, by, bannerW, bannerH, 8);
-    ctx.fill();
-    ctx.stroke();
+    if (activeBoss) {
+      const isInvulnerable = typeof activeBoss.isInvulnerable === 'function' && activeBoss.isInvulnerable();
+      ctx.fillStyle = 'rgba(10, 14, 25, 0.92)';
+      ctx.strokeStyle = isInvulnerable ? '#A020F0' : '#00F0FF';
+      ctx.lineWidth = 2;
+      if (isInvulnerable) {
+        ctx.shadowColor = '#A020F0';
+        ctx.shadowBlur = 10;
+      } else {
+        ctx.shadowColor = '#00F0FF';
+        ctx.shadowBlur = 6;
+      }
 
-    ctx.fillStyle = '#FFE600';
-    ctx.font = '900 15px "Impact", "Arial Black", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(this.objectiveText.toUpperCase(), width / 2, by + 23);
+      const bannerW = 540;
+      const bannerH = 68;
+      const bx = (width - bannerW) / 2;
+      const by = 16;
+      ctx.beginPath();
+      ctx.roundRect(bx, by, bannerW, bannerH, 8);
+      ctx.fill();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
 
-    ctx.fillStyle = '#E0F0FF';
-    ctx.font = 'bold 12px sans-serif';
-    ctx.fillText(this.objectiveSubtext, width / 2, by + 44);
+      // Boss Name Label (Top in the banner box)
+      const bossName = (activeBoss.name || "THE BLACK BOSS").toUpperCase();
+      ctx.font = '900 16px "Impact", "Arial Black", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#FFE600';
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 2.5;
+      ctx.strokeText(bossName, width / 2, by + 23);
+      ctx.fillText(bossName, width / 2, by + 23);
+
+      // Boss Hearts (Centered below the boss name)
+      const maxHearts = activeBoss.maxHealth || 3;
+      const currentHealth = Math.max(0, activeBoss.health || 0);
+      const heartSpacing = 36;
+      const totalHeartsW = (maxHearts - 1) * heartSpacing;
+      const startHeartX = (width / 2) - (totalHeartsW / 2);
+      const heartY = by + 45;
+
+      for (let i = 0; i < maxHearts; i++) {
+        const isFilled = i < currentHealth;
+        const hx = startHeartX + i * heartSpacing;
+        this.drawHeart(ctx, hx, heartY, isFilled, 0.85);
+      }
+    } else {
+      ctx.fillStyle = 'rgba(10, 14, 25, 0.9)';
+      ctx.strokeStyle = '#00F0FF';
+      ctx.lineWidth = 2;
+      const bannerW = 540;
+      const bannerH = 55;
+      const bx = (width - bannerW) / 2;
+      const by = 18;
+      ctx.beginPath();
+      ctx.roundRect(bx, by, bannerW, bannerH, 8);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#FFE600';
+      ctx.font = '900 15px "Impact", "Arial Black", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(this.objectiveText.toUpperCase(), width / 2, by + 23);
+
+      ctx.fillStyle = '#E0F0FF';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.fillText(this.objectiveSubtext, width / 2, by + 44);
+    }
     ctx.restore();
 
     // 4. White Light Refill Hint when standing in spawn or out of ammo
@@ -219,10 +278,10 @@ class UIManager {
     }
   }
 
-  drawHeart(ctx, x, y, filled) {
+  drawHeart(ctx, x, y, filled, scale = 1.2) {
     ctx.save();
     ctx.translate(x, y);
-    ctx.scale(1.2, 1.2);
+    ctx.scale(scale, scale);
     ctx.fillStyle = filled ? '#FF2A4D' : '#33384D';
     ctx.strokeStyle = '#FFFFFF';
     ctx.lineWidth = 1.5;
