@@ -429,9 +429,9 @@ class Level3Director {
           speakerAlt: 'Master Noobi-Wan',
           message:
             '<div class="noobi-callout-box" style="margin: 4px 0; padding: 6px; font-size: 12px; font-weight: bold; color: #00A850; border-left: 3.5px solid #00E676; background: rgba(0,230,118,0.14); border-radius: 4px;">' +
-            '&ldquo;You gained INVERT FRAME! Activate it using E (25s cooldown)!&rdquo;' +
+            '&ldquo;You gained INVERT FRAME! Activate it using right click (25s cooldown)!&rdquo;' +
             '</div>' +
-            '• Press <b>KEY [E]</b> to reverse light physics!<br>' +
+            '• Press <b>KEY [RMB]</b> to reverse light physics!<br>' +
             '• When active, enemies die to matching color lasers (same-color kills).',
           btnText: 'COMPLETE LEVEL 3! 🏆'
         }

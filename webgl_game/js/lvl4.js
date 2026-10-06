@@ -82,7 +82,7 @@ class Level4Director {
       message:
         '<div class="noobi-callout-box" style="margin:4px 0;padding:6px;font-size:12.5px;font-weight:bold;color:#FF3366;border-left:3.5px solid #9400D3;background:rgba(160,32,240,0.15);border-radius:4px;">' +
         '&ldquo;In Inverted Frame, bots die to their <b>own colour</b> laser!&rdquo;</div>' +
-        '• Activate with <b>KEY [E]</b> (10s duration, 25s cooldown).<br>' +
+        '• Activate with <b>KEY [RMB]</b> (10s duration, 25s cooldown).<br>' +
         '• Color-changing logic remains unchanged.',
       btnText: 'UNDERSTOOD! ▶'
     };

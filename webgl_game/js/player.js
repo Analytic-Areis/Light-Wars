@@ -299,28 +299,32 @@ class Player {
     // Aim Angle towards Mouse in World Space
     this.aimAngle = Math.atan2(input.mouseY - this.y, input.mouseX - this.x);
 
-    // Dash feature (enabled when dashUnlocked is true)
-    if (this.dashUnlocked && input.dashRequested && this.dashCooldown <= 0 && !this.isDashing) {
-      input.dashRequested = false;
-      this.isDashing = true;
-      this.dashTimer = window.LightWars.GAME_CONFIG.playerDashDuration;
-      this.dashCooldown = window.LightWars.GAME_CONFIG.playerDashCooldown;
+    // Dash feature (enabled when dashUnlocked is true).
+    // Always consume dashRequested immediately — this prevents spam-pressing Space
+    // during a cooldown or active dash from queuing up a delayed dash.
+    if (this.dashUnlocked && input.dashRequested) {
+      input.dashRequested = false; // consume the press regardless of outcome
+      if (this.dashCooldown <= 0 && !this.isDashing) {
+        this.isDashing = true;
+        this.dashTimer = window.LightWars.GAME_CONFIG.playerDashDuration;
+        this.dashCooldown = window.LightWars.GAME_CONFIG.playerDashCooldown;
 
-      let dx = 0, dy = 0;
-      if (input.keys['KeyW'] || input.keys['ArrowUp']) dy -= 1;
-      if (input.keys['KeyS'] || input.keys['ArrowDown']) dy += 1;
-      if (input.keys['KeyA'] || input.keys['ArrowLeft']) dx -= 1;
-      if (input.keys['KeyD'] || input.keys['ArrowRight']) dx += 1;
+        let dx = 0, dy = 0;
+        if (input.keys['KeyW'] || input.keys['ArrowUp']) dy -= 1;
+        if (input.keys['KeyS'] || input.keys['ArrowDown']) dy += 1;
+        if (input.keys['KeyA'] || input.keys['ArrowLeft']) dx -= 1;
+        if (input.keys['KeyD'] || input.keys['ArrowRight']) dx += 1;
 
-      if (dx === 0 && dy === 0) {
-        dx = Math.cos(this.aimAngle);
-        dy = Math.sin(this.aimAngle);
+        if (dx === 0 && dy === 0) {
+          dx = Math.cos(this.aimAngle);
+          dy = Math.sin(this.aimAngle);
+        }
+        const len = Math.hypot(dx, dy) || 1;
+        this.dashDirX = dx / len;
+        this.dashDirY = dy / len;
+
+        if (window.LightWars.sound) window.LightWars.sound.playDash();
       }
-      const len = Math.hypot(dx, dy) || 1;
-      this.dashDirX = dx / len;
-      this.dashDirY = dy / len;
-
-      if (window.LightWars.sound) window.LightWars.sound.playDash();
     }
 
     if (this.isDashing) {

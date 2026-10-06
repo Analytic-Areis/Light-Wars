@@ -109,7 +109,7 @@ class UIManager {
     }
     ctx.restore();
 
-    // 2b. Ability Indicators (Dash [SPACE], Invert Frame [E])
+    // 2b. Ability Indicators (Dash [SPACE], Invert Frame [RMB])
     if (player.dashUnlocked || player.invertUnlocked) {
       ctx.save();
       // Dash badge to left of ammo bar
@@ -158,7 +158,7 @@ class UIManager {
         ctx.fillStyle = '#A0B2DE';
         ctx.font = 'bold 9px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('[E] INVERT FRAME', invX + invBoxW / 2, invY + 16);
+        ctx.fillText('[RMB] INVERT FRAME', invX + invBoxW / 2, invY + 16);
 
         let statusText = 'READY';
         let statusColor = '#00F0FF';

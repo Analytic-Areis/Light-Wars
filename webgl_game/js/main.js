@@ -70,6 +70,7 @@ class LightWarsGame {
     this.initWindow();
     this.bindEvents();
     this.setupComicMenu();
+    this._currentComicPage = 1;
   }
 
   resetProgressOnLaunch() {
@@ -118,9 +119,7 @@ class LightWarsGame {
         if (this.player) this.player.selectPrevColor();
       }
       if (e.code === 'KeyE') {
-        if (this.player && this.player.invertUnlocked && this.state === 'PLAYING') {
-          this.player.triggerInvertFrame(this);
-        } else if (this.player) {
+        if (this.player) {
           this.player.selectNextColor();
         }
       }
@@ -216,7 +215,9 @@ class LightWarsGame {
         this.handlePlayerShoot();
       } else if (e.button === 2) {
         e.preventDefault();
-        this.input.dashRequested = true;
+        if (this.player && this.player.invertUnlocked && this.state === 'PLAYING') {
+          this.player.triggerInvertFrame(this);
+        }
       }
     });
 
@@ -1176,16 +1177,16 @@ class LightWarsGame {
       window.LightWars.sound.playDialogueAdvance();
     }
 
-    if (this._currentCard && typeof this._currentCard.onDismiss === 'function') {
-      try {
-        this._currentCard.onDismiss();
-      } catch (err) {
-        console.error("Error in card onDismiss:", err);
-      }
-    }
-
     // If another instruction is queued, transition smoothly to it
     if (this._tutorialQueue && this._tutorialQueue.length > 0) {
+      if (this._currentCard && typeof this._currentCard.onDismiss === 'function') {
+        try {
+          this._currentCard.onDismiss();
+        } catch (err) {
+          console.error("Error in card onDismiss:", err);
+        }
+      }
+
       const next = this._tutorialQueue.shift();
       const modal = document.getElementById('tutorialModal');
       if (modal) modal.classList.remove('visible');
@@ -1203,6 +1204,7 @@ class LightWarsGame {
     }
 
     const onComplete = this._tutorialSequenceOnComplete;
+    const currentCard = this._currentCard;
     this._tutorialSequenceOnComplete = null;
     this._currentCard = null;
 
@@ -1212,10 +1214,21 @@ class LightWarsGame {
       }
     }, 320);
 
+    // Restore game state BEFORE calling onDismiss/onComplete so that any state
+    // transition inside those callbacks (e.g. onLevelComplete → 'LEVEL_CLEAR') is
+    // not overwritten back to 'PLAYING' afterwards.
     this.state = (this._savedPreTutorialState && this._savedPreTutorialState !== 'TUTORIAL') 
       ? this._savedPreTutorialState 
       : 'PLAYING';
     this._savedPreTutorialState = 'PLAYING';
+
+    if (currentCard && typeof currentCard.onDismiss === 'function') {
+      try {
+        currentCard.onDismiss();
+      } catch (err) {
+        console.error("Error in card onDismiss:", err);
+      }
+    }
 
     if (typeof onComplete === 'function') {
       onComplete();
@@ -1315,35 +1328,10 @@ class LightWarsGame {
   updateComicMenuLockState() {
     const level1Cleared = this.devMode || (localStorage.getItem('lightwars_level1_cleared') === 'true');
     const level2Cleared = this.devMode || (localStorage.getItem('lightwars_level2_cleared') === 'true');
+    const isBlackBossDefeated = this.devMode || (localStorage.getItem('lightwars_black_boss_defeated') === 'true');
+    const level4Cleared = this.devMode || (localStorage.getItem('lightwars_level4_cleared') === 'true');
 
-    // Row 2 lock
-    const row2Overlay = document.getElementById('row2LockOverlay');
-    if (row2Overlay) row2Overlay.style.display = level1Cleared ? 'none' : 'flex';
-
-    // Mission 2 — unlock content
-    const mission2LockedContent = document.getElementById('mission2LockedContent');
-    const mission2Briefing = document.getElementById('mission2Briefing');
-    const mission2StatusPill = document.getElementById('mission2StatusPill');
-    const startLevel2Btn = document.getElementById('startLevel2Btn');
-    if (level1Cleared) {
-      if (mission2LockedContent) mission2LockedContent.style.display = 'none';
-      if (mission2Briefing) mission2Briefing.style.display = 'block';
-      if (mission2StatusPill) {
-        mission2StatusPill.textContent = 'READY';
-        mission2StatusPill.className = 'comic-status-pill ready';
-      }
-      if (startLevel2Btn) startLevel2Btn.style.display = '';
-    } else {
-      if (mission2LockedContent) mission2LockedContent.style.display = '';
-      if (mission2Briefing) mission2Briefing.style.display = 'none';
-      if (mission2StatusPill) {
-        mission2StatusPill.textContent = 'LOCKED';
-        mission2StatusPill.className = 'comic-status-pill locked';
-      }
-      if (startLevel2Btn) startLevel2Btn.style.display = 'none';
-    }
-
-    // Mission 1 — mark cleared after level 1 done
+    // Mission 1
     const mission1StatusPill = document.getElementById('mission1StatusPill');
     if (mission1StatusPill) {
       if (level1Cleared) {
@@ -1355,20 +1343,55 @@ class LightWarsGame {
       }
     }
 
+    // Row 2 lock
+    const row2Overlay = document.getElementById('row2LockOverlay');
+    if (row2Overlay) row2Overlay.style.display = level1Cleared ? 'none' : 'flex';
+
+    // Mission 2
+    const mission2LockedContent = document.getElementById('mission2LockedContent');
+    const mission2Briefing = document.getElementById('mission2Briefing');
+    const mission2StatusPill = document.getElementById('mission2StatusPill');
+    const startLevel2Btn = document.getElementById('startLevel2Btn');
+    
+    if (level1Cleared) {
+      if (mission2LockedContent) mission2LockedContent.style.display = 'none';
+      if (mission2Briefing) mission2Briefing.style.display = 'block';
+      if (startLevel2Btn) startLevel2Btn.style.display = '';
+      if (mission2StatusPill) {
+        if (level2Cleared) {
+          mission2StatusPill.textContent = 'CLEARED ★';
+          mission2StatusPill.className = 'comic-status-pill cleared';
+        } else {
+          mission2StatusPill.textContent = 'READY';
+          mission2StatusPill.className = 'comic-status-pill ready';
+        }
+      }
+    } else {
+      if (mission2LockedContent) mission2LockedContent.style.display = '';
+      if (mission2Briefing) mission2Briefing.style.display = 'none';
+      if (startLevel2Btn) startLevel2Btn.style.display = 'none';
+      if (mission2StatusPill) {
+        mission2StatusPill.textContent = 'LOCKED';
+        mission2StatusPill.className = 'comic-status-pill locked';
+      }
+    }
+
     // Row 3 lock
     const row3Overlay = document.getElementById('row3LockOverlay');
     if (row3Overlay) row3Overlay.style.display = level2Cleared ? 'none' : 'flex';
 
-    // Page 2: Level 4 & Level 5 locks
-    const level4Cleared = this.devMode || (localStorage.getItem('lightwars_level4_cleared') === 'true');
+    // Page 2: Mission 4
     const mission4StatusPill = document.getElementById('mission4StatusPill');
     if (mission4StatusPill) {
       if (level4Cleared) {
         mission4StatusPill.textContent = 'CLEARED ★';
         mission4StatusPill.className = 'comic-status-pill cleared';
-      } else {
+      } else if (isBlackBossDefeated) {
         mission4StatusPill.textContent = 'READY';
         mission4StatusPill.className = 'comic-status-pill ready';
+      } else {
+        mission4StatusPill.textContent = 'LOCKED';
+        mission4StatusPill.className = 'comic-status-pill locked';
       }
     }
 
@@ -1377,6 +1400,8 @@ class LightWarsGame {
     if (row5LockOverlay) {
       row5LockOverlay.style.display = level4Cleared ? 'none' : 'flex';
     }
+    
+    // Mission 5
     const mission5StatusPill = document.getElementById('mission5StatusPill');
     if (mission5StatusPill) {
       if (level4Cleared) {
@@ -1428,6 +1453,13 @@ class LightWarsGame {
       if (bossPlotTwistReveal) {
         bossPlotTwistReveal.style.display = 'block';
       }
+      
+      const mission3StatusPill = document.getElementById('mission3StatusPill');
+      if (mission3StatusPill) {
+        mission3StatusPill.textContent = 'CLEARED ★';
+        mission3StatusPill.className = 'comic-status-pill cleared';
+      }
+      
       if (page2TeaserBadge) {
         page2TeaserBadge.style.display = 'inline-block';
         page2TeaserBadge.innerText = 'PAGE 02';
@@ -1451,19 +1483,37 @@ class LightWarsGame {
       if (bossEncounterStatus) {
         bossEncounterStatus.style.display = 'block';
       }
+      const mission3StatusPill = document.getElementById('mission3StatusPill');
+      
       if (level2Cleared) {
         if (bossStampLocked) bossStampLocked.style.display = 'none';
         if (startLevel3Btn) startLevel3Btn.style.display = 'inline-block';
+        if (mission3StatusPill) {
+          mission3StatusPill.textContent = 'READY';
+          mission3StatusPill.className = 'comic-status-pill ready';
+        }
       } else {
         if (bossStampLocked) bossStampLocked.style.display = 'block';
         if (startLevel3Btn) startLevel3Btn.style.display = 'none';
+        if (mission3StatusPill) {
+          mission3StatusPill.textContent = 'LOCKED';
+          mission3StatusPill.className = 'comic-status-pill locked';
+        }
       }
       if (bossPlotTwistReveal) {
         bossPlotTwistReveal.style.display = 'none';
       }
       if (page2TeaserBadge) {
-        // Page 2 removed from initial view; only shown after defeating Black Boss
-        page2TeaserBadge.style.display = 'none';
+        if (this.devMode) {
+          page2TeaserBadge.style.display = 'inline-block';
+          page2TeaserBadge.innerText = 'PAGE 02 (DEV)';
+          if (!page2TeaserBadge.classList.contains('current')) {
+            page2TeaserBadge.className = 'page-badge inactive';
+          }
+        } else {
+          // Page 2 removed from initial view; only shown after defeating Black Boss
+          page2TeaserBadge.style.display = 'none';
+        }
       }
     }
   }
@@ -1642,10 +1692,13 @@ class LightWarsGame {
    * Creates a fullscreen flash effect then swaps the visible comic page.
    */
   transitionToPage2() {
+    if (this._currentComicPage === 2) return;
+    this._currentComicPage = 2;
+
     const page1 = document.getElementById('comicPage1');
     const page2 = document.getElementById('comicPage2');
 
-    if (!page2 || window.getComputedStyle(page2).display !== 'none') return; // Safety guard / already on page
+    if (!page2) return;
 
     // Update page badges
     const page1Badge = document.querySelector('.sw-comic-page-tracker span:first-child');
@@ -1692,10 +1745,13 @@ class LightWarsGame {
    * Animated page flip transition back from Page 2 → Page 1.
    */
   transitionToPage1() {
+    if (this._currentComicPage === 1) return;
+    this._currentComicPage = 1;
+
     const page1 = document.getElementById('comicPage1');
     const page2 = document.getElementById('comicPage2');
 
-    if (!page1 || window.getComputedStyle(page1).display !== 'none') return;
+    if (!page1) return;
 
     if (page2) {
       // Better page turn out
@@ -2163,9 +2219,9 @@ class LightWarsGame {
             if (d < (orb.hitRadius || 36)) {
               const res = orb.hitByLaser(laser.colorId);
               if (res.success) {
-                // Double safety: In level 2, white bullets creation should be stopped
-                const isLevel2 = (this.waves && this.waves.level === 2);
-                if (isLevel2 && res.resultColor === 'WHITE') {
+                // Double safety: In levels 1 & 2, white bullet creation should be stopped (only in Level 3+)
+                const currentLevel = (this.waves && this.waves.level) || 0;
+                if (currentLevel <= 2 && res.resultColor === 'WHITE') {
                   this.particles.spawnBurst(laser.x, laser.y, '#FFFFFF', 6);
                   laser.alive = false;
                   laserConsumed = true;

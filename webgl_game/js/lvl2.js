@@ -184,6 +184,15 @@ class Level2Director {
   }
 
   showGreenBlueIntroCards() {
+    // Top up Magenta and Yellow so the player always has enough to kill
+    // the 2 Green (needs Magenta) and 2 Blue (needs Yellow) troops,
+    // even if they spent all their gifted CMY ammo on the Red wave.
+    if (this.game.player) {
+      this.game.player.ammo.MAGENTA = Math.max(this.game.player.ammo.MAGENTA || 0, 4);
+      this.game.player.ammo.YELLOW  = Math.max(this.game.player.ammo.YELLOW  || 0, 4);
+      this.game.player.ammo.CYAN    = Math.max(this.game.player.ammo.CYAN    || 0, 2);
+    }
+
     const cards = [
       {
         id: 'l2_card_gb',
@@ -196,7 +205,8 @@ class Level2Director {
           'Great shooting on the Red scouts!<br><br>' +
           'Now <b>2 GREEN AND 2 BLUE BOTS WILL COME — KILL THEM</b>!<br><br>' +
           '• Destroy <span class="noobi-hl green">GREEN BOTS</span> with <span class="noobi-hl magenta">MAGENTA LASER [5]</span><br>' +
-          '• Destroy <span class="noobi-hl blue">BLUE BOTS</span> with <span class="noobi-hl yellow">YELLOW LASER [6]</span>',
+          '• Destroy <span class="noobi-hl blue">BLUE BOTS</span> with <span class="noobi-hl yellow">YELLOW LASER [6]</span><br><br>' +
+          '<div class="noobi-tip-box">💡 <b>AMMO REFILL:</b> You\'ve been topped up with <span class="noobi-hl magenta">+MAGENTA [5]</span> and <span class="noobi-hl yellow">+YELLOW [6]</span> to get you through this wave!</div>',
         btnText: 'FIGHT GREENS & BLUES! ⚔️'
       }
     ];
@@ -239,10 +249,10 @@ class Level2Director {
         totalSteps: 7,
         title: 'DRILL: TRANSFORM RED WITH GREEN!',
         message:
-          'Let us put this theory to the test right now!<br><br>' +
+          'Let us put this theory to the test right now!<br>' +
           '<b>ONE RED BOT WILL COME</b>.<br>' +
-          'I want you to test color changing by <b>FIRING GREEN LASER [2]</b> at him!<br><br>' +
-          '<div class="noobi-tip-box">⚠️ <b>DO NOT KILL HIM WITH CYAN!</b> Shoot him with <b>GREEN [2]</b> to watch him transform into Yellow!</div>',
+          'Test color changing by <b>FIRING GREEN LASER [2]</b> at him!<br>' +
+          '<div class="noobi-tip-box">⚠️ <b>DO NOT KILL WITH CYAN!</b> Shoot him with <b>GREEN [2]</b> to turn him Yellow!</div>',
         btnText: 'SPAWN TEST RED BOT 🎯'
       }
     ];
@@ -449,73 +459,21 @@ class Level2Director {
   // Practice & Final Waves
   // ═════════════════════════════════════════════════════════════════════════════
 
-  startBlueGreenPractice() {
-    this.step = 'PRACTICE_BLUE_GREEN';
+  startFinalWave_RGB() {
+    this.step = 'FINAL_WAVE_RGB';
     this.clearEnemies();
     this.game.ui.setObjective(
-      "COMBAT PRACTICE: BLUE & GREEN",
-      "Defeat 1 Blue and 1 Green bot! Use your color-changing tactics or counter lasers!"
+      "FINAL ASSAULT: RED, GREEN, BLUE",
+      "Eliminate the final RGB squad to clear Level 2!"
     );
 
     if (this.game.particles) {
-      this.game.particles.spawnComicText(this.game.player.x, this.game.player.y - 80, "BLUE & GREEN INCOMING!", "#0055FF");
+      this.game.particles.spawnComicText(this.game.player.x, this.game.player.y - 80, "RGB SQUAD INCOMING!", "#FFFFFF");
     }
 
-    this.waves.spawnAt(10, 8, 'BLUE');
-    this.waves.spawnAt(14, 11, 'GREEN');
-    this.waves.enemiesRemainingInPhase = 2;
-  }
-
-  startCyanMagentaPractice() {
-    this.step = 'PRACTICE_CYAN_MAGENTA';
-    this.clearEnemies();
-    this.game.ui.setObjective(
-      "COMBAT PRACTICE: CYAN & MAGENTA",
-      "Defeat 1 Cyan and 1 Magenta bot! Practice color changing or eliminate them!"
-    );
-
-    if (this.game.particles) {
-      this.game.particles.spawnComicText(this.game.player.x, this.game.player.y - 80, "CYAN & MAGENTA INCOMING!", "#00F0FF");
-    }
-
-    this.waves.spawnAt(9, 12, 'CYAN');
-    this.waves.spawnAt(14, 8, 'MAGENTA');
-    this.waves.enemiesRemainingInPhase = 2;
-  }
-
-  startFinalWave1_CMR() {
-    this.step = 'FINAL_WAVE_CMR';
-    this.clearEnemies();
-    this.game.ui.setObjective(
-      "ASSAULT WAVE 1/2 — CYAN, MAGENTA, RED",
-      "Eliminate the 3-troop squad: Cyan, Magenta, and Red!"
-    );
-
-    if (this.game.particles) {
-      this.game.particles.spawnComicText(this.game.player.x, this.game.player.y - 80, "CYAN, MAGENTA, RED!", "#FF2A4D");
-    }
-
-    this.waves.spawnAt(9, 7, 'CYAN');
-    this.waves.spawnAt(14, 7, 'MAGENTA');
-    this.waves.spawnAt(12, 12, 'RED');
-    this.waves.enemiesRemainingInPhase = 3;
-  }
-
-  startFinalWave2_GBY() {
-    this.step = 'FINAL_WAVE_GBY';
-    this.clearEnemies();
-    this.game.ui.setObjective(
-      "FINAL WAVE 2/2 — GREEN, BLUE, YELLOW",
-      "Conquer the final triad: Green, Blue, and Yellow to clear Level 2!"
-    );
-
-    if (this.game.particles) {
-      this.game.particles.spawnComicText(this.game.player.x, this.game.player.y - 80, "GREEN, BLUE, YELLOW!", "#FFE600");
-    }
-
-    this.waves.spawnAt(9, 11, 'GREEN');
-    this.waves.spawnAt(14, 11, 'BLUE');
-    this.waves.spawnAt(12, 7, 'YELLOW');
+    this.waves.spawnAt(9, 7, 'RED');
+    this.waves.spawnAt(14, 7, 'GREEN');
+    this.waves.spawnAt(12, 12, 'BLUE');
     this.waves.enemiesRemainingInPhase = 3;
   }
 
@@ -562,7 +520,7 @@ class Level2Director {
       setTimeout(() => {
         enemy.alive = false;
         this.waves.enemiesRemainingInPhase = 0;
-        this.startBlueGreenPractice();
+        this.startFinalWave_RGB();
       }, 700);
     }
   }
@@ -589,16 +547,7 @@ class Level2Director {
       } else if (this.step === 'GREEN_BLUE_TROOPS') {
         // Green and Blue troops eliminated -> Card 5 Color Changing Unlocks!
         setTimeout(() => this.showCard5ColourChangingUnlock(), 700);
-      } else if (this.step === 'PRACTICE_BLUE_GREEN') {
-        // Practice 1 done -> Practice 2 (Cyan & Magenta)
-        setTimeout(() => this.startCyanMagentaPractice(), 700);
-      } else if (this.step === 'PRACTICE_CYAN_MAGENTA') {
-        // Practice 2 done -> Final Assault Wave 1 (Cyan, Magenta, Red)
-        setTimeout(() => this.startFinalWave1_CMR(), 700);
-      } else if (this.step === 'FINAL_WAVE_CMR') {
-        // Wave 1 done -> Final Assault Wave 2 (Green, Blue, Yellow)
-        setTimeout(() => this.startFinalWave2_GBY(), 700);
-      } else if (this.step === 'FINAL_WAVE_GBY') {
+      } else if (this.step === 'FINAL_WAVE_RGB') {
         // Level 2 Complete!
         this.waves.cleared = true;
         this.game.onLevelComplete(2);

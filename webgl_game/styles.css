@@ -1302,7 +1302,7 @@ body, html {
   font-size: clamp(12px, 1.2vw, 14.5px);
   line-height: 1.35;
   color: #1A1F30;
-  overflow: hidden;
+  overflow-y: auto;
   max-height: 100%;
   padding-right: 8px;
   margin: 4px 0 2px 0;
@@ -1438,7 +1438,7 @@ body, html {
   right: 3.5%;
   top: 70.8%;
   bottom: 10.2%;
-  padding: 16px 12px 6px 12px;
+  padding: 8px 12px 4px 12px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;

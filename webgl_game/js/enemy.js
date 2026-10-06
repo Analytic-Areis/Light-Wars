@@ -127,7 +127,7 @@ class Enemy {
   // Whole-body vertical capsule hitbox from feet (y - 4) to head (y - 44 / y - 52 for boss) with continuous sweep segment support
   checkLaserHit(laser) {
     if (!this.alive) return false;
-    const topY = this.isBoss ? (this.y - 52) : (this.y - 44);
+    const topY = this.isBoss ? (this.y - 72) : (this.y - 44);
     const bottomY = this.y - 4;
     const clampedY = Math.max(topY, Math.min(bottomY, laser.y));
     const dist = Math.hypot(laser.x - this.x, laser.y - clampedY);
@@ -847,12 +847,12 @@ class BlackBoss extends Enemy {
     // Glowing void aura around Boss
     const pulse = 1.0 + Math.sin(this.auraPulse) * 0.12;
     const auraColor = (this.inversionState === 'INVERTED') ? 'rgba(0, 240, 255, 0.35)' : 'rgba(160, 32, 240, 0.35)';
-    const grad = ctx.createRadialGradient(0, -22, 5, 0, -22, 35 * pulse);
+    const grad = ctx.createRadialGradient(0, -33, 7.5, 0, -33, 52 * pulse);
     grad.addColorStop(0, auraColor);
     grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = grad;
     ctx.beginPath();
-    ctx.arc(0, -22, 35 * pulse, 0, Math.PI * 2);
+    ctx.arc(0, -33, 52 * pulse, 0, Math.PI * 2);
     ctx.fill();
 
     // Inversion shimmer effect if inverted
@@ -862,7 +862,7 @@ class BlackBoss extends Enemy {
       ctx.lineWidth = 2.5;
       ctx.setLineDash([6, 4]);
       ctx.beginPath();
-      ctx.arc(0, -22, 32 * pulse, 0, Math.PI * 2);
+      ctx.arc(0, -33, 48 * pulse, 0, Math.PI * 2);
       ctx.stroke();
       ctx.setLineDash([]);
 
@@ -873,9 +873,9 @@ class BlackBoss extends Enemy {
       ctx.beginPath();
       for (let s = 0; s < 6; s++) {
         const ang = (s * Math.PI) / 3 + this.auraPulse * 0.5;
-        const rad = 36 * pulse;
+        const rad = 54 * pulse;
         const hx = Math.cos(ang) * rad;
-        const hy = -22 + Math.sin(ang) * rad;
+        const hy = -33 + Math.sin(ang) * rad;
         if (s === 0) ctx.moveTo(hx, hy);
         else ctx.lineTo(hx, hy);
       }
@@ -909,8 +909,8 @@ class BlackBoss extends Enemy {
         if (this.hurtFlash > 0) {
           ctx.filter = 'brightness(3.5) contrast(1.8)';
         }
-        const h = 50;
-        const w = 50;
+        const h = 75; // 1.5x normal size (50 * 1.5 = 75)
+        const w = 75;
         const feetOffset = h * (224 / 256);
         ctx.drawImage(img, sx, sy, frameW, frameH, -w / 2, -feetOffset, w, h);
         ctx.filter = 'none';

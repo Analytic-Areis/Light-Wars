@@ -44,9 +44,9 @@ class Level1Director {
         totalSteps: 6,
         title: 'HI FLUKE! THE BLACK BOSS AWAITS',
         message:
-          'Greetings, <b>Fluke</b>! Master <b>NOOBI-WAN</b> contacting you across the stars.<br><br>' +
-          'Listen closely: your ultimate mission is to infiltrate the Imperial flagship and <b>kill the Black Boss in the space ship</b>!<br>' +
-          'He rules from the dark void, devouring all visible light in the galaxy. Only you can ignite the stars once more!',
+          'Greetings, <b>Fluke</b>! Master <b>NOOBI-WAN</b> contacting you across the stars.<br>' +
+          'Your mission is to infiltrate the Imperial flagship and <b>kill the Black Boss</b>!<br>' +
+          'He rules the dark void, devouring all light. Only you can ignite the stars!',
         btnText: 'CONTINUE NOOBI-WAN ▶'
       },
       {

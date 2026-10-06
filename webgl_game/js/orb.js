@@ -58,9 +58,9 @@ class Orb {
     const key = `${this.colorId}_${laserColorId}`;
     const resultColor = window.LightWars.ORB_CONVERSIONS[key];
     if (resultColor) {
-      // In level 2, white bullets creation should be stopped
-      const isLevel2 = (window.game && window.game.waves && window.game.waves.level === 2);
-      if (isLevel2 && resultColor === 'WHITE') {
+      // In levels 1 & 2, white bullet creation should be stopped (only available in Level 3+)
+      const currentLevel = (window.game && window.game.waves && window.game.waves.level) || 0;
+      if (currentLevel <= 2 && resultColor === 'WHITE') {
         return { success: false };
       }
 
