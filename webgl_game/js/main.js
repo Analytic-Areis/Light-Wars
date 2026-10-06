@@ -1926,16 +1926,30 @@ class LightWarsGame {
 
   startLevel5() {
     this._lastLevel = 5;
-    this.arena.loadLevel(4); // Use map 4/5
+    this.arena.loadLevel(5); // Use final arena (Level 5)
     if (window.LightWars.occlusion) {
-      window.LightWars.occlusion.loadLevelWalls(4, this.arena);
+      window.LightWars.occlusion.loadLevelWalls(5, this.arena);
     }
     this._resetGameEntities();
     this.physicsInverted = false;
-    if (this.waves && typeof this.waves.startLevel5 === "function") {
+    if (this.player) {
+      this.player.dashUnlocked  = true;
+      this.player.invertUnlocked = true;
+    }
+    this.unlockHelpCapability('dash');
+    this.unlockHelpCapability('orbCrafting');
+    this.unlockHelpCapability('whiteAmmo');
+    this.unlockHelpCapability('inversion');
+    this.state = 'PLAYING'; // Must be set BEFORE waves.startLevel5 which triggers tutorial
+    if (window.LightWars.sound) {
+      window.LightWars.sound.startMusic('BOSS');
+    }
+    if (this.waves && typeof this.waves.startLevel5 === 'function') {
       this.waves.startLevel5();
     }
   }
+
+
   transitionToPage2() {
     if (this._currentComicPage === 2) return;
     this._currentComicPage = 2;
@@ -2669,9 +2683,10 @@ class LightWarsGame {
 
               this.waves.onEnemyDefeated(enemy, laser.colorId);
 
-              // When the Black Boss dies, eliminate all remaining enemies across the arena
               if (enemy.isBoss) {
-                this.killRemainingMinions(enemy);
+                if (!(this.waves && this.waves.level === 5)) {
+                  this.killRemainingMinions(enemy);
+                }
               }
             } else if (outcome.action === "BOSS_HIT") {
               // Boss took 1 white bullet hit

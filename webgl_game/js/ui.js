@@ -251,19 +251,41 @@ class UIManager {
       ctx.strokeText(bossName, width / 2, by + 23);
       ctx.fillText(bossName, width / 2, by + 23);
 
-      // Boss Hearts (Centered below the boss name)
-      const maxHearts = activeBoss.maxHealth || 3;
-      const currentHealth = Math.max(0, activeBoss.health || 0);
-      const heartSpacing = 36;
-      const totalHeartsW = (maxHearts - 1) * heartSpacing;
-      const startHeartX = (width / 2) - (totalHeartsW / 2);
-      const heartY = by + 45;
+      const maxHp = activeBoss.maxHealth || 3;
+      const currentHp = Math.max(0, activeBoss.health || 0);
 
-      for (let i = 0; i < maxHearts; i++) {
-        const isFilled = i < currentHealth;
-        const hx = startHeartX + i * heartSpacing;
-        this.drawHeart(ctx, hx, heartY, isFilled, 0.85);
+      // Boss Health Bar for all bosses
+      const barW = 300;
+      const barH = 14;
+      const barX = (width / 2) - (barW / 2);
+      const barY = by + 40;
+      
+      ctx.fillStyle = '#101018';
+      ctx.fillRect(barX, barY, barW, barH);
+      
+      const pct = currentHp / maxHp;
+      // Use different colors for different bosses
+      if (activeBoss.colorId === "WHITE") {
+        ctx.fillStyle = '#FFFFFF';
+      } else if (activeBoss.colorId === "BLACK") {
+        ctx.fillStyle = '#A020F0'; // Purple-ish to stand out on dark background
+      } else {
+        ctx.fillStyle = '#FF0044'; // Fallback
       }
+      ctx.fillRect(barX, barY, barW * pct, barH);
+      
+      ctx.strokeStyle = '#00F0FF';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(barX, barY, barW, barH);
+      
+      // Draw segment dividers
+      ctx.beginPath();
+      for (let i = 1; i < maxHp; i++) {
+        const segX = barX + (barW / maxHp) * i;
+        ctx.moveTo(segX, barY);
+        ctx.lineTo(segX, barY + barH);
+      }
+      ctx.stroke();
     } else {
       ctx.fillStyle = 'rgba(10, 14, 25, 0.9)';
       ctx.strokeStyle = '#00F0FF';

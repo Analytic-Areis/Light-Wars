@@ -33,7 +33,7 @@ class SpriteManager {
     CYAN: 'bots/cyan-red',
     MAGENTA: 'bots/magenta-green',
     YELLOW: 'bots/yellow-blue',
-    WHITE: 'bots/white-pink',
+    WHITE: 'white_boss',
     BLACK: 'boss',
     BOSS: 'boss'
   };

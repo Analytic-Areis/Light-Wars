@@ -971,7 +971,10 @@ class BlackBoss extends Enemy {
         if (window.game) {
           window.game.physicsInverted = false;
           if (typeof window.game.killRemainingMinions === "function") {
-            window.game.killRemainingMinions(this);
+            // In Level 5, killing Black Boss shouldn't kill everyone
+            if (window.game.waves && window.game.waves.level !== 5) {
+              window.game.killRemainingMinions(this);
+            }
           }
         }
         return { action: "KILL", bossDead: true };
@@ -1123,10 +1126,10 @@ class WhiteBoss extends Enemy {
     this.name = "The White Boss";
     this.maxHealth = 3;
     this.health = 3;
-    this.radius = 24;
-    this.bodyRadius = 22;
-    this.spriteWidth = 50;
-    this.spriteHeight = 50;
+    this.radius = 32;
+    this.bodyRadius = 30;
+    this.spriteWidth = 100;
+    this.spriteHeight = 100;
     this.speed = 50;
 
     this.shootCooldown = 2.0;
@@ -1201,11 +1204,8 @@ class WhiteBoss extends Enemy {
       if (this.health <= 0) {
         this.health = 0;
         this.alive = false;
-        if (window.game) {
-          if (typeof window.game.killRemainingMinions === "function") {
-            window.game.killRemainingMinions(this);
-          }
-        }
+        // NOTE: killRemainingMinions is handled by Level5Director.onEnemyDefeated
+        // so we do NOT call it here to avoid double kills / race conditions.
         return { action: "KILL", bossDead: true };
       }
 
@@ -1272,8 +1272,8 @@ class WhiteBoss extends Enemy {
 
         if (this.hurtFlash > 0) ctx.filter = "brightness(3.5) contrast(1.8)";
 
-        const h = 75;
-        const w = 75;
+        const h = 100;
+        const w = 100;
         const feetOffset = h * (224 / 256);
         ctx.drawImage(img, sx, sy, frameW, frameH, -w / 2, -feetOffset, w, h);
         ctx.filter = "none";

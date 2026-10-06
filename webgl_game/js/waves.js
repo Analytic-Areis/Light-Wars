@@ -32,8 +32,11 @@ class WaveDirector {
   }
 
   // Helper to spawn enemy in arena screen coordinates
+
   spawnAt(col, row, colorId) {
+    // Only apply the lvl3 guard when actually on level 3
     if (
+      this.level === 3 &&
       this.lvl3 &&
       (this.lvl3.isVictoryInProgress ||
         (this.lvl3.bossRef && !this.lvl3.bossRef.alive))
@@ -106,6 +109,12 @@ class WaveDirector {
   startLevel4() {
     this.currentDirector = this.lvl4;
     this.lvl4.start();
+  }
+
+  startLevel5() {
+    this.level = 5;
+    this.currentDirector = this.lvl5;
+    this.lvl5.start();
   }
 
   // ═════════════════════════════════════════════════════════════════════════════
