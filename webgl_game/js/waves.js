@@ -50,8 +50,8 @@ class WaveDirector {
     // Level 1: 2-2-2 sequential CYM spawn state
     this.l1Subwave = 'CYAN'; // 'CYAN' -> 'YELLOW' -> 'MAGENTA' -> done
 
-    // Level 2: C+R -> Y+B -> M+G progression state
-    this.l2PairStep = 0; // 0: C+R, 1: Y+B, 2: M+G
+    // Level 2: R+M -> B+C -> G+Y progression state
+    this.l2PairStep = 0; // 0: R+M, 1: B+C, 2: G+Y
 
     // Level 3: Replenish cycle & 3-second gap timer
     this.l3ReplenishPending = false;
@@ -170,9 +170,9 @@ class WaveDirector {
       }
     ];
 
-    // Spawn the 2 Cyan enemies
-    this.spawnAt(11, 4, 'CYAN');
-    this.spawnAt(6, 13, 'CYAN');
+    // Spawn the 2 Cyan enemies (strictly at least 4 tiles away on walkable floor)
+    this.spawnAt(16, 6, 'CYAN');
+    this.spawnAt(8, 7, 'CYAN');
     this.enemiesRemainingInPhase = 2;
 
     if (this.game.showTutorialSequence) {
@@ -273,10 +273,10 @@ class WaveDirector {
         tracker: 'CARD 10 / 10',
         step: 10,
         totalSteps: 10,
-        title: 'HIT THE BOX TO UNLOCK SURPRISE!',
+        title: 'HIT THE BLACK ORB TO UNLOCK REWARD!',
         message:
-          'Look ahead! A reinforced armored <b>BLACK BOX</b> (The Black Barrel) has materialized in the chamber!<br><br>' +
-          '<b>HIT THE BOX WITH ALL COLOURS TO UNLOCK A SURPRISE!</b><br><br>' +
+          'Look ahead! A mysterious radiant <b>BLACK ORB</b> has materialized in the chamber!<br><br>' +
+          '<b>STRIKE THE BLACK ORB WITH ALL 6 COLOURS TO UNLOCK YOUR REWARD!</b><br><br>' +
           'Fire <b>one bullet of each of the 6 colors</b> into it:<br>' +
           '<div class="noobi-color-pips-preview">' +
             '<span style="color:#FF2A4D;">● RED [1]</span>' +
@@ -286,7 +286,7 @@ class WaveDirector {
             '<span style="color:#FF2AD4;">● MAGENTA [5]</span>' +
             '<span style="color:#FFE600;">● YELLOW [6]</span>' +
           '</div>' +
-          'Watch the 6 illuminated color pips above the box light up. Strike it with all 6 colors to claim your secret surprise power!',
+          'Watch the 6 illuminated color pips above the black orb light up. Strike it with all 6 colors to claim your secret surprise power!',
         btnText: 'UNLOCK THE SURPRISE! 🎁',
         onDismiss: () => {
           this.spawnBlackBarrelChallenge();
@@ -305,8 +305,8 @@ class WaveDirector {
     if (this.phase === 'BLACK_BARREL') return;
     this.phase = 'BLACK_BARREL';
     this.game.ui.setObjective(
-      "SPECIAL OBJECTIVE — DESTROY THE BLACK BOX!",
-      "Synthesize all 6 colors and hit the box with all colors to unlock the surprise!"
+      "SPECIAL OBJECTIVE — STRIKE THE BLACK ORB!",
+      "Synthesize all 6 colors and hit the Black Orb with all colors to unlock the surprise!"
     );
 
     const barrelPos = (this.game.arena && this.game.arena.toScreen)
@@ -317,7 +317,7 @@ class WaveDirector {
     this.game.barrels.push(blackBarrel);
 
     if (this.game.particles) {
-      this.game.particles.spawnComicText(barrelPos.x, barrelPos.y - 120, "BLACK BOX SPAWNED!", "#FFE600");
+      this.game.particles.spawnComicText(barrelPos.x, barrelPos.y - 60, "BLACK ORB SPAWNED!", "#FFE600");
     }
   }
 
@@ -327,7 +327,7 @@ class WaveDirector {
       this.game.showStopTutorial(
         'l1_dash_unlocked',
         'SURPRISE UNLOCKED: DASH ABILITY!',
-        'SPLENDID WORK, FLUKE! The Black Box has shattered and released its contained power: <b>THE DASH ABILITY</b>!<br><br>' +
+        'SPLENDID WORK, FLUKE! The Black Orb has released its contained power: <b>THE DASH ABILITY</b>!<br><br>' +
         '• Press <span class="noobi-key">[SPACE]</span> or <span class="noobi-key">[RMB]</span> to warp through danger at high speed!<br><br>' +
         'You have mastered the foundations of the chromatic spectrum. Prepare yourself—the war escalates!',
         {
@@ -342,7 +342,7 @@ class WaveDirector {
   }
 
   // ═════════════════════════════════════════════════════════════════════════════
-  // LEVEL 2: Complement Pairs Progression (Cyan+Red -> Yellow+Blue -> Magenta+Green)
+  // LEVEL 2: Complement Pairs Progression (Red+Magenta -> Blue+Cyan -> Green+Yellow)
   // ═════════════════════════════════════════════════════════════════════════════
 
   startLevel2() {
@@ -362,9 +362,9 @@ class WaveDirector {
           'Welcome to Level 2, Fluke!<br><br>' +
           '• <b>USING YOUR NEW DASH:</b><br>' +
           'Press <span class="noobi-key">[SPACE]</span> or <span class="noobi-key">[RIGHT MOUSE BUTTON]</span> to execute a high-speed dash!<br><br>' +
-          '• <b>COMPLEMENTARY PAIR BATTLES:</b><br>' +
-          'Enemies are now attacking in complementary pairs! First: <span class="noobi-hl cyan">CYAN</span> and its complement <span class="noobi-hl red">RED</span>!<br>' +
-          'Eliminate Cyan with Red laser [1] to harvest Red orbs, then synthesize Cyan ammo [4] to eliminate Red!'
+          '• <b>DUAL ENEMY BATTLES:</b><br>' +
+          'Enemies are attacking in pairs! First wave: <span class="noobi-hl red">RED</span> and <span class="noobi-hl magenta">MAGENTA</span>!<br>' +
+          'Eliminate Red with Cyan ammo [4] and Magenta with Green laser [2]!'
         );
       }, 200);
     }
@@ -375,44 +375,48 @@ class WaveDirector {
   spawnL2Pair1() {
     this.l2PairStep = 0;
     this.game.ui.setObjective(
-      "LEVEL 2 — PAIR 1: CYAN & RED",
-      "Defeat Cyan (with Red [1]) and Red (with Cyan [4])!"
+      "LEVEL 2 — PAIR 1: RED & MAGENTA",
+      "Defeat Red (with Cyan [4]) and Magenta (with Green [2])!"
     );
 
-    this.spawnAt(11, 4, 'CYAN');
-    this.spawnAt(13, 3, 'RED');
+    if (this.game.particles) {
+      this.game.particles.spawnComicText(this.game.player.x, this.game.player.y - 80, "RED + MAGENTA INCOMING!", "#FF2A4D");
+    }
+
+    this.spawnAt(11, 4, 'RED');
+    this.spawnAt(14, 11, 'MAGENTA');
     this.enemiesRemainingInPhase = 2;
   }
 
   spawnL2Pair2() {
     this.l2PairStep = 1;
     this.game.ui.setObjective(
-      "LEVEL 2 — PAIR 2: YELLOW & BLUE",
-      "Defeat Yellow (with Blue [3]) and Blue (with Yellow [6])!"
+      "LEVEL 2 — PAIR 2: BLUE & CYAN",
+      "Defeat Blue (with Yellow [6]) and Cyan (with Red [1])!"
     );
 
     if (this.game.particles) {
-      this.game.particles.spawnComicText(this.game.player.x, this.game.player.y - 80, "YELLOW + BLUE INCOMING!", "#FFE600");
+      this.game.particles.spawnComicText(this.game.player.x, this.game.player.y - 80, "BLUE + CYAN INCOMING!", "#0055FF");
     }
 
-    this.spawnAt(5, 12, 'YELLOW');
     this.spawnAt(14, 13, 'BLUE');
+    this.spawnAt(5, 12, 'CYAN');
     this.enemiesRemainingInPhase = 2;
   }
 
   spawnL2Pair3() {
     this.l2PairStep = 2;
     this.game.ui.setObjective(
-      "LEVEL 2 — PAIR 3: MAGENTA & GREEN",
-      "Defeat Magenta (with Green [2]) and Green (with Magenta [5])!"
+      "LEVEL 2 — PAIR 3: GREEN & YELLOW",
+      "Defeat Green (with Magenta [5]) and Yellow (with Blue [3])!"
     );
 
     if (this.game.particles) {
-      this.game.particles.spawnComicText(this.game.player.x, this.game.player.y - 80, "MAGENTA + GREEN INCOMING!", "#FF2AD4");
+      this.game.particles.spawnComicText(this.game.player.x, this.game.player.y - 80, "GREEN + YELLOW INCOMING!", "#00FF66");
     }
 
-    this.spawnAt(14, 11, 'MAGENTA');
     this.spawnAt(4, 13, 'GREEN');
+    this.spawnAt(13, 3, 'YELLOW');
     this.enemiesRemainingInPhase = 2;
   }
 
@@ -657,13 +661,13 @@ class WaveDirector {
       this.enemiesRemainingInPhase = Math.max(0, this.enemiesRemainingInPhase - 1);
       if (this.enemiesRemainingInPhase === 0) {
         if (this.l2PairStep === 0) {
-          // Cyan + Red defeated -> spawn Yellow + Blue
+          // Red + Magenta defeated -> spawn Blue + Cyan
           setTimeout(() => this.spawnL2Pair2(), 800);
         } else if (this.l2PairStep === 1) {
-          // Yellow + Blue defeated -> spawn Magenta + Green
+          // Blue + Cyan defeated -> spawn Green + Yellow
           setTimeout(() => this.spawnL2Pair3(), 800);
         } else if (this.l2PairStep === 2) {
-          // Magenta + Green defeated -> Level 2 complete!
+          // Green + Yellow defeated -> Level 2 complete!
           this.cleared = true;
           this.game.onLevelComplete(2);
         }

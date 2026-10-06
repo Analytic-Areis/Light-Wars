@@ -37,6 +37,7 @@ class LightWarsGame {
       mouseY: 2320,
       screenMouseX: 640,
       screenMouseY: 360,
+      mouseInside: false,
       isMouseDown: false,
       dashRequested: false
     };
@@ -124,6 +125,7 @@ class LightWarsGame {
         }
       }
       if (e.code === 'Escape') {
+        if (e.repeat) return; // Prevent glitching/toggling when holding down Escape
         if (this.state === 'TUTORIAL') {
           this.dismissTutorial();
         } else if (this.state === 'PLAYING') {
@@ -136,6 +138,7 @@ class LightWarsGame {
         this.dismissTutorial();
       }
       if (e.code === 'KeyH' || e.code === 'KeyI') {
+        if (e.repeat) return;
         if (this.state === 'TUTORIAL') {
           this.dismissTutorial();
         } else if (this.state === 'PLAYING') {
@@ -143,6 +146,7 @@ class LightWarsGame {
         }
       }
       if (e.code === 'KeyP' && (this.state === 'PLAYING' || this.state === 'PAUSED')) {
+        if (e.repeat) return;
         this.togglePauseMenu(this.state === 'PLAYING');
       }
     });
@@ -152,7 +156,17 @@ class LightWarsGame {
     });
 
     // Mouse tracking & firing
+    this.canvas.addEventListener('mouseenter', () => {
+      this.input.mouseInside = true;
+    });
+
+    this.canvas.addEventListener('mouseleave', () => {
+      this.input.mouseInside = false;
+      this.input.isMouseDown = false;
+    });
+
     this.canvas.addEventListener('mousemove', (e) => {
+      this.input.mouseInside = true;
       const rect = this.canvas.getBoundingClientRect();
       const scaleX = this.canvas.width / rect.width;
       const scaleY = this.canvas.height / rect.height;
@@ -313,11 +327,19 @@ class LightWarsGame {
     const sfxSlider = document.getElementById('sfxVolumeSlider');
     const sfxVal = document.getElementById('sfxVolumeVal');
     if (sfxSlider && sfxVal) {
-      sfxSlider.addEventListener('input', (e) => {
+      const updateSfx = (e) => {
         const val = parseFloat(e.target.value);
         sfxVal.textContent = `${Math.round(val * 100)}%`;
         if (window.LightWars.sound) {
+          window.LightWars.sound.resume();
           window.LightWars.sound.setSfxVolume(val);
+        }
+      };
+      sfxSlider.addEventListener('input', updateSfx);
+      sfxSlider.addEventListener('change', (e) => {
+        updateSfx(e);
+        if (window.LightWars.sound && window.LightWars.sound.sfxVolume > 0) {
+          window.LightWars.sound.playLaser('RED');
         }
       });
     }
@@ -329,6 +351,7 @@ class LightWarsGame {
         const val = parseFloat(e.target.value);
         musicVal.textContent = `${Math.round(val * 100)}%`;
         if (window.LightWars.sound) {
+          window.LightWars.sound.resume();
           window.LightWars.sound.setMusicVolume(val);
         }
       });
@@ -370,6 +393,18 @@ class LightWarsGame {
 
     this.updateComicMenuLockState();
     this.updateComicMenuBossState();
+
+    // Start Main Menu music on first user interaction anywhere (complies with browser AudioContext autoplay policy)
+    const startMenuMusicOnFirstGesture = () => {
+      if (this.state === 'MENU' && window.LightWars.sound) {
+        window.LightWars.sound.resume();
+        window.LightWars.sound.startMusic('MENU');
+      }
+      window.removeEventListener('pointerdown', startMenuMusicOnFirstGesture);
+      window.removeEventListener('keydown', startMenuMusicOnFirstGesture);
+    };
+    window.addEventListener('pointerdown', startMenuMusicOnFirstGesture, { once: true });
+    window.addEventListener('keydown', startMenuMusicOnFirstGesture, { once: true });
   }
 
   togglePauseMenu(show) {
@@ -609,7 +644,7 @@ class LightWarsGame {
         "&nbsp;&nbsp;&bull; <span class=\"noobi-hl cyan\">CYAN TROOP</span> &rarr; Kill with <span class=\"noobi-hl red\">RED LASER [1]</span><br>" +
         "&nbsp;&nbsp;&bull; <span class=\"noobi-hl magenta\">MAGENTA TROOP</span> &rarr; Kill with <span class=\"noobi-hl green\">GREEN LASER [2]</span><br>" +
         "&nbsp;&nbsp;&bull; <span class=\"noobi-hl yellow\">YELLOW TROOP</span> &rarr; Kill with <span class=\"noobi-hl blue\">BLUE LASER [3]</span><br>" +
-        "• <b>BLACK BOX:</b> Shoot with 1 bullet of each type (Red, Green, Blue, Cyan, Magenta, Yellow) to unlock the DASH surprise!<br>" +
+        "• <b>BLACK ORB:</b> Shoot with 1 bullet of each type (Red, Green, Blue, Cyan, Magenta, Yellow) to unlock the DASH reward!<br>" +
         "• <b>RECHARGE:</b> Step onto the white glowing sanctuary circle to reload your RGB blasters and heal HP.";
     } else if (lvl === 2) {
       title = "FIELD GUIDE: LEVEL 2 TACTICS";
@@ -813,6 +848,9 @@ class LightWarsGame {
 
   showMenu() {
     this.state = 'MENU';
+    if (window.LightWars.sound) {
+      window.LightWars.sound.startMusic('MENU');
+    }
     this.updateComicMenuLockState();
     this.updateComicMenuBossState();
     document.getElementById('comicMenu').style.display = 'flex';
@@ -852,6 +890,9 @@ class LightWarsGame {
     this._resetGameEntities();
     this.waves.startLevel1();
     this.state = 'PLAYING';
+    if (window.LightWars.sound) {
+      window.LightWars.sound.startMusic('EXPLORATION');
+    }
   }
 
   startLevel2() {
@@ -868,6 +909,9 @@ class LightWarsGame {
     }
     this.waves.startLevel2();
     this.state = 'PLAYING';
+    if (window.LightWars.sound) {
+      window.LightWars.sound.startMusic('COMBAT');
+    }
   }
 
   startLevel3() {
@@ -884,6 +928,9 @@ class LightWarsGame {
     }
     this.waves.startLevel3();
     this.state = 'PLAYING';
+    if (window.LightWars.sound) {
+      window.LightWars.sound.startMusic('BOSS');
+    }
   }
 
 
@@ -901,83 +948,104 @@ class LightWarsGame {
       return false;
     };
 
+    const minTileDist = 4.0; // Strictly spawn enemies at least 4 tiles away from player
+
     if (this.arena.ignoreBoundaries) {
-      const d = Math.hypot(targetX - this.player.x, targetY - this.player.y);
-      if (d < 180) {
-        const angle = Math.atan2(targetY - this.player.y, targetX - this.player.x) || 0;
-        const candidatePos = {
-          x: this.player.x + Math.cos(angle) * 250,
-          y: this.player.y + Math.sin(angle) * 250
-        };
-        return candidatePos;
-      }
-      return { x: targetX, y: targetY };
+      const angle = Math.atan2(targetY - this.player.y, targetX - this.player.x) || 0;
+      return {
+        x: this.player.x + Math.cos(angle) * (minTileDist * 50),
+        y: this.player.y + Math.sin(angle) * (minTileDist * 50)
+      };
     }
 
     const pGrid = this.arena.toGrid(this.player.x, this.player.y);
     const sGrid = this.arena.toGrid(targetX, targetY);
 
-    // Exclusion distance: square of at least 3.2 tiles around the player
-    const minTileDist = 3.2;
-    const dx = Math.abs(sGrid.gx - pGrid.gx);
-    const dy = Math.abs(sGrid.gy - pGrid.gy);
+    // 1. Check if the requested target is already >= 4.0 tiles away and on a walkable tile
+    const targetDist = Math.hypot(sGrid.gx - pGrid.gx, sGrid.gy - pGrid.gy);
+    const targetTx = Math.floor(sGrid.gx);
+    const targetTy = Math.floor(sGrid.gy);
 
-    const targetTx = Math.round(sGrid.gx);
-    const targetTy = Math.round(sGrid.gy);
-
-    // If proposed point is already outside the 3-tile square, walkable, and not crowded by another enemy, keep it!
-    if ((dx >= minTileDist || dy >= minTileDist) && this.arena.isWalkableTile(targetTx, targetTy) && !isTooCloseToOtherEnemy(targetX, targetY)) {
-      return { x: targetX, y: targetY };
-    }
-
-    // Otherwise, find a valid walkable arena tile that is strictly >= 3.2 tiles away from player and free of other enemies
-    let dirGx = sGrid.gx - pGrid.gx;
-    let dirGy = sGrid.gy - pGrid.gy;
-    if (Math.abs(dirGx) < 0.1 && Math.abs(dirGy) < 0.1) {
-      dirGx = 1.0;
-      dirGy = 0.0;
-    }
-    const maxDelta = Math.max(Math.abs(dirGx), Math.abs(dirGy)) || 1.0;
-    const stepGx = dirGx / maxDelta; // Normalized so max component is 1.0
-    const stepGy = dirGy / maxDelta;
-
-    for (let extra = minTileDist; extra <= 14.0; extra += 0.8) {
-      const candGx = Math.round(pGrid.gx + stepGx * extra);
-      const candGy = Math.round(pGrid.gy + stepGy * extra);
-      const cdx = Math.abs(candGx - pGrid.gx);
-      const cdy = Math.abs(candGy - pGrid.gy);
-      if ((cdx >= minTileDist || cdy >= minTileDist) && this.arena.isWalkableTile(candGx, candGy)) {
-        const candScreen = this.arena.toScreen(candGx + 0.5, candGy + 0.5);
-        if (!isTooCloseToOtherEnemy(candScreen.x, candScreen.y)) {
-          return candScreen;
-        }
+    if (targetDist >= minTileDist && this.arena.isWalkableTile(targetTx, targetTy)) {
+      let candPos = { x: targetX, y: targetY };
+      if (this.arena.pushOutOfWall) {
+        candPos = this.arena.pushOutOfWall(candPos.x, candPos.y);
+      }
+      const candGrid = this.arena.toGrid(candPos.x, candPos.y);
+      const candDist = Math.hypot(candGrid.gx - pGrid.gx, candGrid.gy - pGrid.gy);
+      if (candDist >= minTileDist && !this.arena.isPointBlocked(candPos.x, candPos.y) && !isTooCloseToOtherEnemy(candPos.x, candPos.y)) {
+        return candPos;
       }
     }
 
-    // Fallback: search all walkable tiles in the arena outside the 3-tile square
-    let bestDist = Infinity;
+    // 2. Search for valid walkable arena tiles strictly >= 4.0 tiles away from player
+    const targetAngle = Math.atan2(sGrid.gy - pGrid.gy, sGrid.gx - pGrid.gx);
+    const maxCols = this.arena.cols || 36;
+    const maxRows = this.arena.rows || 24;
+
+    const validCandidates = [];
+
+    for (let r = 0; r < maxRows; r++) {
+      for (let c = 0; c < maxCols; c++) {
+        if (!this.arena.isWalkableTile(c, r)) continue;
+
+        const tileCenterGx = c + 0.5;
+        const tileCenterGy = r + 0.5;
+        const distTiles = Math.hypot(tileCenterGx - pGrid.gx, tileCenterGy - pGrid.gy);
+
+        // Enforce strictly at least 4.0 tiles away from player
+        if (distTiles < minTileDist) continue;
+
+        const screenPos = this.arena.toScreen(tileCenterGx, tileCenterGy);
+        if (this.arena.isPointBlocked(screenPos.x, screenPos.y)) continue;
+        if (this.arena.isBodyBlocked && this.arena.isBodyBlocked(screenPos.x, screenPos.y, 14)) continue;
+
+        const crowded = isTooCloseToOtherEnemy(screenPos.x, screenPos.y);
+        const crowdedPenalty = crowded ? 5000 : 0;
+
+        // Angle and proximity score: prioritize tiles close to 4.0–4.5 tiles in target direction
+        const ang = Math.atan2(tileCenterGy - pGrid.gy, tileCenterGx - pGrid.gx);
+        let angDiff = Math.abs(ang - targetAngle);
+        if (angDiff > Math.PI) angDiff = Math.PI * 2 - angDiff;
+
+        const distPenalty = Math.abs(distTiles - 4.2) * 40;
+        const score = angDiff * 60 + distPenalty + crowdedPenalty;
+
+        validCandidates.push({
+          pos: screenPos,
+          score
+        });
+      }
+    }
+
+    if (validCandidates.length > 0) {
+      validCandidates.sort((a, b) => a.score - b.score);
+      let bestPos = validCandidates[0].pos;
+      if (this.arena.pushOutOfWall) {
+        bestPos = this.arena.pushOutOfWall(bestPos.x, bestPos.y);
+      }
+      return bestPos;
+    }
+
+    // Fallback: search all walkable tiles outside the 2.5-tile radius
     let bestPos = { x: targetX, y: targetY };
-
-    const maxCols = this.arena.cols || 32;
-    const maxRows = this.arena.rows || 21;
-
-    for (let gx = 0; gx < maxCols; gx++) {
-      for (let gy = 0; gy < maxRows; gy++) {
-        if (!this.arena.isWalkableTile(gx, gy)) continue;
-        const dTileX = Math.abs(gx - pGrid.gx);
-        const dTileY = Math.abs(gy - pGrid.gy);
-        if (dTileX < minTileDist && dTileY < minTileDist) continue; // Inside 3-tile exclusion square
-
-        const screenPos = this.arena.toScreen(gx + 0.5, gy + 0.5);
-        const crowdedPenalty = isTooCloseToOtherEnemy(screenPos.x, screenPos.y) ? 5000 : 0;
-        const distToTarget = Math.hypot(screenPos.x - targetX, screenPos.y - targetY) + crowdedPenalty;
-        if (distToTarget < bestDist) {
-          bestDist = distToTarget;
-          bestPos = screenPos;
+    let bestDist = Infinity;
+    for (let r = 0; r < maxRows; r++) {
+      for (let c = 0; c < maxCols; c++) {
+        if (!this.arena.isWalkableTile(c, r)) continue;
+        const distTiles = Math.hypot(c + 0.5 - pGrid.gx, r + 0.5 - pGrid.gy);
+        if (distTiles < minTileDist) continue;
+        const pos = this.arena.toScreen(c + 0.5, r + 0.5);
+        const d = Math.hypot(pos.x - targetX, pos.y - targetY);
+        if (d < bestDist) {
+          bestDist = d;
+          bestPos = pos;
         }
       }
     }
-
+    if (this.arena.pushOutOfWall) {
+      bestPos = this.arena.pushOutOfWall(bestPos.x, bestPos.y);
+    }
     return bestPos;
   }
 
@@ -1064,11 +1132,19 @@ class LightWarsGame {
     document.getElementById('clearKills').innerText = this.waves.stats.enemiesKilled;
     document.getElementById('clearOrbs').innerText = this.waves.stats.orbsCrafted;
     document.getElementById('levelClearModal').style.display = 'flex';
+    if (window.LightWars.sound) {
+      window.LightWars.sound.stopMusic();
+      window.LightWars.sound.playVictory();
+    }
   }
 
   onGameOver() {
     this.state = 'GAME_OVER';
     document.getElementById('gameOverModal').style.display = 'flex';
+    if (window.LightWars.sound) {
+      window.LightWars.sound.stopMusic();
+      window.LightWars.sound.playPlayerDeath();
+    }
   }
 
   update(dt) {
@@ -1162,14 +1238,15 @@ class LightWarsGame {
       let hitBarrel = false;
       for (const b of this.barrels) {
         if (!b.alive) continue;
-        const dist = Math.hypot(laser.x - b.x, laser.y - (b.y - 12));
+        const targetY = b.isBlackBarrel ? b.y : (b.y - 12);
+        const dist = Math.hypot(laser.x - b.x, laser.y - targetY);
         if (dist < b.colRadiusX + laser.radius) {
           hitBarrel = true;
           laser.alive = false;
-          this.particles.spawnBurst(laser.x, laser.y, '#D2A679', 10);
+          this.particles.spawnBurst(laser.x, laser.y, b.isBlackBarrel ? '#B040FF' : '#D2A679', 10);
           const res = b.takeLaserHit(laser.colorId, laser.angle);
           if (res.destroyed) {
-            this.particles.spawnComicText(b.x, b.y, b.isBlackBarrel ? 'DASH UNLOCKED!' : 'CRASH!', '#D2A679');
+            this.particles.spawnComicText(b.x, b.y, b.isBlackBarrel ? 'REWARD UNLOCKED!' : 'CRASH!', b.isBlackBarrel ? '#B040FF' : '#D2A679');
             if (b.isBlackBarrel) {
               if (this.player) this.player.dashUnlocked = true;
               localStorage.setItem('lightwars_dash_unlocked', 'true');
@@ -1184,7 +1261,7 @@ class LightWarsGame {
               window.LightWars.sound.playKaboom();
             }
           } else if (b.isBlackBarrel && res.newHit) {
-            this.particles.spawnComicText(b.x, b.y - 40, `+${laser.colorId}! (${res.remaining} left)`, window.LightWars.COLORS[laser.colorId].hex);
+            this.particles.spawnComicText(b.x, b.y - 30, `+${laser.colorId}! (${res.remaining} left)`, window.LightWars.COLORS[laser.colorId].hex);
             if (window.LightWars.sound) window.LightWars.sound.playOrbConvert();
           }
           break;
@@ -1197,11 +1274,19 @@ class LightWarsGame {
 
       // 3. Collision handling based on laser owner
       if (laser.isPlayer) {
+        // [only for 1st level] orbs must be uninteractable till all the enemies die **NOTE only 1st level**
+        const isLevel1 = (this.waves && this.waves.level === 1);
+        const l1EnemiesStillAlive = isLevel1 && (
+          this.enemies.some(e => e.alive) ||
+          (this.waves && this.waves.l1Subwave !== 'MAGENTA_YELLOW')
+        );
+
         // Player Laser: Check collision with Orbs -> Spawn 2 Ammo Crystals!
         let laserConsumed = false;
-        for (let j = this.orbs.length - 1; j >= 0; j--) {
-          const orb = this.orbs[j];
-          if (!orb.alive) continue;
+        if (!l1EnemiesStillAlive) {
+          for (let j = this.orbs.length - 1; j >= 0; j--) {
+            const orb = this.orbs[j];
+            if (!orb.alive) continue;
           const clampedOrbY = Math.max(orb.y - 45, Math.min(orb.y + 10, laser.y));
           const d = Math.hypot(laser.x - orb.x, laser.y - clampedOrbY);
           if (d < (orb.hitRadius || 36)) {
@@ -1230,6 +1315,7 @@ class LightWarsGame {
               break;
             }
           }
+        }
         }
 
         if (laserConsumed) {
@@ -1498,6 +1584,104 @@ class LightWarsGame {
 
     // 5. Draw Screenspace HUD
     this.ui.drawHUD(this.ctx, this.canvas.width, this.canvas.height, this.player, this.waves);
+
+    // 6. Draw Custom Crosshair (Mini Orb matching currently selected player color)
+    if (this.state === 'PLAYING' && this.player && this.player.alive && this.input.mouseInside) {
+      this.drawCrosshair(this.ctx);
+    }
+  }
+
+  /**
+   * Render custom crosshair designed as a mini glowing energy orb matching the selected color.
+   */
+  drawCrosshair(ctx) {
+    const x = this.input.screenMouseX;
+    const y = this.input.screenMouseY;
+    const colorData = this.player.getActiveColorData() || window.LightWars.COLORS.RED;
+    const hex = colorData.hex || '#FF2A4D';
+    const glow = colorData.glow || hex;
+
+    const time = (performance.now ? performance.now() : Date.now()) * 0.005;
+    const pulse = 1.0 + Math.sin(time * 2.0) * 0.12;
+
+    const baseRadius = 2.75; // Mini orb base radius (scaled to 50%)
+    const outerRadius = baseRadius * 2.6 * pulse;
+    const innerRadius = baseRadius * 1.15 * pulse;
+
+    ctx.save();
+    ctx.translate(x, y);
+
+    // 1. Ambient outer energy glow halo
+    const glowGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, outerRadius);
+    glowGrad.addColorStop(0.0, '#FFFFFF');
+    glowGrad.addColorStop(0.2, hex);
+    glowGrad.addColorStop(0.55, glow);
+    glowGrad.addColorStop(0.85, hex);
+    glowGrad.addColorStop(1.0, 'rgba(0, 0, 0, 0)');
+
+    ctx.fillStyle = glowGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, outerRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2. High-intensity additive inner luminous core
+    ctx.globalCompositeOperation = 'lighter';
+    const coreGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, innerRadius);
+    coreGrad.addColorStop(0.0, '#FFFFFF');
+    coreGrad.addColorStop(0.35, '#FFFFFF');
+    coreGrad.addColorStop(0.7, hex);
+    coreGrad.addColorStop(1.0, 'rgba(0, 0, 0, 0)');
+
+    ctx.fillStyle = coreGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, innerRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 3. Mini orbiting orbital sparks
+    ctx.fillStyle = '#FFFFFF';
+    for (let i = 0; i < 3; i++) {
+      const angle = time * 3.0 + (i * (Math.PI * 2 / 3));
+      const sparkDist = outerRadius * 0.85;
+      const sx = Math.cos(angle) * sparkDist;
+      const sy = Math.sin(angle) * sparkDist;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 0.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 4. Subtle tactical crosshair tick marks outside the mini orb for precision aiming
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.strokeStyle = hex;
+    ctx.lineWidth = 1.0;
+    ctx.shadowColor = glow;
+    ctx.shadowBlur = 3;
+
+    const tickDist = outerRadius + 1.8;
+    const tickLen = 2.5;
+
+    // 4 directional ticks (Top, Bottom, Left, Right)
+    ctx.beginPath();
+    // Top
+    ctx.moveTo(0, -tickDist - tickLen);
+    ctx.lineTo(0, -tickDist);
+    // Bottom
+    ctx.moveTo(0, tickDist);
+    ctx.lineTo(0, tickDist + tickLen);
+    // Left
+    ctx.moveTo(-tickDist - tickLen, 0);
+    ctx.lineTo(-tickDist, 0);
+    // Right
+    ctx.moveTo(tickDist, 0);
+    ctx.lineTo(tickDist + tickLen, 0);
+    ctx.stroke();
+
+    // Pinpoint white center pip
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.arc(0, 0, 0.75, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
   }
 
   loop(timestamp) {

@@ -258,7 +258,7 @@ const GAME_CONFIG = {
   arenaWidth: 1536,
   arenaHeight: 1024,
   maxAmmoPerType: 6,
-  playerSpeed: 175,
+  playerSpeed: 140, // Decreased to 80% (was 175)
   playerDashSpeed: 420,
   playerDashDuration: 0.22,
   playerDashCooldown: 1.2,
@@ -270,7 +270,7 @@ const GAME_CONFIG = {
   refillRate: 1.0, // seconds to fully refill RGB
 
   // Enemy Combat & Dodging Module Configuration
-  enemyDodgingEnabled: true, // Toggle module ON / OFF anytime
+  enemyDodgingEnabled: false, // Commented out / disabled
   enemyDodgeDetectionRadius: 180, // Distance to incoming player laser to trigger dodge
   enemyDodgeSpeed: 140, // Impulse speed when dodging
   enemyDodgeCooldown: 2.2, // Minimum seconds between dodges per enemy

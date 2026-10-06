@@ -12,8 +12,8 @@ class Laser {
     this.colorId = colorId;
     this.colorData = window.LightWars.COLORS[colorId] || window.LightWars.COLORS.RED;
     this.isPlayer = isPlayer;
-    this.radius = 7;
-    this.length = 26;
+    this.radius = 3.5; // Reduced compact bullet size
+    this.length = 15;
     this.angle = Math.atan2(vy, vx);
     this.life = window.LightWars.GAME_CONFIG.laserLifetime;
     this.alive = true;
@@ -29,8 +29,8 @@ class Laser {
     this.homingLife = options.homingLife !== undefined ? options.homingLife : 1.5; // Exactly 1.5 seconds lifetime
     if (this.isHoming) {
       this.life = this.homingLife;
-      this.radius = 9;
-      this.length = 28;
+      this.radius = 4.5; // Reduced homing bullet size
+      this.length = 18;
     }
   }
 
@@ -61,7 +61,7 @@ class Laser {
 
     // Record trail positions
     this.trail.push({ x: this.x, y: this.y, alpha: 1.0 });
-    if (this.trail.length > (this.isHoming ? 12 : 7)) {
+    if (this.trail.length > (this.isHoming ? 10 : 6)) {
       this.trail.shift();
     }
     for (const t of this.trail) {
@@ -84,7 +84,7 @@ class Laser {
     ctx.save();
     ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
     ctx.beginPath();
-    ctx.ellipse(this.x, this.y + this.z * 0.7, this.length * 0.45, 5, this.angle, 0, Math.PI * 2);
+    ctx.ellipse(this.x, this.y + this.z * 0.7, this.length * 0.45, 2.5, this.angle, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
@@ -95,7 +95,7 @@ class Laser {
       ctx.save();
       ctx.strokeStyle = this.colorData.hex;
       ctx.globalAlpha = Math.max(0, pt.alpha * 0.4);
-      ctx.lineWidth = 4 * (i / this.trail.length);
+      ctx.lineWidth = 2.2 * (i / this.trail.length);
       ctx.beginPath();
       ctx.moveTo(pt.x, pt.y);
       ctx.lineTo(this.x, this.y);
@@ -110,7 +110,7 @@ class Laser {
 
     // Outer intense glow
     ctx.shadowColor = (this.colorId === 'BLACK') ? '#A020F0' : (this.colorData.hex || '#FFFFFF');
-    ctx.shadowBlur = this.isHoming ? 18 : 14;
+    ctx.shadowBlur = this.isHoming ? 9 : 7;
 
     if (this.colorId === 'BLACK') {
       // Void homing bullet: dark obsidian body with glowing purple corona
@@ -119,7 +119,7 @@ class Laser {
       ctx.roundRect(-this.length * 0.5, -this.radius, this.length, this.radius * 2, this.radius);
       ctx.fill();
       ctx.strokeStyle = '#B040FF';
-      ctx.lineWidth = 2.0;
+      ctx.lineWidth = 1.2;
       ctx.stroke();
 
       // Deep void core

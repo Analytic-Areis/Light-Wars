@@ -241,7 +241,7 @@ class ParticleSystem {
       y,
       vx: 0,
       vy: 0,
-      radius: 6,
+      radius: 3,
       colorHex: '#FFFFFF',
       life: 0.08,
       maxLife: 0.08
@@ -252,21 +252,21 @@ class ParticleSystem {
       y,
       vx: 0,
       vy: 0,
-      radius: 11,
+      radius: 5,
       colorHex,
       life: 0.12,
       maxLife: 0.12
     });
     // 3. Directional sparks leaping from the gun barrel
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 3; i++) {
       const spread = (Math.random() - 0.5) * 0.45;
-      const spd = 140 + Math.random() * 180;
+      const spd = 100 + Math.random() * 120;
       this.particles.push({
-        x: x + Math.cos(angle) * 3,
-        y: y + Math.sin(angle) * 3,
+        x: x + Math.cos(angle) * 2,
+        y: y + Math.sin(angle) * 2,
         vx: Math.cos(angle + spread) * spd,
         vy: Math.sin(angle + spread) * spd,
-        radius: 2 + Math.random() * 1.5,
+        radius: 1.2 + Math.random() * 0.8,
         colorHex,
         life: 0.1 + Math.random() * 0.08,
         maxLife: 0.18
@@ -277,13 +277,13 @@ class ParticleSystem {
   spawnComicText(x, y, text, colorHex = '#FF2A4D') {
     this.comicTexts.push({
       x,
-      y: y - 25,
+      y: y - 18,
       text,
       colorHex,
       life: 0.85,
       maxLife: 0.85,
-      scale: 0.4,
-      targetScale: 1.15,
+      scale: 0.3,
+      targetScale: 0.65, // Decreased accordingly
       rot: (Math.random() - 0.5) * 0.25
     });
   }
@@ -303,7 +303,7 @@ class ParticleSystem {
 
     for (let i = this.comicTexts.length - 1; i >= 0; i--) {
       const ct = this.comicTexts[i];
-      ct.y -= dt * 25;
+      ct.y -= dt * 20;
       ct.scale += (ct.targetScale - ct.scale) * Math.min(1.0, dt * 14);
       ct.life -= dt;
       if (ct.life <= 0) {
@@ -332,14 +332,14 @@ class ParticleSystem {
       ctx.scale(ct.scale, ct.scale);
       ctx.globalAlpha = Math.min(1.0, ct.life / (ct.maxLife * 0.4));
 
-      // Comic Starburst Polygon behind word
+      // Comic Starburst Polygon behind word (decreased accordingly)
       ctx.fillStyle = '#FFE600';
       ctx.strokeStyle = '#12121A';
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 2.2;
       ctx.beginPath();
       const points = 14;
-      const outerR = 52;
-      const innerR = 32;
+      const outerR = 28;
+      const innerR = 16;
       for (let j = 0; j < points * 2; j++) {
         const r = (j % 2 === 0) ? outerR : innerR;
         const a = (j * Math.PI) / points;
@@ -353,11 +353,11 @@ class ParticleSystem {
       ctx.stroke();
 
       // Comic text
-      ctx.font = '900 22px "Impact", "Arial Black", sans-serif';
+      ctx.font = '900 13px "Impact", "Arial Black", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = ct.colorHex;
-      ctx.lineWidth = 4.5;
+      ctx.lineWidth = 2.5;
       ctx.strokeStyle = '#12121A';
       ctx.strokeText(ct.text, 0, 0);
       ctx.fillText(ct.text, 0, 0);

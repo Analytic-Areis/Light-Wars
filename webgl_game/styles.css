@@ -37,7 +37,7 @@ body, html {
   display: block;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-  cursor: crosshair;
+  cursor: none;
 }
 
 /* Comic Strip Level Menu Overlay */

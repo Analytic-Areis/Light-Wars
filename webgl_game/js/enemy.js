@@ -19,7 +19,7 @@ class Enemy {
     this.bodyRadius = 15; // Full body laser hit capsule radius
     this.spriteWidth = 50;
     this.spriteHeight = 50;
-    this.speed = 105 + Math.random() * 25;
+    this.speed = (105 + Math.random() * 25) * 0.60; // Decreased speed to 60%
     this.alive = true;
     this.health = 2;
 
@@ -37,9 +37,9 @@ class Enemy {
     this.attackCooldown = 0;
     this.shootCooldown = 1.8 + Math.random() * 2.2;
 
-    // Tactical Standoff & Modular Dodging
-    this.idealMinDist = 200 + Math.random() * 45; // Individual standoff distance variation
-    this.idealMaxDist = 380 + Math.random() * 65; // Prevents enemies from converging on exact same radial line
+    // Tactical Standoff (stays 4 tiles away from hero, not too far away)
+    this.idealMinDist = 160; // ~3.5–4 tiles standoff distance
+    this.idealMaxDist = 220; // Proximity cap (4–4.5 tiles away)
     this.strafeDir = Math.random() < 0.5 ? 1 : -1;
     this.strafeTimer = 1.0 + Math.random() * 3.0;
     this.dodgeCooldown = 0.5 + Math.random() * 1.5;
@@ -56,6 +56,9 @@ class Enemy {
    * or per-enemy instance via enemy.dodgingModuleEnabled
    */
   processDodging(dt, lasers = [], arena = null) {
+    // Dodging commented out as requested
+    return;
+    /*
     const config = window.LightWars.GAME_CONFIG || {};
     const moduleEnabled = (this.dodgingModuleEnabled !== undefined)
       ? this.dodgingModuleEnabled
@@ -117,6 +120,7 @@ class Enemy {
         }
       }
     }
+    */
   }
 
   // Whole-body vertical capsule hitbox from feet (y - 4) to head (y - 44 / y - 52 for boss) with continuous sweep segment support
@@ -239,11 +243,30 @@ class Enemy {
   update(dt, player, arena, barrels = [], lasers = [], otherEnemies = []) {
     if (!this.alive) return;
 
-    // Decay knockback
-    this.x += this.knockbackVx * dt;
-    this.y += this.knockbackVy * dt;
-    this.knockbackVx *= Math.pow(0.05, dt);
-    this.knockbackVy *= Math.pow(0.05, dt);
+    // Decay knockback with strict arena collision checks
+    if (Math.abs(this.knockbackVx) > 0.1 || Math.abs(this.knockbackVy) > 0.1) {
+      const nextX = this.x + this.knockbackVx * dt;
+      const nextY = this.y + this.knockbackVy * dt;
+      if (arena && arena.resolveMovement) {
+        const res = arena.resolveMovement(this.x, this.y, nextX, nextY, this.radius);
+        if (Math.abs(res.x - nextX) > 0.05) this.knockbackVx = 0;
+        if (Math.abs(res.y - nextY) > 0.05) this.knockbackVy = 0;
+        this.x = res.x;
+        this.y = res.y;
+      } else {
+        this.x = nextX;
+        this.y = nextY;
+      }
+      this.knockbackVx *= Math.pow(0.05, dt);
+      this.knockbackVy *= Math.pow(0.05, dt);
+    }
+
+    // Safety check: ensure enemy is always strictly within the walkable area of the hero
+    if (arena && arena.pushOutOfWall) {
+      const safe = arena.pushOutOfWall(this.x, this.y, this.radius);
+      this.x = safe.x;
+      this.y = safe.y;
+    }
 
     if (this.hurtFlash > 0) this.hurtFlash -= dt * 4;
     if (this.transformPulse > 0) this.transformPulse -= dt * 3;
@@ -283,8 +306,8 @@ class Enemy {
       }
     }
 
-    // 1. Process Modular Dodging if incoming player laser detected
-    this.processDodging(dt, lasers, arena);
+    // 1. Process Modular Dodging if incoming player laser detected (COMMENTED OUT)
+    // this.processDodging(dt, lasers, arena);
 
     let firedLaser = null;
 
@@ -306,11 +329,14 @@ class Enemy {
       // - If dist < idealMinDist: Back away to maintain safe distance
       // - If dist > idealMaxDist: Advance towards player (steering around neighboring enemies)
       // - If within safe zone: Actively space out if crowded, or gently strafe around player
+      /*
       if (this.dodgeTimer > 0) {
-        // Currently executing dodge impulse
+        // Currently executing dodge impulse (COMMENTED OUT)
         this.isMoving = true;
         this.facingDir = SpriteManager.getDirection8(this.facingAngle);
-      } else if (dist < this.idealMinDist) {
+      } else
+      */
+      if (dist < this.idealMinDist) {
         // TOO CLOSE: Back away from the player to stay safe!
         let nx = -dx / dist;
         let ny = -dy / dist;
@@ -445,8 +471,8 @@ class Enemy {
     const interaction = (rules && rules[laserColorId]) ? rules[laserColorId] : { action: 'NONE' };
 
     // Apply brief knockback
-    this.knockbackVx = Math.cos(hitAngle) * 280;
-    this.knockbackVy = Math.sin(hitAngle) * 280;
+    this.knockbackVx = Math.cos(hitAngle) * 140;
+    this.knockbackVy = Math.sin(hitAngle) * 140;
     this.hurtFlash = 1.0;
 
     if (interaction.action === 'KILL') {
@@ -498,43 +524,12 @@ class Enemy {
     ctx.restore();
   }
 
-  // Visual essence of contrary color: chest power core & floating head diamond
+  // Visual essence of contrary color: floating head diamond crystal (chest red blob removed)
   drawContraryEssence(ctx) {
     if (this.isBoss) return; // Boss has its own void aura
     const colHex = this.bandColorData ? this.bandColorData.hex : '#FF2A4D';
     const now = Date.now();
     const pulse = 1.0 + Math.sin(now * 0.006 + this.x * 0.01) * 0.22;
-
-    // 1. Glowing Contrary Energy Core on Chest Armor (y = -24)
-    const chestY = -24;
-    
-    // Ambient radial glow around chest core
-    const coreGrad = ctx.createRadialGradient(0, chestY, 1, 0, chestY, 11 * pulse);
-    coreGrad.addColorStop(0, colHex);
-    coreGrad.addColorStop(0.5, this.bandColorData ? (this.bandColorData.glow || colHex) : colHex);
-    coreGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.save();
-    ctx.globalAlpha = 0.88;
-    ctx.fillStyle = coreGrad;
-    ctx.beginPath();
-    ctx.arc(0, chestY, 11 * pulse, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Solid core gem with white rim
-    ctx.fillStyle = colHex;
-    ctx.beginPath();
-    ctx.arc(0, chestY, 3.2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#FFFFFF';
-    ctx.lineWidth = 1.2;
-    ctx.stroke();
-
-    // Hot center sparkle
-    ctx.fillStyle = '#FFFFFF';
-    ctx.beginPath();
-    ctx.arc(0, chestY, 1.2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
 
     // 2. Floating Contrary Energy Diamond Indicator above head (y = -52)
     const floatY = -52 + Math.sin(now * 0.005 + this.y * 0.01) * 2.5;
@@ -586,12 +581,12 @@ class BlackBoss extends Enemy {
     this.bodyRadius = 22; // Boss laser hitbox radius
     this.spriteWidth = 50;
     this.spriteHeight = 50;
-    this.speed = 90;
+    this.speed = 90 * 0.60; // Decreased speed to 60%
 
     // Shooting: black homing bullets
     this.shootCooldown = 2.5;
-    this.idealMinDist = 240;
-    this.idealMaxDist = 440;
+    this.idealMinDist = 180; // ~4 tiles standoff
+    this.idealMaxDist = 240; // 4–5 tiles cap
 
     // Physics Inversion ability
     this.inversionState = 'IDLE'; // 'IDLE' | 'PREPARING_SHAKE' | 'INVERTED'

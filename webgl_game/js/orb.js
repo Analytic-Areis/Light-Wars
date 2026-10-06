@@ -10,8 +10,9 @@ class Orb {
     this.y = y;
     this.colorId = colorId;
     this.colorData = window.LightWars.COLORS[colorId] || window.LightWars.COLORS.GREEN;
-    this.radius = 9;
-    this.hitRadius = 32;
+    // Sized to 75% of previous size (~19px visual diameter)
+    this.radius = 3.4;
+    this.hitRadius = 12;
     this.hoverTime = Math.random() * Math.PI * 2;
     this.alive = true;
     this.pulsePhase = 0;
@@ -46,6 +47,14 @@ class Orb {
 
   // Hit by a laser shot
   hitByLaser(laserColorId) {
+    // [only for 1st level] orbs must be uninteractable till all the enemies die
+    const isLevel1 = (window.game && window.game.waves && window.game.waves.level === 1);
+    const isL1Locked = isLevel1 && (
+      (window.game.enemies && window.game.enemies.some(e => e.alive)) ||
+      (window.game.waves && window.game.waves.l1Subwave !== 'MAGENTA_YELLOW')
+    );
+    if (isL1Locked) return { success: false };
+
     const key = `${this.colorId}_${laserColorId}`;
     const resultColor = window.LightWars.ORB_CONVERSIONS[key];
     if (resultColor) {
@@ -58,9 +67,16 @@ class Orb {
   draw(ctx) {
     if (!this.alive) return;
 
-    const hoverY = this.y - 10 + Math.sin(this.hoverTime) * 3.0;
+    const hoverY = this.y - 8 + Math.sin(this.hoverTime) * 2.5;
     const groundShadowY = this.y + 2;
     const pulse = 1 + Math.sin(this.pulsePhase) * 0.12;
+
+    // Check if uninteractable in Level 1
+    const isLevel1 = (window.game && window.game.waves && window.game.waves.level === 1);
+    const isL1Locked = isLevel1 && (
+      (window.game.enemies && window.game.enemies.some(e => e.alive)) ||
+      (window.game.waves && window.game.waves.l1Subwave !== 'MAGENTA_YELLOW')
+    );
 
     // 1. Soft Ground Contact Ambient Glow
     ctx.save();
@@ -70,12 +86,16 @@ class Orb {
     ctx.fill();
     ctx.restore();
 
-    // 2. Radiant Luminous Energy Flare (Matches user reference style: soft glowing star core, no hard blob edges)
+    // 2. Radiant Luminous Energy Flare (half the size of player, ~25px diameter)
     ctx.save();
     ctx.translate(this.x, hoverY);
 
+    if (isL1Locked) {
+      ctx.globalAlpha = 0.55; // Dimmer while uninteractable in Level 1
+    }
+
     // Multi-layered smooth radiant gradient
-    const outerRadius = this.radius * 3.4 * pulse;
+    const outerRadius = this.radius * 2.8 * pulse; // ~12.5px radius -> ~25px diameter
     const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, outerRadius);
 
     // Color definitions for each spectral type
@@ -90,15 +110,14 @@ class Orb {
     grad.addColorStop(1.00, 'rgba(0, 0, 0, 0)');
 
     // Render outer ambient flare
-    ctx.globalAlpha = 0.88;
     ctx.fillStyle = grad;
     ctx.beginPath();
     ctx.arc(0, 0, outerRadius, 0, Math.PI * 2);
     ctx.fill();
 
-    // Additive intense inner heat core (creates the brilliant shining center seen in reference)
+    // Additive intense inner heat core
     ctx.globalCompositeOperation = 'lighter';
-    const innerRadius = this.radius * 1.6 * pulse;
+    const innerRadius = this.radius * 1.3 * pulse;
     const coreGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, innerRadius);
     coreGrad.addColorStop(0.0, '#FFFFFF');
     coreGrad.addColorStop(0.35, hex);
@@ -116,8 +135,18 @@ class Orb {
       ctx.fillStyle = '#FFFFFF';
       ctx.globalAlpha = (sp.life / sp.maxLife) * 0.8;
       ctx.beginPath();
-      ctx.arc(sx, sy, 1.4, 0, Math.PI * 2);
+      ctx.arc(sx, sy, 0.9, 0, Math.PI * 2);
       ctx.fill();
+    }
+
+    // Faint stasis ring if locked in Level 1
+    if (isL1Locked) {
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.lineWidth = 1.0;
+      ctx.setLineDash([2, 3]);
+      ctx.beginPath();
+      ctx.arc(0, 0, outerRadius + 3, 0, Math.PI * 2);
+      ctx.stroke();
     }
 
     ctx.restore();

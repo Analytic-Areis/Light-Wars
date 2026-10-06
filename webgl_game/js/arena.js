@@ -22,7 +22,119 @@ class Arena {
       particles: []
     };
 
+    // Deep Galaxy & Cosmic Space Backdrop System
+    this.galaxyTime = 0;
+    this.stars = [];
+    this.planets = [];
+    this.shootingStars = [];
+    this.initGalaxyBackdrop();
+
     this.loadLevel(1);
+  }
+
+  initGalaxyBackdrop() {
+    this.stars = [];
+    // 3 layers of stars spanning a large canvas region (-1000 to 2600, -1000 to 2200)
+    const bounds = { minX: -1000, maxX: 2600, minY: -1000, maxY: 2200 };
+    const w = bounds.maxX - bounds.minX;
+    const h = bounds.maxY - bounds.minY;
+
+    // Distant twinkle stars
+    for (let i = 0; i < 280; i++) {
+      this.stars.push({
+        x: bounds.minX + Math.random() * w,
+        y: bounds.minY + Math.random() * h,
+        radius: 0.6 + Math.random() * 1.4,
+        baseAlpha: 0.35 + Math.random() * 0.55,
+        twinkleSpeed: 1.5 + Math.random() * 3.5,
+        twinklePhase: Math.random() * Math.PI * 2,
+        color: ['#FFFFFF', '#B8D5FF', '#FFE8D6', '#00F0FF', '#FFB8E8'][Math.floor(Math.random() * 5)],
+        layer: 1
+      });
+    }
+
+    // Mid-ground brighter stars with diffraction crosses
+    for (let i = 0; i < 60; i++) {
+      this.stars.push({
+        x: bounds.minX + Math.random() * w,
+        y: bounds.minY + Math.random() * h,
+        radius: 1.5 + Math.random() * 1.5,
+        baseAlpha: 0.7 + Math.random() * 0.3,
+        twinkleSpeed: 2.0 + Math.random() * 2.5,
+        twinklePhase: Math.random() * Math.PI * 2,
+        color: ['#FFFFFF', '#D0E8FF', '#FFEABF', '#80FFFF'][Math.floor(Math.random() * 4)],
+        hasSpikes: Math.random() < 0.45,
+        layer: 2
+      });
+    }
+
+    // Distant Majestic Planets visible outside the station edges
+    this.planets = [
+      // 1. Giant Ringed Gas Planet (Upper Right edge)
+      {
+        x: 1720,
+        y: 180,
+        radius: 110,
+        primaryColor: '#6B3FA0',
+        secondaryColor: '#B24BF3',
+        atmosphereColor: 'rgba(178, 75, 243, 0.4)',
+        hasRings: true,
+        ringColor: 'rgba(215, 160, 255, 0.45)',
+        ringTilt: -0.42,
+        ringInner: 140,
+        ringOuter: 220,
+        glowRadius: 180,
+        craters: []
+      },
+      // 2. Cyan Glowing Ice / Terra World (Bottom Right edge)
+      {
+        x: 1580,
+        y: 920,
+        radius: 85,
+        primaryColor: '#0A3B5C',
+        secondaryColor: '#00F0FF',
+        atmosphereColor: 'rgba(0, 240, 255, 0.5)',
+        hasRings: false,
+        glowRadius: 130,
+        craters: [
+          { dx: -20, dy: -15, r: 18, color: '#00D1FF' },
+          { dx: 25, dy: 10, r: 24, color: '#00A8FF' },
+          { dx: -5, dy: 30, r: 12, color: '#00F0FF' }
+        ]
+      },
+      // 3. Volcanic Crimson / Magma Dwarf Planet (Bottom Left edge)
+      {
+        x: -280,
+        y: 720,
+        radius: 95,
+        primaryColor: '#4A1118',
+        secondaryColor: '#FF2A4D',
+        atmosphereColor: 'rgba(255, 42, 77, 0.45)',
+        hasRings: false,
+        glowRadius: 150,
+        craters: [
+          { dx: -25, dy: -20, r: 22, color: '#FF4D66' },
+          { dx: 15, dy: -10, r: 16, color: '#FFA04D' },
+          { dx: 10, dy: 25, r: 28, color: '#FF1A35' }
+        ]
+      },
+      // 4. Golden Sun / Radiant Star Cluster (Upper Left deep void)
+      {
+        x: -220,
+        y: -140,
+        radius: 125,
+        primaryColor: '#5C380A',
+        secondaryColor: '#FFE600',
+        atmosphereColor: 'rgba(255, 230, 0, 0.4)',
+        hasRings: true,
+        ringColor: 'rgba(255, 230, 100, 0.35)',
+        ringTilt: 0.35,
+        ringInner: 155,
+        ringOuter: 205,
+        glowRadius: 210,
+        craters: []
+      }
+    ];
   }
 
   static computeProj(corners) {
@@ -274,12 +386,36 @@ class Arena {
           }
         }
       }
+
+      // If knocked far out of bounds, search full map for the closest valid walkable tile
+      if (bestDist === Infinity) {
+        for (let r = 0; r < this.rows; r++) {
+          for (let c = 0; c < this.cols; c++) {
+            if (this.blocked[r][c] === 0) {
+              const cand = this.toScreen(c + 0.5, r + 0.5);
+              const d = Math.hypot(cand.x - px, cand.y - py);
+              if (d < bestDist) {
+                bestDist = d;
+                bestX = cand.x;
+                bestY = cand.y;
+              }
+            }
+          }
+        }
+      }
+
+      // If still not found, safely fallback to the hero's spawn location
+      if (bestDist === Infinity && this.spawn) {
+        bestX = this.spawn.x;
+        bestY = this.spawn.y;
+      }
     }
     return { x: bestX, y: bestY };
   }
 
   update(dt) {
     this.whiteLight.pulseTime += dt * 3.0;
+    this.galaxyTime += dt;
 
     // Upward glowing energy particles inside sanctuary
     if (Math.random() < 0.45) {
@@ -304,16 +440,46 @@ class Arena {
         this.whiteLight.particles.splice(i, 1);
       }
     }
+
+    // Occasional shooting star across deep space
+    if (Math.random() < 0.02) {
+      const sx = -400 + Math.random() * 2000;
+      const sy = -400 + Math.random() * 600;
+      const angle = Math.PI * 0.25 + (Math.random() - 0.5) * 0.4;
+      const speed = 700 + Math.random() * 500;
+      this.shootingStars.push({
+        x: sx,
+        y: sy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        len: 80 + Math.random() * 70,
+        life: 0.8 + Math.random() * 0.5,
+        maxLife: 1.2
+      });
+    }
+
+    for (let i = this.shootingStars.length - 1; i >= 0; i--) {
+      const ss = this.shootingStars[i];
+      ss.x += ss.vx * dt;
+      ss.y += ss.vy * dt;
+      ss.life -= dt;
+      if (ss.life <= 0) {
+        this.shootingStars.splice(i, 1);
+      }
+    }
   }
 
   draw(ctx) {
-    // 1. Draw Map Image
+    // 0. Draw Infinite Deep Galaxy & Cosmic Space Backdrop
+    this.drawGalaxyBackdrop(ctx);
+
+    // 1. Draw Map Image (Isometric Sci-Fi Station floating in space)
     if (this.mapImg && this.mapImg.complete && this.mapImg.naturalWidth > 0) {
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(this.mapImg, 0, 0, this.width, this.height);
     } else {
-      ctx.fillStyle = '#08090E';
+      ctx.fillStyle = 'rgba(8, 9, 14, 0.4)';
       ctx.fillRect(0, 0, this.width, this.height);
     }
 
@@ -383,6 +549,201 @@ class Arena {
       }
       ctx.restore();
     }
+  }
+
+  /**
+   * Render Infinite Galaxy Backdrop with Twinkling Stars, Cosmic Nebulae, and Glowing Planets
+   */
+  drawGalaxyBackdrop(ctx) {
+    ctx.save();
+
+    const minX = -1000;
+    const minY = -1000;
+    const maxX = 2600;
+    const maxY = 2200;
+    const width = maxX - minX;
+    const height = maxY - minY;
+
+    // 1. Deep Space Cosmic Sky Gradient
+    const spaceGrad = ctx.createRadialGradient(
+      this.width * 0.5, this.height * 0.5, 200,
+      this.width * 0.5, this.height * 0.5, 1600
+    );
+    spaceGrad.addColorStop(0.0, '#060814'); // Center deep navy void
+    spaceGrad.addColorStop(0.4, '#04060E');
+    spaceGrad.addColorStop(0.75, '#020308');
+    spaceGrad.addColorStop(1.0, '#010204'); // Edge deep black void
+
+    ctx.fillStyle = spaceGrad;
+    ctx.fillRect(minX, minY, width, height);
+
+    // 2. Cosmic Nebulae Clouds (Ethereal Purple, Cyan, and Magenta dust clouds)
+    // Purple Nebula (Upper Right)
+    const neb1 = ctx.createRadialGradient(1600, 250, 40, 1600, 250, 550);
+    neb1.addColorStop(0.0, 'rgba(120, 40, 200, 0.28)');
+    neb1.addColorStop(0.45, 'rgba(60, 20, 140, 0.15)');
+    neb1.addColorStop(0.8, 'rgba(20, 10, 60, 0.05)');
+    neb1.addColorStop(1.0, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = neb1;
+    ctx.fillRect(minX, minY, width, height);
+
+    // Cyan Nebula (Bottom Right)
+    const neb2 = ctx.createRadialGradient(1500, 950, 50, 1500, 950, 600);
+    neb2.addColorStop(0.0, 'rgba(0, 180, 255, 0.22)');
+    neb2.addColorStop(0.5, 'rgba(0, 80, 160, 0.12)');
+    neb2.addColorStop(0.85, 'rgba(0, 20, 60, 0.04)');
+    neb2.addColorStop(1.0, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = neb2;
+    ctx.fillRect(minX, minY, width, height);
+
+    // Magenta / Crimson Nebula (Bottom Left)
+    const neb3 = ctx.createRadialGradient(-200, 750, 40, -200, 750, 520);
+    neb3.addColorStop(0.0, 'rgba(255, 30, 100, 0.20)');
+    neb3.addColorStop(0.5, 'rgba(140, 20, 60, 0.10)');
+    neb3.addColorStop(0.85, 'rgba(50, 10, 30, 0.03)');
+    neb3.addColorStop(1.0, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = neb3;
+    ctx.fillRect(minX, minY, width, height);
+
+    // Golden Stardust Nebula (Top Left)
+    const neb4 = ctx.createRadialGradient(-150, -100, 60, -150, -100, 480);
+    neb4.addColorStop(0.0, 'rgba(255, 190, 40, 0.18)');
+    neb4.addColorStop(0.5, 'rgba(160, 100, 20, 0.08)');
+    neb4.addColorStop(1.0, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = neb4;
+    ctx.fillRect(minX, minY, width, height);
+
+    // 3. Render Twinkling Stars
+    const time = this.galaxyTime;
+    for (const s of this.stars) {
+      const alpha = s.baseAlpha * (0.65 + 0.35 * Math.sin(time * s.twinkleSpeed + s.twinklePhase));
+      ctx.fillStyle = s.color;
+      ctx.globalAlpha = Math.max(0.1, Math.min(1.0, alpha));
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Diffraction spike cross for brighter stars
+      if (s.hasSpikes && alpha > 0.7) {
+        ctx.strokeStyle = s.color;
+        ctx.lineWidth = 0.75;
+        const spikeLen = s.radius * 3.8;
+        ctx.beginPath();
+        ctx.moveTo(s.x - spikeLen, s.y);
+        ctx.lineTo(s.x + spikeLen, s.y);
+        ctx.moveTo(s.x, s.y - spikeLen);
+        ctx.lineTo(s.x, s.y + spikeLen);
+        ctx.stroke();
+      }
+    }
+
+    // 4. Render Shooting Stars
+    ctx.globalCompositeOperation = 'lighter';
+    for (const ss of this.shootingStars) {
+      const prog = ss.life / ss.maxLife;
+      const tailX = ss.x - (ss.vx * 0.06);
+      const tailY = ss.y - (ss.vy * 0.06);
+
+      const grad = ctx.createLinearGradient(ss.x, ss.y, tailX, tailY);
+      grad.addColorStop(0, 'rgba(255, 255, 255, ' + (prog * 0.9) + ')');
+      grad.addColorStop(0.3, 'rgba(0, 240, 255, ' + (prog * 0.6) + ')');
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(ss.x, ss.y);
+      ctx.lineTo(tailX, tailY);
+      ctx.stroke();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+
+    // 5. Render Majestic Planets at the Edges
+    for (const planet of this.planets) {
+      this.drawPlanet(ctx, planet);
+    }
+
+    ctx.restore();
+  }
+
+  drawPlanet(ctx, p) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+
+    // A. Atmospheric Outer Glow
+    const atmosGrad = ctx.createRadialGradient(0, 0, p.radius * 0.8, 0, 0, p.glowRadius);
+    atmosGrad.addColorStop(0, p.atmosphereColor);
+    atmosGrad.addColorStop(0.6, p.atmosphereColor.replace(/[\d\.]+\)$/, '0.15)'));
+    atmosGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+    ctx.fillStyle = atmosGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, p.glowRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // B. Back Planetary Rings (if tilted)
+    if (p.hasRings) {
+      ctx.save();
+      ctx.rotate(p.ringTilt);
+      ctx.fillStyle = p.ringColor;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, p.ringOuter, p.ringOuter * 0.28, 0, Math.PI, Math.PI * 2); // Top half behind
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // C. Planet Body (3D Spherical Shading)
+    const bodyGrad = ctx.createRadialGradient(
+      -p.radius * 0.35, -p.radius * 0.35, p.radius * 0.1,
+      0, 0, p.radius
+    );
+    bodyGrad.addColorStop(0.0, p.secondaryColor);
+    bodyGrad.addColorStop(0.55, p.primaryColor);
+    bodyGrad.addColorStop(0.9, '#05070C');
+    bodyGrad.addColorStop(1.0, '#000000');
+
+    ctx.fillStyle = bodyGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Craters / Surface Bands
+    if (p.craters && p.craters.length > 0) {
+      for (const cr of p.craters) {
+        ctx.fillStyle = cr.color;
+        ctx.globalAlpha = 0.35;
+        ctx.beginPath();
+        ctx.arc(cr.dx, cr.dy, cr.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1.0;
+    }
+
+    // D. Front Planetary Rings (Crossing over the planet body)
+    if (p.hasRings) {
+      ctx.save();
+      ctx.rotate(p.ringTilt);
+      ctx.fillStyle = p.ringColor;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, p.ringOuter, p.ringOuter * 0.28, 0, 0, Math.PI); // Bottom half in front
+      ctx.fill();
+      // Inner shadow cutout
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, p.ringInner, p.ringInner * 0.28, 0, 0, Math.PI);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Rim specular light
+    ctx.strokeStyle = p.secondaryColor;
+    ctx.lineWidth = 1.5;
+    ctx.globalAlpha = 0.55;
+    ctx.beginPath();
+    ctx.arc(0, 0, p.radius, Math.PI * 0.8, Math.PI * 1.6);
+    ctx.stroke();
+
+    ctx.restore();
   }
 }
 
