@@ -77,13 +77,12 @@ class Level3Director {
         speakerImg: BOSS_ALIVE,
         speakerAlt: 'The Black Boss — Armoured Enforcer',
         message:
-          '<div style="font-size: 11px; letter-spacing: 1.5px; color: #666; font-weight: 800; margin-bottom: 3px;">— TRANSMISSION INTERCEPTED —</div>' +
-          '<div class="noobi-callout-box" style="margin: 2px 0 4px 0; padding: 5px 9px; font-size: 12.5px; line-height: 1.34; color: #E60039; border-left: 3.5px solid #FF0055; background: rgba(255,0,85,0.10); border-radius: 4px; font-weight: 700;">' +
-          '&ldquo;You dare challenge me, Fluke?! I am the Void Enforcer — absolute darkness itself. ' +
-          'Every photon you fire crumbles at my feet. Your pitiful little lasers are nothing but flickering ' +
-          'candles before the abyss. You <em>cannot</em> defeat me. Surrender now, or be consumed by the dark!&rdquo;' +
+          '<div class="noobi-callout-box" style="margin: 2px 0; padding: 5px; font-size: 13px; line-height: 1.3; color: #E60039; border-left: 3.5px solid #FF0055; background: rgba(255,0,85,0.10); border-radius: 4px; font-weight: 700;">' +
+          '&ldquo;You dare challenge me, Fluke?! I am absolute darkness itself. ' +
+          'Your pitiful lasers are nothing but flickering candles. ' +
+          'Surrender now, or be consumed by the dark!&rdquo;' +
           '</div>' +
-          '<div style="font-size: 11px; color: #555; font-weight: 600;">— <b style="color:#000;">THE BLACK BOSS</b>, Void Enforcer of the Spectrum War</div>',
+          '<div style="font-size: 11px; color: #555; font-weight: 600;">— <b style="color:#000;">THE BLACK BOSS</b></div>',
         btnText: 'RESPOND! ▶'
       },
       {
@@ -117,9 +116,7 @@ class Level3Director {
         speakerImg: NOOBI_IMG,
         speakerAlt: 'Master Noobi-Wan',
         message:
-          '<div class="noobi-callout-box" style="margin: 4px 0; padding: 6px; font-size: 12px; font-weight: bold; color: #FF2A6D; border-left: 3.5px solid #9400D3; background: rgba(160,32,240,0.14); border-radius: 4px;">' +
-          '&ldquo;Shoot an orb with its contrary-color laser to form white crystals&rdquo;' +
-          '</div>' +
+          '<b>Shoot an orb with its contrary-color laser to form white crystals:</b><br>' +
           '• <span class="noobi-hl red">RED [1]</span> + <span class="noobi-hl cyan">CYAN orb</span><br>' +
           '• <span class="noobi-hl green">GREEN [2]</span> + <span class="noobi-hl magenta">MAGENTA orb</span><br>' +
           '• <span class="noobi-hl blue">BLUE [3]</span> + <span class="noobi-hl yellow">YELLOW orb</span><br><br>' +
@@ -232,15 +229,12 @@ class Level3Director {
       speakerImg: NOOBI_IMG,
       speakerAlt: 'Master Noobi-Wan',
       message:
-        '<div style="font-size: 13px; font-weight: bold; color: #FF4D66; border-left: 3px solid #A020F0; ' +
-        'padding: 8px; background: rgba(160,32,240,0.15); border-radius: 4px; margin-bottom: 12px;">' +
-        '&ldquo;Invert frame is ON! Bots can only be killed by lasers of THEIR OWN color, and the Black Boss is invincible!&rdquo;' +
+        '<div class="noobi-callout-box" style="margin: 4px 0; padding: 6px; font-size: 13px; font-weight: bold; color: #FF4D66; border-left: 3px solid #A020F0; background: rgba(160,32,240,0.15); border-radius: 4px;">' +
+        '&ldquo;Invert frame ON! Bots die to THEIR OWN color! Boss is invincible!&rdquo;' +
         '</div>' +
-        '• <b>SAME-COLOR VULNERABILITY:</b><br>' +
-        '&nbsp;&nbsp;&bull; <span class="noobi-hl cyan">CYAN bot</span> &rarr; <b>CYAN laser [4]</b><br>' +
-        '&nbsp;&nbsp;&bull; <span class="noobi-hl magenta">MAGENTA bot</span> &rarr; <b>MAGENTA laser [5]</b><br>' +
-        '&nbsp;&nbsp;&bull; <span class="noobi-hl red">RED bot</span> &rarr; <b>RED laser [1]</b><br><br>' +
-        '• <b>BOSS IS INVINCIBLE:</b> Wait until it drops!',
+        '• <span class="noobi-hl cyan">CYAN bot</span> &rarr; <b>CYAN [4]</b><br>' +
+        '• <span class="noobi-hl magenta">MAGENTA bot</span> &rarr; <b>MAGENTA [5]</b><br>' +
+        '• <span class="noobi-hl red">RED bot</span> &rarr; <b>RED [1]</b>',
       btnText: 'UNDERSTOOD, NOOBI-WAN! ⚔️'
     };
 

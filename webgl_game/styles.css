@@ -243,9 +243,23 @@ body, html {
   padding: 3px 9px;
   border: 2px solid #000;
   letter-spacing: 1px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.1s;
+}
+
+.page-badge:hover:not(.locked) {
+  transform: scale(1.05);
 }
 
 .page-badge.current {
+  background: #FFE600;
+  color: #000;
+  border-color: #000;
+  box-shadow: 3px 3px 0 #FF2A4D;
+}
+
+.page-badge.inactive {
   background: #00F0FF;
   color: #000;
   box-shadow: 3px 3px 0 #000;
@@ -1277,7 +1291,7 @@ body, html {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 5px 16px 6px 14px;
+  padding: 8px 14px 4px 14px;
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -1285,13 +1299,13 @@ body, html {
 .noobi-instruction-body {
   font-family: 'Montserrat', sans-serif;
   font-weight: 700;
-  font-size: clamp(12px, 1.1vw, 14px);
-  line-height: 1.4;
+  font-size: clamp(12px, 1.2vw, 14.5px);
+  line-height: 1.35;
   color: #1A1F30;
   overflow: hidden;
   max-height: 100%;
   padding-right: 8px;
-  margin: 2px 0 4px 0;
+  margin: 4px 0 2px 0;
 }
 
 .noobi-instruction-body b {
@@ -1312,7 +1326,7 @@ body, html {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .noobi-footer-left {
@@ -1384,15 +1398,15 @@ body, html {
 /* Comic Callout / Tip Box — High Saturation, matching user reference (no blue/yellow) */
 .noobi-tip-box,
 .noobi-callout-box {
-  margin: 6px 0 4px 0;
-  padding: 7px 11px;
+  margin: 2px 0 2px 0;
+  padding: 4px 8px;
   background: rgba(160, 32, 240, 0.14);
   border-left: 3.5px solid #9400D3;
   border-radius: 4px;
-  font-size: clamp(11.5px, 1.05vw, 13px);
+  font-size: clamp(11px, 1vw, 13px);
   color: #FF2A6D;
   font-weight: 700;
-  line-height: 1.35;
+  line-height: 1.3;
 }
 
 .noobi-tip-box b,
@@ -1424,7 +1438,7 @@ body, html {
   right: 3.5%;
   top: 70.8%;
   bottom: 10.2%;
-  padding: 6px 12px 6px 12px;
+  padding: 16px 12px 6px 12px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -1435,13 +1449,13 @@ body, html {
 #tutorialModal.is-boss-card .noobi-instruction-body {
   font-family: 'Montserrat', sans-serif;
   font-weight: 700;
-  font-size: clamp(11.5px, 1.05vw, 13px);
+  font-size: clamp(11.5px, 1.1vw, 13.5px);
   line-height: 1.34;
   color: #1A1F30;
   overflow: hidden;
   max-height: 100%;
   padding-right: 6px;
-  margin: 0 0 3px 0;
+  margin: 3px 0 2px 0;
 }
 
 #tutorialModal.is-boss-card .noobi-box-footer {
@@ -1497,10 +1511,10 @@ body, html {
 .noobi-combos-grid {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin: 6px 0 4px 0;
+  gap: 2px;
+  margin: 2px 0 2px 0;
   background: rgba(0, 0, 0, 0.06);
-  padding: 6px 10px;
+  padding: 4px 8px;
   border-radius: 4px;
   border: 1px solid rgba(0, 0, 0, 0.12);
 }
@@ -1509,7 +1523,7 @@ body, html {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: clamp(11.5px, 1.05vw, 13px);
+  font-size: clamp(11.5px, 1.1vw, 13px);
   font-weight: 700;
 }
 
@@ -1526,7 +1540,7 @@ body, html {
   border-radius: 4px;
   border: 1.5px solid #33384D;
   font-family: 'Bangers', cursive;
-  font-size: clamp(12px, 1.1vw, 14px);
+  font-size: clamp(14.5px, 1.4vw, 17px);
   letter-spacing: 0.8px;
 }
 
