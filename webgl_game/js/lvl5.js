@@ -45,9 +45,9 @@ class Level5Director {
     // Ensure player has invert unlocked and starter ammo
     if (this.game.player) {
       this.game.player.invertUnlocked = true;
-      const startAmmo = { RED: 8, GREEN: 8, BLUE: 8, CYAN: 8, MAGENTA: 8, YELLOW: 8, WHITE: 4 };
+      const startAmmo = { RED: 6, GREEN: 6, BLUE: 6, CYAN: 6, MAGENTA: 6, YELLOW: 6, WHITE: 4 };
       for (const [c, n] of Object.entries(startAmmo)) {
-        this.game.player.ammo[c] = Math.max(this.game.player.ammo[c] || 0, n);
+        this.game.player.ammo[c] = Math.min(this.game.player.maxAmmo, Math.max(this.game.player.ammo[c] || 0, n));
       }
     }
 

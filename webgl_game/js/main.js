@@ -78,10 +78,26 @@ class LightWarsGame {
 
   resetProgressOnLaunch() {
     try {
-      localStorage.removeItem("lightwars_level1_cleared");
-      localStorage.removeItem("lightwars_level2_cleared");
-      localStorage.removeItem("lightwars_black_boss_defeated");
-      localStorage.removeItem("lightwars_dash_unlocked");
+      // If level 4 or 5 has been cleared, all page-1 prerequisites were also
+      // earned — preserve them so page 1 levels don't appear locked when the
+      // player navigates back from page 2.
+      const level4Cleared = localStorage.getItem("lightwars_level4_cleared") === "true";
+      const level5Cleared = localStorage.getItem("lightwars_level5_cleared") === "true";
+      const page2Cleared  = level4Cleared || level5Cleared;
+
+      if (!page2Cleared) {
+        localStorage.removeItem("lightwars_level1_cleared");
+        localStorage.removeItem("lightwars_level2_cleared");
+        localStorage.removeItem("lightwars_black_boss_defeated");
+        localStorage.removeItem("lightwars_dash_unlocked");
+      } else {
+        // Ensure all prerequisite page-1 flags are set so the lock-state
+        // logic shows them correctly when the player browses page 1.
+        localStorage.setItem("lightwars_level1_cleared", "true");
+        localStorage.setItem("lightwars_level2_cleared", "true");
+        localStorage.setItem("lightwars_black_boss_defeated", "true");
+        localStorage.setItem("lightwars_dash_unlocked", "true");
+      }
     } catch (e) {
       console.warn("Storage reset on launch:", e);
     }

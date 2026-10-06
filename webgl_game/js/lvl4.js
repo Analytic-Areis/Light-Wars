@@ -55,9 +55,9 @@ class Level4Director {
     if (this.game.player) {
       this.game.player.invertUnlocked = true;
       // Give solid combat ammo
-      const startAmmo = { RED:8, GREEN:8, BLUE:8, CYAN:6, MAGENTA:6, YELLOW:6, WHITE:0 };
+      const startAmmo = { RED:6, GREEN:6, BLUE:6, CYAN:6, MAGENTA:6, YELLOW:6, WHITE:0 };
       for (const [c, n] of Object.entries(startAmmo)) {
-        this.game.player.ammo[c] = Math.max(this.game.player.ammo[c] || 0, n);
+        this.game.player.ammo[c] = Math.min(this.game.player.maxAmmo, Math.max(this.game.player.ammo[c] || 0, n));
       }
     }
 
@@ -226,7 +226,7 @@ class Level4Director {
     if (this.game.player) {
       const p = this.game.player;
       ['CYAN', 'MAGENTA', 'YELLOW'].forEach(color => {
-        p.ammo[color] = (p.ammo[color] || 0) + 3;
+        p.ammo[color] = Math.min(p.maxAmmo, (p.ammo[color] || 0) + 3);
       });
       if (this.game.particles) {
         this.game.particles.spawnComicText(
