@@ -1473,7 +1473,21 @@ class LightWarsGame {
     // If coming back from Level 4, show Page 2; otherwise default to Page 1
     const page1 = document.getElementById('comicPage1');
     const page2 = document.getElementById('comicPage2');
-    if (this._lastLevel === 4 && page2) {
+    
+    if (this._justClearedBossAndUnlockedPage2 && page2) {
+      this._justClearedBossAndUnlockedPage2 = false;
+      if (page1) {
+        page1.style.display = 'flex';
+        page1.style.opacity = '1';
+        page1.style.transform = 'none';
+      }
+      if (page2) page2.style.display = 'none';
+      
+      // Auto-trigger page turn animation
+      setTimeout(() => {
+        this.transitionToPage2();
+      }, 800);
+    } else if (this._lastLevel === 4 && page2) {
       if (page1) page1.style.display = 'none';
       page2.style.display = 'flex';
       page2.style.opacity = '1';
@@ -1623,7 +1637,6 @@ class LightWarsGame {
   transitionToPage2() {
     const page1 = document.getElementById('comicPage1');
     const page2 = document.getElementById('comicPage2');
-    const pageTracker = document.querySelector('.sw-comic-page-tracker');
 
     if (!page2) return; // Safety guard
 
@@ -1638,49 +1651,32 @@ class LightWarsGame {
       page2Badge.classList.add('current');
     }
 
-    // Flash overlay animation
-    const flash = document.createElement('div');
-    flash.style.cssText = `
-      position: fixed; inset: 0; z-index: 9999; pointer-events: none;
-      background: #FFFFFF;
-      opacity: 0;
-      transition: opacity 0.25s ease;
-    `;
-    document.body.appendChild(flash);
-
-    // Animate flash in
-    requestAnimationFrame(() => {
-      flash.style.opacity = '1';
+    if (page1) {
+      page1.style.transformOrigin = 'left center';
+      page1.style.transition = 'transform 0.4s ease-in, opacity 0.4s ease-in';
+      page1.style.transform = 'perspective(1200px) rotateY(-90deg)';
+      page1.style.opacity = '0';
+      
       setTimeout(() => {
-        // Swap pages
-        if (page1) {
-          page1.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-          page1.style.opacity = '0';
-          page1.style.transform = 'translateX(-40px)';
-          setTimeout(() => { page1.style.display = 'none'; }, 300);
-        }
+        page1.style.display = 'none';
+        
         page2.style.display = 'flex';
+        page2.style.transformOrigin = 'right center';
+        page2.style.transform = 'perspective(1200px) rotateY(90deg)';
         page2.style.opacity = '0';
-        page2.style.transform = 'translateX(40px)';
-        page2.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
-        requestAnimationFrame(() => {
-          setTimeout(() => {
-            page2.style.opacity = '1';
-            page2.style.transform = 'translateX(0)';
-          }, 20);
-        });
+        
+        // Force reflow
+        void page2.offsetWidth;
+        
+        page2.style.transition = 'transform 0.4s ease-out, opacity 0.4s ease-out';
+        page2.style.transform = 'perspective(1200px) rotateY(0deg)';
+        page2.style.opacity = '1';
 
         // Update issue badge
         const issueBox = document.querySelector('.sw-comic-corner-box .corner-issue');
         if (issueBox) issueBox.textContent = '#2';
-
-        // Flash out
-        flash.style.opacity = '0';
-        setTimeout(() => {
-          if (flash.parentNode) flash.parentNode.removeChild(flash);
-        }, 350);
-      }, 200);
-    });
+      }, 400);
+    }
   }
 
   /**
@@ -1690,35 +1686,27 @@ class LightWarsGame {
     const page1 = document.getElementById('comicPage1');
     const page2 = document.getElementById('comicPage2');
 
-    const flash = document.createElement('div');
-    flash.style.cssText = `
-      position: fixed; inset: 0; z-index: 9999; pointer-events: none;
-      background: #FFFFFF;
-      opacity: 0;
-      transition: opacity 0.25s ease;
-    `;
-    document.body.appendChild(flash);
-
-    requestAnimationFrame(() => {
-      flash.style.opacity = '1';
+    if (page2) {
+      page2.style.transformOrigin = 'right center';
+      page2.style.transition = 'transform 0.4s ease-in, opacity 0.4s ease-in';
+      page2.style.transform = 'perspective(1200px) rotateY(90deg)';
+      page2.style.opacity = '0';
+      
       setTimeout(() => {
-        if (page2) {
-          page2.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-          page2.style.opacity = '0';
-          page2.style.transform = 'translateX(40px)';
-          setTimeout(() => { page2.style.display = 'none'; }, 300);
-        }
+        page2.style.display = 'none';
+        
         if (page1) {
           page1.style.display = 'flex';
+          page1.style.transformOrigin = 'left center';
+          page1.style.transform = 'perspective(1200px) rotateY(-90deg)';
           page1.style.opacity = '0';
-          page1.style.transform = 'translateX(-40px)';
-          page1.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
-          requestAnimationFrame(() => {
-            setTimeout(() => {
-              page1.style.opacity = '1';
-              page1.style.transform = 'translateX(0)';
-            }, 20);
-          });
+          
+          // Force reflow
+          void page1.offsetWidth;
+          
+          page1.style.transition = 'transform 0.4s ease-out, opacity 0.4s ease-out';
+          page1.style.transform = 'perspective(1200px) rotateY(0deg)';
+          page1.style.opacity = '1';
         }
 
         const currentBadge = document.querySelector('.page-badge.current');
@@ -1726,13 +1714,8 @@ class LightWarsGame {
 
         const issueBox = document.querySelector('.sw-comic-corner-box .corner-issue');
         if (issueBox) issueBox.textContent = '#1';
-
-        flash.style.opacity = '0';
-        setTimeout(() => {
-          if (flash.parentNode) flash.parentNode.removeChild(flash);
-        }, 350);
-      }, 200);
-    });
+      }, 400);
+    }
   }
 
   getSafeEnemySpawnPos(targetX, targetY) {
@@ -2001,6 +1984,7 @@ class LightWarsGame {
       localStorage.setItem('lightwars_level2_cleared', 'true');
     } else if (lvl === 3) {
       localStorage.setItem('lightwars_black_boss_defeated', 'true');
+      this._justClearedBossAndUnlockedPage2 = true;
     } else if (lvl === 4) {
       localStorage.setItem('lightwars_level4_cleared', 'true');
     }
