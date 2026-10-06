@@ -40,6 +40,7 @@ class Enemy {
     // Tactical Standoff (stays 4 tiles away from hero, not too far away)
     this.idealMinDist = 160; // ~3.5–4 tiles standoff distance
     this.idealMaxDist = 220; // Proximity cap (4–4.5 tiles away)
+    this.isRetreating = false;
     this.strafeDir = Math.random() < 0.5 ? 1 : -1;
     this.strafeTimer = 1.0 + Math.random() * 3.0;
     this.dodgeCooldown = 0.5 + Math.random() * 1.5;
@@ -263,7 +264,7 @@ class Enemy {
 
     // Safety check: ensure enemy is always strictly within the walkable area of the hero
     if (arena && arena.pushOutOfWall) {
-      const safe = arena.pushOutOfWall(this.x, this.y, this.radius + 4);
+      const safe = arena.pushOutOfWall(this.x, this.y, this.radius);
       this.x = safe.x;
       this.y = safe.y;
     }
@@ -327,7 +328,7 @@ class Enemy {
       // Obstacle & Line-of-Sight Check:
       // If direct line to player is blocked (e.g. player went behind center box),
       // or if enemy is stuck against an obstacle, navigate via arena waypoints!
-      const hasLOS = arena && arena.hasLineOfSight ? arena.hasLineOfSight(this.x, this.y, player.x, player.y, this.radius) : true;
+      const hasLOS = arena && arena.hasLineOfSight ? arena.hasLineOfSight(this.x, this.y, player.x, player.y, 4) : true;
 
       // Safe Standoff Positioning:
       // - If NO direct LOS (player is behind the box): actively navigate around the box to reach the occluded region!
@@ -370,10 +371,12 @@ class Enemy {
         this.walkAnimTime += dt * 12.0;
         this.facingAngle = Math.atan2(ny, nx);
         this.facingDir = SpriteManager.getDirection8(this.facingAngle);
-      } else if (dist < this.idealMinDist) {
+      } else if (dist < this.idealMinDist || (this.isRetreating && dist < this.idealMinDist + 25)) {
+        this.isRetreating = true;
         // TOO CLOSE: Back away from the player to stay safe!
-        let nx = -dx / dist;
-        let ny = -dy / dist;
+        const safeDist = dist > 0.001 ? dist : 1;
+        let nx = -dx / safeDist;
+        let ny = -dy / safeDist;
         // Blend with separation vector
         if (sepX !== 0 || sepY !== 0) {
           nx += sepX * 1.2;
@@ -388,13 +391,13 @@ class Enemy {
         let moveNy = ny;
 
         // If direct retreat leads into a wall, steer sideways (strafe) along open floor
-        if (arena && arena.isBodyBlocked && arena.isBodyBlocked(this.x + nx * retreatSpeed * dt, this.y + ny * retreatSpeed * dt, this.radius + 4)) {
+        if (arena && arena.isBodyBlocked && arena.isBodyBlocked(this.x + nx * retreatSpeed * dt, this.y + ny * retreatSpeed * dt, this.radius)) {
           const perpX = -ny * (this.strafeDir || 1);
           const perpY = nx * (this.strafeDir || 1);
-          if (!arena.isBodyBlocked(this.x + perpX * retreatSpeed * dt, this.y + perpY * retreatSpeed * dt, this.radius + 2)) {
+          if (!arena.isBodyBlocked(this.x + perpX * retreatSpeed * dt, this.y + perpY * retreatSpeed * dt, this.radius)) {
             moveNx = perpX;
             moveNy = perpY;
-          } else if (!arena.isBodyBlocked(this.x - perpX * retreatSpeed * dt, this.y - perpY * retreatSpeed * dt, this.radius + 2)) {
+          } else if (!arena.isBodyBlocked(this.x - perpX * retreatSpeed * dt, this.y - perpY * retreatSpeed * dt, this.radius)) {
             moveNx = -perpX;
             moveNy = -perpY;
             this.strafeDir = (this.strafeDir || 1) * -1;
@@ -417,9 +420,11 @@ class Enemy {
         this.walkAnimTime += dt * 12.0;
         this.facingDir = SpriteManager.getDirection8(this.facingAngle);
       } else if (dist > this.idealMaxDist && dist < this.aggroRange) {
+        this.isRetreating = false;
         // TOO FAR: Close in until in safe shooting range, but steer around other enemies!
-        let nx = dx / dist;
-        let ny = dy / dist;
+        const safeDist = dist > 0.001 ? dist : 1;
+        let nx = dx / safeDist;
+        let ny = dy / safeDist;
         if (sepX !== 0 || sepY !== 0) {
           nx += sepX * 1.4;
           ny += sepY * 1.4;
@@ -444,6 +449,7 @@ class Enemy {
         this.walkAnimTime += dt * 12.0;
         this.facingDir = SpriteManager.getDirection8(this.facingAngle);
       } else {
+        this.isRetreating = false;
         // IN SWEET SPOT:
         // If crowded by another enemy, actively step away so they never stand in the same place!
         const sepDist = Math.hypot(sepX, sepY);
@@ -512,7 +518,7 @@ class Enemy {
 
     // Final boundary safeguard: keep enemy strictly clear of any blocked boundary walls
     if (arena && arena.pushOutOfWall) {
-      const safe = arena.pushOutOfWall(this.x, this.y, this.radius + 4);
+      const safe = arena.pushOutOfWall(this.x, this.y, this.radius);
       this.x = safe.x;
       this.y = safe.y;
     }
@@ -528,9 +534,12 @@ class Enemy {
     const rules = rulesTable[this.colorId];
     const interaction = (rules && rules[laserColorId]) ? rules[laserColorId] : { action: 'NONE' };
 
-    // Apply brief knockback
-    this.knockbackVx = Math.cos(hitAngle) * 140;
-    this.knockbackVy = Math.sin(hitAngle) * 140;
+    // Apply brief knockback (reduced to 30%: was 140)
+    const kbSpeed = (window.LightWars && window.LightWars.GAME_CONFIG && window.LightWars.GAME_CONFIG.enemyKnockbackSpeed !== undefined)
+      ? window.LightWars.GAME_CONFIG.enemyKnockbackSpeed
+      : 42;
+    this.knockbackVx = Math.cos(hitAngle) * kbSpeed;
+    this.knockbackVy = Math.sin(hitAngle) * kbSpeed;
     this.hurtFlash = 1.0;
 
     if (interaction.action === 'KILL') {
@@ -770,8 +779,12 @@ class BlackBoss extends Enemy {
   }
 
   takeLaserHit(laserColorId, hitAngle) {
-    this.knockbackVx = Math.cos(hitAngle) * 120;
-    this.knockbackVy = Math.sin(hitAngle) * 120;
+    // Apply brief knockback (reduced to 30%: was 120)
+    const bossKbSpeed = (window.LightWars && window.LightWars.GAME_CONFIG && window.LightWars.GAME_CONFIG.bossKnockbackSpeed !== undefined)
+      ? window.LightWars.GAME_CONFIG.bossKnockbackSpeed
+      : 36;
+    this.knockbackVx = Math.cos(hitAngle) * bossKbSpeed;
+    this.knockbackVy = Math.sin(hitAngle) * bossKbSpeed;
     this.hurtFlash = 1.0;
 
     // If boss is invulnerable (during shaking or reality inversion), immune to ALL attacks!

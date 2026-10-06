@@ -455,16 +455,18 @@ class Arena {
   /**
    * Check if there is an unblocked direct line of sight between two points
    */
-  hasLineOfSight(x1, y1, x2, y2, radius = 8) {
+  hasLineOfSight(x1, y1, x2, y2, radius = 4) {
     if (this.ignoreBoundaries) return true;
     const dist = Math.hypot(x2 - x1, y2 - y1);
     if (dist <= 1) return true;
+    const checkRadius = Math.min(radius, 6);
     const steps = Math.max(2, Math.ceil(dist / 16));
-    for (let i = 1; i <= steps; i++) {
+    // Check interior points along the line between entities (excluding endpoints where player/enemy touches wall)
+    for (let i = 1; i < steps; i++) {
       const frac = i / steps;
       const sx = x1 + (x2 - x1) * frac;
       const sy = y1 + (y2 - y1) * frac;
-      if (this.isBodyBlocked(sx, sy, radius)) {
+      if (this.isBodyBlocked(sx, sy, checkRadius)) {
         return false;
       }
     }

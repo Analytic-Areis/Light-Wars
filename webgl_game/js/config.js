@@ -268,6 +268,9 @@ const GAME_CONFIG = {
   bossLaserSpeed: 232.5, // Decreased to 75% (was 310)
   laserLifetime: 1.6,
   laserCooldown: 0.22,
+  playerKnockbackSpeed: 102, // Decreased to 30% (was 340)
+  enemyKnockbackSpeed: 42, // Decreased to 30% (was 140)
+  bossKnockbackSpeed: 36, // Decreased to 30% (was 120)
   whiteLightRadius: 50,
   refillRate: 1.0, // seconds to fully refill RGB
 

@@ -77,6 +77,7 @@ class Level2Director {
       this.game.player.ammo.RED = Math.max(this.game.player.ammo.RED, 6);
       this.game.player.ammo.GREEN = Math.max(this.game.player.ammo.GREEN, 6);
       this.game.player.ammo.BLUE = Math.max(this.game.player.ammo.BLUE, 6);
+      this.game.player.ammo.WHITE = 0;
     }
 
     const startCards = [

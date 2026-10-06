@@ -212,8 +212,11 @@ class Player {
           angle = 0;
         }
       }
-      this.vx = Math.cos(angle) * 340;
-      this.vy = Math.sin(angle) * 340;
+      const kbSpeed = (window.LightWars && window.LightWars.GAME_CONFIG && window.LightWars.GAME_CONFIG.playerKnockbackSpeed !== undefined)
+        ? window.LightWars.GAME_CONFIG.playerKnockbackSpeed
+        : 102; // Reduced to 30% (was 340)
+      this.vx = Math.cos(angle) * kbSpeed;
+      this.vy = Math.sin(angle) * kbSpeed;
     }
     // Note: Melee collision (applyKnockback = false) adds zero knockback, but leaves existing player velocity intact
 

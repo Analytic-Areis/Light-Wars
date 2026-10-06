@@ -1858,6 +1858,15 @@ class LightWarsGame {
             if (d < (orb.hitRadius || 36)) {
               const res = orb.hitByLaser(laser.colorId);
               if (res.success) {
+                // Double safety: In level 2, white bullets creation should be stopped
+                const isLevel2 = (this.waves && this.waves.level === 2);
+                if (isLevel2 && res.resultColor === 'WHITE') {
+                  this.particles.spawnBurst(laser.x, laser.y, '#FFFFFF', 6);
+                  laser.alive = false;
+                  laserConsumed = true;
+                  break;
+                }
+
                 laser.alive = false;
                 laserConsumed = true;
                 this.unlockHelpCapability('orbCrafting');
@@ -2098,10 +2107,10 @@ class LightWarsGame {
             e2.y += ny * overlap * ratio2;
 
             if (arena && arena.pushOutOfWall) {
-              const s1 = arena.pushOutOfWall(e1.x, e1.y, e1.radius + 4);
+              const s1 = arena.pushOutOfWall(e1.x, e1.y, e1.radius);
               e1.x = s1.x;
               e1.y = s1.y;
-              const s2 = arena.pushOutOfWall(e2.x, e2.y, e2.radius + 4);
+              const s2 = arena.pushOutOfWall(e2.x, e2.y, e2.radius);
               e2.x = s2.x;
               e2.y = s2.y;
             }
@@ -2147,7 +2156,7 @@ class LightWarsGame {
               const ps = arena.pushOutOfWall(this.player.x, this.player.y, this.player.radius);
               this.player.x = ps.x;
               this.player.y = ps.y;
-              const es = arena.pushOutOfWall(enemy.x, enemy.y, enemy.radius + 4);
+              const es = arena.pushOutOfWall(enemy.x, enemy.y, enemy.radius);
               enemy.x = es.x;
               enemy.y = es.y;
             }
@@ -2166,7 +2175,7 @@ class LightWarsGame {
             enemy.x = res.x;
             enemy.y = res.y;
             if (arena && arena.pushOutOfWall) {
-              const es = arena.pushOutOfWall(enemy.x, enemy.y, enemy.radius + 4);
+              const es = arena.pushOutOfWall(enemy.x, enemy.y, enemy.radius);
               enemy.x = es.x;
               enemy.y = es.y;
             }
