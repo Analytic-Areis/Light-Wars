@@ -117,14 +117,13 @@ class Level3Director {
         speakerImg: NOOBI_IMG,
         speakerAlt: 'Master Noobi-Wan',
         message:
-          'Listen carefully, Fluke — this is the key!<br><br>' +
-          '<div class="noobi-callout-box" style="margin: 4px 0 6px 0; padding: 6px 10px; font-size: 13.5px; font-weight: bold; color: #FF2A6D; border-left: 3.5px solid #9400D3; background: rgba(160,32,240,0.14); border-radius: 4px;">' +
-          '&ldquo;Shoot some orb with its contrary-color laser to form white crystals&rdquo;' +
+          '<div class="noobi-callout-box" style="margin: 4px 0; padding: 6px; font-size: 12px; font-weight: bold; color: #FF2A6D; border-left: 3.5px solid #9400D3; background: rgba(160,32,240,0.14); border-radius: 4px;">' +
+          '&ldquo;Shoot an orb with its contrary-color laser to form white crystals&rdquo;' +
           '</div>' +
-          '• Shoot <span class="noobi-hl red">RED laser [1]</span> into a <span class="noobi-hl cyan">CYAN orb</span> (or Cyan into Red)<br>' +
-          '• Shoot <span class="noobi-hl green">GREEN laser [2]</span> into a <span class="noobi-hl magenta">MAGENTA orb</span> (or Magenta into Green)<br>' +
-          '• Shoot <span class="noobi-hl blue">BLUE laser [3]</span> into a <span class="noobi-hl yellow">YELLOW orb</span> (or Yellow into Blue)<br><br>' +
-          'Contrary-color reaction crystallizes pure <b>WHITE AMMO [7]</b> — the only laser that can harm the Black Boss!',
+          '• <span class="noobi-hl red">RED [1]</span> + <span class="noobi-hl cyan">CYAN orb</span><br>' +
+          '• <span class="noobi-hl green">GREEN [2]</span> + <span class="noobi-hl magenta">MAGENTA orb</span><br>' +
+          '• <span class="noobi-hl blue">BLUE [3]</span> + <span class="noobi-hl yellow">YELLOW orb</span><br><br>' +
+          'Reaction makes <b>WHITE AMMO [7]</b> — the only laser to harm the Boss!',
         btnText: 'ENGAGE THE BLACK BOSS! ⚔️'
       }
     ];
@@ -233,18 +232,15 @@ class Level3Director {
       speakerImg: NOOBI_IMG,
       speakerAlt: 'Master Noobi-Wan',
       message:
-        'Fluke, look out — he activated his power!<br><br>' +
-        '<div style="font-size: 15px; font-weight: bold; color: #FF4D66; border-left: 3px solid #A020F0; ' +
-        'padding: 8px 10px; background: rgba(160,32,240,0.15); border-radius: 4px; margin-bottom: 12px;">' +
-        '&ldquo;The black boss has a special ability known as invert frame; when it is turned on, bots can be ' +
-        'killed only by the lasers of their color, and the black boss is literally invincible in this state!&rdquo;' +
+        '<div style="font-size: 13px; font-weight: bold; color: #FF4D66; border-left: 3px solid #A020F0; ' +
+        'padding: 8px; background: rgba(160,32,240,0.15); border-radius: 4px; margin-bottom: 12px;">' +
+        '&ldquo;Invert frame is ON! Bots can only be killed by lasers of THEIR OWN color, and the Black Boss is invincible!&rdquo;' +
         '</div>' +
-        '• <b>SAME-COLOR VULNERABILITY (Invert Frame ON):</b><br>' +
-        '&nbsp;&nbsp;&bull; <span class="noobi-hl cyan">CYAN bot</span> dies only to <b>CYAN laser [4]</b><br>' +
-        '&nbsp;&nbsp;&bull; <span class="noobi-hl magenta">MAGENTA bot</span> dies only to <b>MAGENTA laser [5]</b><br>' +
-        '&nbsp;&nbsp;&bull; <span class="noobi-hl yellow">YELLOW bot</span> dies only to <b>YELLOW laser [6]</b><br>' +
-        '&nbsp;&nbsp;&bull; <span class="noobi-hl red">RED bot</span> dies only to <b>RED laser [1]</b> (and Green to Green, Blue to Blue)<br><br>' +
-        '• <b>THE BLACK BOSS IS INVINCIBLE:</b> Hold your ground until his invert frame drops, then strike with White lasers again!',
+        '• <b>SAME-COLOR VULNERABILITY:</b><br>' +
+        '&nbsp;&nbsp;&bull; <span class="noobi-hl cyan">CYAN bot</span> &rarr; <b>CYAN laser [4]</b><br>' +
+        '&nbsp;&nbsp;&bull; <span class="noobi-hl magenta">MAGENTA bot</span> &rarr; <b>MAGENTA laser [5]</b><br>' +
+        '&nbsp;&nbsp;&bull; <span class="noobi-hl red">RED bot</span> &rarr; <b>RED laser [1]</b><br><br>' +
+        '• <b>BOSS IS INVINCIBLE:</b> Wait until it drops!',
       btnText: 'UNDERSTOOD, NOOBI-WAN! ⚔️'
     };
 
@@ -386,12 +382,10 @@ class Level3Director {
           speakerImg: BOSS_FALLEN,
           speakerAlt: 'The Black Boss — Fallen in the Shattered Dark',
           message:
-            '<div style="font-size: 11px; letter-spacing: 1.5px; color: #666; font-weight: 800; margin-bottom: 3px;">— LAST TRANSMISSION —</div>' +
-            '<div class="noobi-callout-box" style="margin: 2px 0 4px 0; padding: 5px 9px; font-size: 12.5px; line-height: 1.34; color: #E60039; border-left: 3.5px solid #FF0055; background: rgba(255,0,85,0.10); border-radius: 4px; font-weight: 700;">' +
-            '&ldquo;…Are you thinking that everything is done? &hellip;Not yet, little warrior. ' +
-            'This battle — <em>heh</em> — this was nothing. You haven\'t seen what lies ahead…&rdquo;' +
+            '<div class="noobi-callout-box" style="margin: 2px 0; padding: 5px; font-size: 12.5px; line-height: 1.34; color: #E60039; border-left: 3.5px solid #FF0055; background: rgba(255,0,85,0.10); border-radius: 4px; font-weight: 700;">' +
+            '&ldquo;…Not yet, little warrior. This battle was nothing. You haven\'t seen what lies ahead…&rdquo;' +
             '</div>' +
-            '<div style="font-size: 11px; color: #555; font-weight: 600;">— <b style="color:#000;">THE BLACK BOSS</b>, Void Enforcer — <em>defeated</em></div>',
+            '<div style="font-size: 11px; color: #555; font-weight: 600;">— <b style="color:#000;">THE BLACK BOSS</b></div>',
           btnText: 'LISTEN ▶'
         },
         {
@@ -405,13 +399,10 @@ class Level3Director {
           speakerImg: BOSS_FALLEN,
           speakerAlt: 'The Black Boss — Fallen in the Shattered Dark',
           message:
-            '<div style="font-size: 11px; letter-spacing: 1.5px; color: #666; font-weight: 800; margin-bottom: 3px;">— DYING WORDS —</div>' +
-            '<div class="noobi-callout-box" style="margin: 2px 0 4px 0; padding: 5px 9px; font-size: 12.5px; line-height: 1.34; color: #E60039; border-left: 3.5px solid #FF0055; background: rgba(255,0,85,0.10); border-radius: 4px; font-weight: 700;">' +
-            '&ldquo;You think you\'ve won? You have only awakened a far greater wrath. ' +
-            'Our true lord — the one who forged this war — you cannot hope to defeat him. ' +
-            'No light you carry will be enough!&rdquo;' +
+            '<div class="noobi-callout-box" style="margin: 2px 0; padding: 5px; font-size: 12.5px; line-height: 1.34; color: #E60039; border-left: 3.5px solid #FF0055; background: rgba(255,0,85,0.10); border-radius: 4px; font-weight: 700;">' +
+            '&ldquo;You have awakened a far greater wrath. Our true lord — you cannot hope to defeat him!&rdquo;' +
             '</div>' +
-            '<div style="font-size: 11px; color: #555; font-weight: 600;">— <b style="color:#000;">THE BLACK BOSS</b>, last breath</div>',
+            '<div style="font-size: 11px; color: #555; font-weight: 600;">— <b style="color:#000;">THE BLACK BOSS</b></div>',
           btnText: 'LISTEN ▶'
         },
         {
@@ -443,14 +434,11 @@ class Level3Director {
           speakerImg: NOOBI_IMG,
           speakerAlt: 'Master Noobi-Wan',
           message:
-            'Incredible, Fluke — you\'ve claimed his power!<br><br>' +
-            '<div class="noobi-callout-box" style="margin: 4px 0 6px 0; padding: 6px 10px; font-size: 13.5px; font-weight: bold; color: #00A850; border-left: 3.5px solid #00E676; background: rgba(0,230,118,0.14); border-radius: 4px;">' +
-            '&ldquo;By defeating the black boss, you gained his ability to invert frame. ' +
-            'You can activate the ability using the key E, and it has a timeout of 25s!&rdquo;' +
+            '<div class="noobi-callout-box" style="margin: 4px 0; padding: 6px; font-size: 12px; font-weight: bold; color: #00A850; border-left: 3.5px solid #00E676; background: rgba(0,230,118,0.14); border-radius: 4px;">' +
+            '&ldquo;You gained INVERT FRAME! Activate it using E (25s cooldown)!&rdquo;' +
             '</div>' +
-            '• Press <b>KEY [E]</b> during combat to reverse light physics for a limited time!<br>' +
-            '• When active, enemies can be destroyed by matching color lasers (same-color kills).<br>' +
-            '• Ability timeout: <b>25 s</b>.',
+            '• Press <b>KEY [E]</b> to reverse light physics!<br>' +
+            '• When active, enemies die to matching color lasers (same-color kills).',
           btnText: 'COMPLETE LEVEL 3! 🏆'
         }
       ];

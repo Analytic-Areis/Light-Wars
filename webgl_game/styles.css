@@ -1288,7 +1288,7 @@ body, html {
   font-size: clamp(12px, 1.1vw, 14px);
   line-height: 1.4;
   color: #1A1F30;
-  overflow-y: auto;
+  overflow: hidden;
   max-height: 100%;
   padding-right: 8px;
   margin: 2px 0 4px 0;
@@ -1438,7 +1438,7 @@ body, html {
   font-size: clamp(11.5px, 1.05vw, 13px);
   line-height: 1.34;
   color: #1A1F30;
-  overflow-y: auto;
+  overflow: hidden;
   max-height: 100%;
   padding-right: 6px;
   margin: 0 0 3px 0;
@@ -1692,7 +1692,7 @@ body, html {
   max-width: 980px;
   width: 95%;
   max-height: 92vh;
-  overflow-y: auto;
+  overflow: hidden;
   overflow-x: hidden;
   background: radial-gradient(circle at 50% 12%, #17213F 0%, #0C1123 60%, #060914 100%);
   border: 5px solid #FFE600;

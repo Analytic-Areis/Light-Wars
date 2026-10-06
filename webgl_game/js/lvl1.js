@@ -69,12 +69,10 @@ class Level1Director {
         totalSteps: 6,
         title: 'THE CURSE OF THE LIGHT',
         message:
-          'All imperial combatants are bound by <b>THE LIGHT CURSE</b>!<br><br>' +
-          'The curse shields them against ordinary attacks: <b>ENEMIES ONLY DIE TO THEIR CONTRARY (COMPLEMENTARY) COLOUR</b>!<br><br>' +
-          '• <span class="noobi-hl cyan">CYAN TROOPS</span> &rarr; Die ONLY to <span class="noobi-hl red">RED LASER [1]</span><br>' +
-          '• <span class="noobi-hl magenta">MAGENTA TROOPS</span> &rarr; Die ONLY to <span class="noobi-hl green">GREEN LASER [2]</span><br>' +
-          '• <span class="noobi-hl yellow">YELLOW TROOPS</span> &rarr; Die ONLY to <span class="noobi-hl blue">BLUE LASER [3]</span><br><br>' +
-          'Shooting them with matching or non-contrary colors deals no damage!',
+          '<b>ENEMIES ONLY DIE TO CONTRARY (COMPLEMENTARY) COLOUR</b>!<br><br>' +
+          '• <span class="noobi-hl cyan">CYAN TROOPS</span> &rarr; <span class="noobi-hl red">RED LASER [1]</span><br>' +
+          '• <span class="noobi-hl magenta">MAGENTA TROOPS</span> &rarr; <span class="noobi-hl green">GREEN LASER [2]</span><br>' +
+          '• <span class="noobi-hl yellow">YELLOW TROOPS</span> &rarr; <span class="noobi-hl blue">BLUE LASER [3]</span>',
         btnText: 'CONTINUE NOOBI-WAN ▶'
       },
       {
@@ -85,12 +83,10 @@ class Level1Director {
         totalSteps: 6,
         title: 'CONTRARY ESSENCE & ORBS',
         message:
-          'Because of this curse, <b>aspects of that contrary colour are trapped within them</b>!<br><br>' +
-          'When you destroy an enemy, that contrary essence destabilizes and is <b>DROPPED INTO ORBS</b> on the deck:<br><br>' +
-          '• Eliminating <span class="noobi-hl cyan">Cyan</span> drops a <span class="noobi-hl red">RED ORB</span><br>' +
-          '• Eliminating <span class="noobi-hl magenta">Magenta</span> drops a <span class="noobi-hl green">GREEN ORB</span><br>' +
-          '• Eliminating <span class="noobi-hl yellow">Yellow</span> drops a <span class="noobi-hl blue">BLUE ORB</span><br><br>' +
-          'These orbs hold the secret to forging secondary ammunition!',
+          'Defeating enemies drops their contrary essence as <b>ORBS</b>:<br><br>' +
+          '• <span class="noobi-hl cyan">Cyan</span> drops <span class="noobi-hl red">RED ORB</span><br>' +
+          '• <span class="noobi-hl magenta">Magenta</span> drops <span class="noobi-hl green">GREEN ORB</span><br>' +
+          '• <span class="noobi-hl yellow">Yellow</span> drops <span class="noobi-hl blue">BLUE ORB</span>',
         btnText: 'CONTINUE NOOBI-WAN ▶'
       },
       {
@@ -113,8 +109,8 @@ class Level1Director {
         totalSteps: 6,
         title: '2 CYAN TROOPS INCOMING!',
         message:
-          'Battle begins now, Fluke! <b>2 Cyan troops are going to come</b> right now into the corridor! Select your <span class="noobi-hl red">RED LASER [1]</span> and kill them!<br><br>' +
-          '<div class="noobi-tip-box">💡 <b>TIP:</b> Every bot contains some visible essence of their contrary colour on them — watch for the red energy core glowing on their chest and armor!</div>',
+          '<b>2 Cyan troops incoming</b>! Select <span class="noobi-hl red">RED LASER [1]</span> and kill them!<br><br>' +
+          '<div class="noobi-tip-box">💡 <b>TIP:</b> Watch for the red core glowing on their chest!</div>',
         btnText: 'FIGHT CYAN TROOPS! ⚔️'
       }
     ];
@@ -141,11 +137,9 @@ class Level1Director {
         totalSteps: 10,
         title: 'REPEAT FOR MAGENTA & YELLOW!',
         message:
-          'Outstanding shooting, Fluke! The 2 Cyan scouts are eliminated, leaving 2 Red orbs on the deck.<br><br>' +
-          'Now <b>REPEAT THE SAME FOR MAGENTA AND YELLOW</b>!<br><br>' +
-          '• Destroy <span class="noobi-hl magenta">MAGENTA TROOPS</span> with <span class="noobi-hl green">GREEN LASER [2]</span> (notice their glowing green essence!)<br>' +
-          '• Destroy <span class="noobi-hl yellow">YELLOW TROOPS</span> with <span class="noobi-hl blue">BLUE LASER [3]</span> (notice their glowing blue essence!)<br><br>' +
-          'Eliminate them to harvest their Green and Blue energy orbs!',
+          'Outstanding! <b>NOW REPEAT FOR MAGENTA AND YELLOW</b>!<br><br>' +
+          '• Destroy <span class="noobi-hl magenta">MAGENTA</span> with <span class="noobi-hl green">GREEN [2]</span><br>' +
+          '• Destroy <span class="noobi-hl yellow">YELLOW</span> with <span class="noobi-hl blue">BLUE [3]</span>',
         btnText: 'FIGHT REINFORCEMENTS! ⚔️',
         onDismiss: () => {
           this.spawnL1MagentaYellowWave();
@@ -190,14 +184,12 @@ class Level1Director {
         totalSteps: 10,
         title: 'ALL ORB COMBINATIONS OF RGB',
         message:
-          'Superb combat, Fluke! All imperial scouts are eliminated, leaving <b>RED, GREEN, and BLUE ORBS</b> across the deck!<br><br>' +
-          'Firing your RGB lasers into contrary orbs triggers additive light fusion:<br>' +
+          'Fire your RGB lasers into contrary orbs for additive light fusion:<br>' +
           '<div class="noobi-combos-grid">' +
-            '<div class="combo-row">🔴 <b>Red Laser</b> + 🟢 <b>Green Orb</b> &rarr; <span class="noobi-hl yellow">🟡 YELLOW AMMO [6]</span></div>' +
-            '<div class="combo-row">🔵 <b>Blue Laser</b> + 🟢 <b>Green Orb</b> &rarr; <span class="noobi-hl cyan">💠 CYAN AMMO [4]</span></div>' +
-            '<div class="combo-row">🔵 <b>Blue Laser</b> + 🔴 <b>Red Orb</b> &rarr; <span class="noobi-hl magenta">💖 MAGENTA AMMO [5]</span></div>' +
-          '</div>' +
-          '<div class="noobi-tip-box">💡 Additive symmetry: Green laser into Red orb also yields Yellow!</div>',
+            '<div class="combo-row">🔴 <b>Red</b> + 🟢 <b>Green Orb</b> &rarr; <span class="noobi-hl yellow">🟡 YELLOW AMMO [6]</span></div>' +
+            '<div class="combo-row">🔵 <b>Blue</b> + 🟢 <b>Green Orb</b> &rarr; <span class="noobi-hl cyan">💠 CYAN AMMO [4]</span></div>' +
+            '<div class="combo-row">🔵 <b>Blue</b> + 🔴 <b>Red Orb</b> &rarr; <span class="noobi-hl magenta">💖 MAGENTA AMMO [5]</span></div>' +
+          '</div>',
         btnText: 'CONTINUE NOOBI-WAN ▶'
       },
       {
@@ -208,12 +200,10 @@ class Level1Director {
         totalSteps: 10,
         title: 'PICK UP BULLETS & USE CMY NOW!',
         message:
-          'When you shoot an orb with a fusing laser, it shatters into ammo crystals.<br><br>' +
-          '<b>PICK THOSE BULLETS AND YOU CAN USE CMY BULLETS NOW</b>!<br><br>' +
-          '• Press <span class="noobi-key">[4]</span> for <span class="noobi-hl cyan">CYAN LASER</span><br>' +
-          '• Press <span class="noobi-key">[5]</span> for <span class="noobi-hl magenta">MAGENTA LASER</span><br>' +
-          '• Press <span class="noobi-key">[6]</span> for <span class="noobi-hl yellow">YELLOW LASER</span><br><br>' +
-          'Collect the dropped crystals to equip all six wavelengths of the light spectrum!',
+          '<b>PICK THOSE BULLETS TO USE CMY BULLETS</b>!<br><br>' +
+          '• Press <span class="noobi-key">[4]</span> for <span class="noobi-hl cyan">CYAN</span><br>' +
+          '• Press <span class="noobi-key">[5]</span> for <span class="noobi-hl magenta">MAGENTA</span><br>' +
+          '• Press <span class="noobi-key">[6]</span> for <span class="noobi-hl yellow">YELLOW</span>',
         btnText: 'CONTINUE NOOBI-WAN ▶'
       },
       {
@@ -224,18 +214,15 @@ class Level1Director {
         totalSteps: 10,
         title: 'HIT THE BLACK ORB TO UNLOCK REWARD!',
         message:
-          'Look ahead! A mysterious radiant <b>BLACK ORB</b> has materialized in the chamber!<br><br>' +
-          '<b>STRIKE THE BLACK ORB WITH ALL 6 COLOURS TO UNLOCK YOUR REWARD!</b><br><br>' +
-          'Fire <b>one bullet of each of the 6 colors</b> into it:<br>' +
+          '<b>STRIKE THE BLACK ORB WITH ALL 6 COLOURS FOR A REWARD!</b><br><br>' +
           '<div class="noobi-color-pips-preview">' +
-            '<span style="color:#FF2A4D;">● RED [1]</span>' +
-            '<span style="color:#22E058;">● GREEN [2]</span>' +
-            '<span style="color:#2A85FF;">● BLUE [3]</span>' +
-            '<span style="color:#00F0FF;">● CYAN [4]</span>' +
-            '<span style="color:#FF2AD4;">● MAGENTA [5]</span>' +
-            '<span style="color:#FFE600;">● YELLOW [6]</span>' +
-          '</div>' +
-          'Watch the 6 illuminated color pips above the black orb light up. Strike it with all 6 colors to claim your secret surprise power!',
+            '<span style="color:#FF2A4D;">● RED</span> ' +
+            '<span style="color:#22E058;">● GREEN</span> ' +
+            '<span style="color:#2A85FF;">● BLUE</span> ' +
+            '<span style="color:#00F0FF;">● CYAN</span> ' +
+            '<span style="color:#FF2AD4;">● MAGENTA</span> ' +
+            '<span style="color:#FFE600;">● YELLOW</span>' +
+          '</div>',
         btnText: 'UNLOCK THE SURPRISE! 🎁',
         onDismiss: () => {
           this.spawnBlackBarrelChallenge();

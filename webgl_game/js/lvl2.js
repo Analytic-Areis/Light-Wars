@@ -89,12 +89,11 @@ class Level2Director {
         totalSteps: 4,
         title: 'MASTER NOOBI-WAN: SPECIAL GIFT',
         message:
-          'Welcome to Level 2, <b>Fluke</b>!<br><br>' +
-          'Since you performed so well in the trials, <b>I WANT TO GIFT YOU 4 LASER SHOTS OF EACH CMY</b>!<br><br>' +
-          '• <span class="noobi-hl cyan">+4 CYAN LASER [4]</span><br>' +
-          '• <span class="noobi-hl magenta">+4 MAGENTA LASER [5]</span><br>' +
-          '• <span class="noobi-hl yellow">+4 YELLOW LASER [6]</span><br><br>' +
-          'You will need these synthesized wavelengths for what lies ahead in this sector!',
+          'Welcome to Level 2, <b>Fluke</b>!<br>' +
+          '<b>I GIFT YOU 4 LASER SHOTS OF EACH CMY</b>!<br>' +
+          '• <span class="noobi-hl cyan">+4 CYAN [4]</span><br>' +
+          '• <span class="noobi-hl magenta">+4 MAGENTA [5]</span><br>' +
+          '• <span class="noobi-hl yellow">+4 YELLOW [6]</span>',
         btnText: 'CLAIM GIFT & CONTINUE ▶'
       },
       {
@@ -227,12 +226,9 @@ class Level2Director {
         totalSteps: 7,
         title: 'COLOR CHANGING OF TROOPS UNLOCKED!',
         message:
-          'Marvelous shooting, Fluke! Now pay close attention — you have discovered a key tactical secret:<br><br>' +
-          '<b>TROOPS CHANGE THEIR COLOR WHEN HIT BY DIFFERENT LASERS OF THEIR SAME GROUP!</b><br><br>' +
-          '• <b>RGB GROUP:</b> If a Red bot is struck by a Green laser, it transforms into <b>YELLOW</b>!<br>' +
-          '• If a Red bot is struck by a Blue laser, it transforms into <b>MAGENTA</b>!<br>' +
-          '• <b>CMY GROUP:</b> If a Cyan bot is struck by Magenta, it shifts into <b>BLUE</b>; struck by Yellow, it shifts into <b>GREEN</b>!<br><br>' +
-          '<div class="noobi-tip-box">💡 This allows you to manipulate enemy color affinities on the fly before delivering the finishing blow!</div>',
+          '<b>TROOPS CHANGE COLOR WHEN HIT BY LASERS OF SAME GROUP!</b><br>' +
+          '• <b>RGB:</b> Red struck by Green becomes <b>YELLOW</b>! Struck by Blue &rarr; <b>MAGENTA</b>!<br>' +
+          '• <b>CMY:</b> Cyan struck by Magenta becomes <b>BLUE</b>! Struck by Yellow &rarr; <b>GREEN</b>!',
         btnText: 'CONTINUE TO PRACTICE ▶'
       },
       {
@@ -355,11 +351,10 @@ class Level2Director {
         totalSteps: 7,
         title: 'DRILL: TRANSFORM CYAN TROOPS!',
         message:
-          'Brilliant work mastering the RGB transformation!<br><br>' +
-          '<b>JUST LIKE RED, CYAN BOTS WILL ALSO TRANSFORM</b>:<br><br>' +
-          '• Shoot Cyan with <span class="noobi-hl magenta">MAGENTA LASER [5]</span> &rarr; transforms into <b>BLUE</b>!<br>' +
-          '• Shoot Cyan with <span class="noobi-hl yellow">YELLOW LASER [6]</span> &rarr; transforms into <b>GREEN</b>!<br><br>' +
-          'A Cyan bot will appear now. <b>SHOOT MAGENTA [5]</b> at him!',
+          '<b>CYAN BOTS ALSO TRANSFORM</b>:<br>' +
+          '• Cyan + <span class="noobi-hl magenta">MAGENTA [5]</span> &rarr; <b>BLUE</b>!<br>' +
+          '• Cyan + <span class="noobi-hl yellow">YELLOW [6]</span> &rarr; <b>GREEN</b>!<br><br>' +
+          '<b>SHOOT MAGENTA [5]</b> at the incoming Cyan bot!',
         btnText: 'SPAWN TEST CYAN BOT 🎯'
       }
     ];

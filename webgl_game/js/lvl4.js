@@ -80,14 +80,10 @@ class Level4Director {
       speakerImg: L4_NOOBI_IMG,
       speakerAlt: 'Master Noobi-Wan',
       message:
-        'You have now acquired the <b>Inverted Frame</b> ability!\u003cbr\u003e\u003cbr\u003e' +
-        '\u003cdiv class="noobi-callout-box" style="margin:4px 0 6px 0;padding:6px 10px;font-size:13.5px;font-weight:bold;color:#FF3366;border-left:3.5px solid #9400D3;background:rgba(160,32,240,0.15);border-radius:4px;"\u003e' +
-        '&ldquo;In Inverted Frame, <em>only the way they die</em> changes — bots die to their <b>own colour</b> ' +
-        'laser instead of the complementary one. The colour-changing mechanic of bots remains the same.&rdquo;' +
-        '\u003c/div\u003e' +
-        '• Activate with <b>KEY [E]</b> — lasts <b>10 seconds</b>.\u003cbr\u003e' +
-        '• Cooldown: <b>25 s</b> (scales down if you take damage).\u003cbr\u003e' +
-        '• Now is your time to use it — get a good grip on it!',
+        '<div class="noobi-callout-box" style="margin:4px 0;padding:6px;font-size:12.5px;font-weight:bold;color:#FF3366;border-left:3.5px solid #9400D3;background:rgba(160,32,240,0.15);border-radius:4px;">' +
+        '&ldquo;In Inverted Frame, bots die to their <b>own colour</b> laser!&rdquo;</div>' +
+        '• Activate with <b>KEY [E]</b> (10s duration, 25s cooldown).<br>' +
+        '• Color-changing logic remains unchanged.',
       btnText: 'UNDERSTOOD! ▶'
     };
 
@@ -143,15 +139,12 @@ class Level4Director {
       speakerImg: L4_NOOBI_IMG,
       speakerAlt: 'Master Noobi-Wan',
       message:
-        'Now <span style="color:#FF2A4D;font-weight:bold">Red</span>, ' +
-        '<span style="color:#22E058;font-weight:bold">Blue</span>, ' +
-        '<span style="color:#4D96FF;font-weight:bold">Green</span> troops will come!\u003cbr\u003e\u003cbr\u003e' +
-        '\u003cdiv class="noobi-callout-box" style="margin:4px 0 6px 0;padding:6px 10px;font-size:13.5px;font-weight:bold;color:#FF3366;border-left:3.5px solid #9400D3;background:rgba(160,32,240,0.15);border-radius:4px;"\u003e' +
-        '&ldquo;Use <b>Inverted Frame [E]</b> and defeat them — in this state, bots can only be killed ' +
-        'by their <b>own colour</b> laser!&rdquo;\u003c/div\u003e' +
-        '• <span style="color:#FF2A4D">RED</span> dies to <b>RED [1]</b>\u003cbr\u003e' +
-        '• <span style="color:#22E058">GREEN</span> dies to <b>GREEN [2]</b>\u003cbr\u003e' +
-        '• <span style="color:#4D96FF">BLUE</span> dies to <b>BLUE [3]</b>',
+        '<b>INVERTED FRAME PRACTICE: RGB</b><br><br>' +
+        '• <span style="color:#FF2A4D">RED</span> dies to <b>RED [1]</b><br>' +
+        '• <span style="color:#22E058">GREEN</span> dies to <b>GREEN [2]</b><br>' +
+        '• <span style="color:#4D96FF">BLUE</span> dies to <b>BLUE [3]</b><br><br>' +
+        '<div class="noobi-callout-box" style="margin:4px 0;padding:6px;font-size:12.5px;font-weight:bold;color:#FF3366;border-left:3.5px solid #9400D3;background:rgba(160,32,240,0.15);border-radius:4px;">' +
+        '&ldquo;Activate <b>[E]</b> to defeat the incoming bots with their own color!&rdquo;</div>',
       btnText: 'ENGAGE! ⚔️'
     };
 
@@ -218,16 +211,12 @@ class Level4Director {
       speakerImg: L4_NOOBI_IMG,
       speakerAlt: 'Master Noobi-Wan',
       message:
-        'Excellent! Now — here are <b>3 of each</b> ' +
-        '<span style="color:#00F0FF;font-weight:bold">Cyan</span>, ' +
-        '<span style="color:#FF2AD4;font-weight:bold">Magenta</span>, ' +
-        '<span style="color:#FFE600;font-weight:bold">Yellow</span>!\u003cbr\u003e\u003cbr\u003e' +
-        '\u003cdiv class="noobi-callout-box" style="margin:4px 0 6px 0;padding:6px 10px;font-size:13.5px;font-weight:bold;color:#FF3366;border-left:3.5px solid #9400D3;background:rgba(160,32,240,0.15);border-radius:4px;"\u003e' +
-        '&ldquo;Use <b>Inverted Frame [E]</b> and defeat them — ' +
-        'Cyan dies to CYAN [4], Magenta to MAGENTA [5], Yellow to YELLOW [6]!&rdquo;\u003c/div\u003e' +
-        '• <span style="color:#00F0FF">CYAN</span> dies to <b>CYAN [4]</b>\u003cbr\u003e' +
-        '• <span style="color:#FF2AD4">MAGENTA</span> dies to <b>MAGENTA [5]</b>\u003cbr\u003e' +
-        '• <span style="color:#FFE600">YELLOW</span> dies to <b>YELLOW [6]</b>',
+        '<b>INVERTED FRAME PRACTICE: CMY</b><br><br>' +
+        '• <span style="color:#00F0FF">CYAN</span> dies to <b>CYAN [4]</b><br>' +
+        '• <span style="color:#FF2AD4">MAGENTA</span> dies to <b>MAGENTA [5]</b><br>' +
+        '• <span style="color:#FFE600">YELLOW</span> dies to <b>YELLOW [6]</b><br><br>' +
+        '<div class="noobi-callout-box" style="margin:4px 0;padding:6px;font-size:12.5px;font-weight:bold;color:#FF3366;border-left:3.5px solid #9400D3;background:rgba(160,32,240,0.15);border-radius:4px;">' +
+        '&ldquo;Activate <b>[E]</b> to defeat the incoming bots with their own color!&rdquo;</div>',
       btnText: 'ENGAGE! ⚔️'
     };
 
