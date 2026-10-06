@@ -315,6 +315,9 @@ class Arena {
       return { x: newX, y: newY };
     }
 
+    // Direct path struck a boundary wall: trigger localized boundary illumination!
+    this.triggerCollisionBoundary(newX, newY);
+
     // 2. Sliding along World X axis
     if (!this.isBodyBlocked(newX, oldY, radius)) {
       return { x: newX, y: oldY };
@@ -362,6 +365,8 @@ class Arena {
   pushOutOfWall(px, py, radius = 12) {
     if (this.ignoreBoundaries) return { x: px, y: py };
     if (!this.isBodyBlocked(px, py, radius)) return { x: px, y: py };
+
+    this.triggerCollisionBoundary(px, py);
 
     let curX = px, curY = py;
     const angles = [0, 0.785, 1.571, 2.356, 3.142, 3.927, 4.712, 5.498];
@@ -448,6 +453,141 @@ class Arena {
   }
 
   /**
+   * Check if there is an unblocked direct line of sight between two points
+   */
+  hasLineOfSight(x1, y1, x2, y2, radius = 8) {
+    if (this.ignoreBoundaries) return true;
+    const dist = Math.hypot(x2 - x1, y2 - y1);
+    if (dist <= 1) return true;
+    const steps = Math.max(2, Math.ceil(dist / 16));
+    for (let i = 1; i <= steps; i++) {
+      const frac = i / steps;
+      const sx = x1 + (x2 - x1) * frac;
+      const sy = y1 + (y2 - y1) * frac;
+      if (this.isBodyBlocked(sx, sy, radius)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Breadth-First Search (BFS) grid pathfinding to navigate around obstacles (e.g. center box)
+   * Returns next screen target position {x, y} along walkable grid path towards goal
+   */
+  findNextWaypoint(startX, startY, goalX, goalY) {
+    if (!this.blocked || !this.cols || !this.rows) return { x: goalX, y: goalY };
+
+    const startG = this.toGrid(startX, startY);
+    const goalG = this.toGrid(goalX, goalY);
+
+    let sc = Math.floor(startG.c);
+    let sr = Math.floor(startG.r);
+    let gc = Math.floor(goalG.c);
+    let gr = Math.floor(goalG.r);
+
+    // Clamp coordinates to grid bounds
+    sc = Math.max(0, Math.min(this.cols - 1, sc));
+    sr = Math.max(0, Math.min(this.rows - 1, sr));
+    gc = Math.max(0, Math.min(this.cols - 1, gc));
+    gr = Math.max(0, Math.min(this.rows - 1, gr));
+
+    // If goal tile is blocked, search nearest walkable tile to goal
+    if (this.isBlocked(gc, gr)) {
+      let found = false;
+      for (let r = 1; r <= 3 && !found; r++) {
+        for (let dr = -r; dr <= r && !found; dr++) {
+          for (let dc = -r; dc <= r && !found; dc++) {
+            const tc = gc + dc;
+            const tr = gr + dr;
+            if (tc >= 0 && tr >= 0 && tc < this.cols && tr < this.rows && !this.isBlocked(tc, tr)) {
+              gc = tc;
+              gr = tr;
+              found = true;
+            }
+          }
+        }
+      }
+      if (!found) return { x: goalX, y: goalY };
+    }
+
+    if (sc === gc && sr === gr) {
+      return { x: goalX, y: goalY };
+    }
+
+    // Queue BFS starting from goal towards start
+    const visited = new Int8Array(this.cols * this.rows);
+    const cameFrom = new Int32Array(this.cols * this.rows);
+    cameFrom.fill(-1);
+
+    const goalIdx = gr * this.cols + gc;
+    const startIdx = sr * this.cols + sc;
+    visited[goalIdx] = 1;
+
+    const queue = [goalIdx];
+    let head = 0;
+    let foundStart = false;
+
+    // 8-directional exploration
+    const dirs = [
+      [0, 1], [0, -1], [1, 0], [-1, 0],
+      [1, 1], [1, -1], [-1, 1], [-1, -1]
+    ];
+
+    while (head < queue.length) {
+      const curr = queue[head++];
+      if (curr === startIdx) {
+        foundStart = true;
+        break;
+      }
+
+      const cc = curr % this.cols;
+      const cr = Math.floor(curr / this.cols);
+
+      for (let i = 0; i < 8; i++) {
+        const nc = cc + dirs[i][0];
+        const nr = cr + dirs[i][1];
+        if (nc >= 0 && nr >= 0 && nc < this.cols && nr < this.rows) {
+          const nIdx = nr * this.cols + nc;
+          if (!visited[nIdx] && !this.isBlocked(nc, nr)) {
+            // Diagonal safety: do not cut corner through adjacent blocked tiles
+            if (dirs[i][0] !== 0 && dirs[i][1] !== 0) {
+              if (this.isBlocked(cc, nr) || this.isBlocked(nc, cr)) {
+                continue;
+              }
+            }
+            visited[nIdx] = 1;
+            cameFrom[nIdx] = curr;
+            queue.push(nIdx);
+          }
+        }
+      }
+    }
+
+    if (foundStart && cameFrom[startIdx] !== -1) {
+      const nextIdx = cameFrom[startIdx];
+      const nextC = nextIdx % this.cols;
+      const nextR = Math.floor(nextIdx / this.cols);
+      const nextScreen = this.toScreen(nextC + 0.5, nextR + 0.5);
+
+      // Check if we can look 1 extra step ahead for smoother corner turning
+      const step2Idx = cameFrom[nextIdx];
+      if (step2Idx !== -1 && step2Idx !== nextIdx) {
+        const s2C = step2Idx % this.cols;
+        const s2R = Math.floor(step2Idx / this.cols);
+        const s2Screen = this.toScreen(s2C + 0.5, s2R + 0.5);
+        if (this.hasLineOfSight(startX, startY, s2Screen.x, s2Screen.y, 10)) {
+          return s2Screen;
+        }
+      }
+
+      return nextScreen;
+    }
+
+    return { x: goalX, y: goalY };
+  }
+
+  /**
    * Precompute boundary perimeter edges separating walkable tiles (0) from blocked tiles (1)
    */
   computeBoundaryEdges() {
@@ -459,19 +599,19 @@ class Arena {
 
         // Top-Right edge: (c, r) -> (c + 1, r)
         if (r === 0 || this.blocked[r - 1][c] === 1) {
-          edges.push({ p1: this.toScreen(c, r), p2: this.toScreen(c + 1, r) });
+          edges.push({ p1: this.toScreen(c, r), p2: this.toScreen(c + 1, r), c, r });
         }
         // Bottom-Right edge: (c + 1, r) -> (c + 1, r + 1)
         if (c === this.cols - 1 || this.blocked[r][c + 1] === 1) {
-          edges.push({ p1: this.toScreen(c + 1, r), p2: this.toScreen(c + 1, r + 1) });
+          edges.push({ p1: this.toScreen(c + 1, r), p2: this.toScreen(c + 1, r + 1), c, r });
         }
         // Bottom-Left edge: (c + 1, r + 1) -> (c, r + 1)
         if (r === this.rows - 1 || this.blocked[r + 1][c] === 1) {
-          edges.push({ p1: this.toScreen(c + 1, r + 1), p2: this.toScreen(c, r + 1) });
+          edges.push({ p1: this.toScreen(c + 1, r + 1), p2: this.toScreen(c, r + 1), c, r });
         }
         // Top-Left edge: (c, r + 1) -> (c, r)
         if (c === 0 || this.blocked[r][c - 1] === 1) {
-          edges.push({ p1: this.toScreen(c, r + 1), p2: this.toScreen(c, r) });
+          edges.push({ p1: this.toScreen(c, r + 1), p2: this.toScreen(c, r), c, r });
         }
       }
     }
@@ -479,44 +619,86 @@ class Arena {
   }
 
   /**
-   * Render glowing sci-fi holographic perimeter demarcating the clear arena boundaries
+   * Trigger glowing holographic perimeter on edges within 2 tiles of collision point
+   */
+  triggerCollisionBoundary(colX, colY) {
+    if (!this.boundaryEdges || this.boundaryEdges.length === 0) return;
+    const colG = this.toGrid(colX, colY);
+    const rangeTiles = 2.0;
+
+    for (let i = 0; i < this.boundaryEdges.length; i++) {
+      const e = this.boundaryEdges[i];
+      // Tile distance from collision
+      const dc = e.c - colG.c;
+      const dr = e.r - colG.r;
+      const tileDist = Math.hypot(dc, dr);
+
+      if (tileDist <= rangeTiles) {
+        // Closer edges illuminate brighter; smoothly boost activation
+        const intensity = 1.0 - (tileDist / rangeTiles) * 0.45;
+        e.glowAlpha = Math.max(e.glowAlpha || 0, intensity);
+      }
+    }
+  }
+
+  /**
+   * Render glowing sci-fi holographic perimeter demarcating arena boundaries
+   * ONLY displays edges within 2 tiles of where any player or bot is colliding/pressing against the boundary!
    */
   drawArenaBoundaries(ctx) {
     if (!this.boundaryEdges || this.boundaryEdges.length === 0) return;
+
+    // Filter edges that currently have glow activation
+    const activeEdges = [];
+    for (let i = 0; i < this.boundaryEdges.length; i++) {
+      const e = this.boundaryEdges[i];
+      if (e.glowAlpha && e.glowAlpha > 0.01) {
+        activeEdges.push(e);
+      }
+    }
+
+    if (activeEdges.length === 0) return;
+
     ctx.save();
-    const pulse = 0.65 + 0.25 * Math.sin(this.galaxyTime * 2.2);
+    for (let i = 0; i < activeEdges.length; i++) {
+      const e = activeEdges[i];
+      const a = e.glowAlpha;
 
-    // 1. Soft atmospheric outer glow
-    ctx.shadowColor = '#00F0FF';
-    ctx.shadowBlur = 8;
-    ctx.strokeStyle = `rgba(0, 240, 255, ${0.40 * pulse})`;
-    ctx.lineWidth = 3.2;
-    ctx.beginPath();
-    for (let i = 0; i < this.boundaryEdges.length; i++) {
-      const e = this.boundaryEdges[i];
+      // 1. Soft atmospheric outer glow
+      ctx.shadowColor = '#00F0FF';
+      ctx.shadowBlur = 10;
+      ctx.strokeStyle = `rgba(0, 240, 255, ${0.55 * a})`;
+      ctx.lineWidth = 3.6;
+      ctx.beginPath();
       ctx.moveTo(e.p1.x, e.p1.y);
       ctx.lineTo(e.p2.x, e.p2.y);
-    }
-    ctx.stroke();
+      ctx.stroke();
 
-    // 2. Crisp bright neon laser perimeter line
-    ctx.shadowBlur = 0;
-    ctx.strokeStyle = `rgba(215, 250, 255, ${0.80 * pulse})`;
-    ctx.lineWidth = 1.6;
-    ctx.beginPath();
-    for (let i = 0; i < this.boundaryEdges.length; i++) {
-      const e = this.boundaryEdges[i];
+      // 2. Crisp bright neon laser perimeter line
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = `rgba(225, 255, 255, ${0.95 * a})`;
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
       ctx.moveTo(e.p1.x, e.p1.y);
       ctx.lineTo(e.p2.x, e.p2.y);
+      ctx.stroke();
     }
-    ctx.stroke();
-
     ctx.restore();
   }
 
   update(dt) {
     this.whiteLight.pulseTime += dt * 3.0;
     this.galaxyTime += dt;
+
+    // Smoothly decay boundary collision glow
+    if (this.boundaryEdges) {
+      for (let i = 0; i < this.boundaryEdges.length; i++) {
+        const e = this.boundaryEdges[i];
+        if (e.glowAlpha > 0) {
+          e.glowAlpha = Math.max(0, e.glowAlpha - dt * 2.8);
+        }
+      }
+    }
 
     // Upward glowing energy particles inside sanctuary
     if (Math.random() < 0.45) {

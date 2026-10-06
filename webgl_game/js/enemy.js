@@ -324,19 +324,53 @@ class Enemy {
         firedLaser = this.shoot(player.x, player.y);
       }
 
+      // Obstacle & Line-of-Sight Check:
+      // If direct line to player is blocked (e.g. player went behind center box),
+      // or if enemy is stuck against an obstacle, navigate via arena waypoints!
+      const hasLOS = arena && arena.hasLineOfSight ? arena.hasLineOfSight(this.x, this.y, player.x, player.y, this.radius) : true;
+
       // Safe Standoff Positioning:
-      // Bots DO NOT come too close to player!
-      // - If dist < idealMinDist: Back away to maintain safe distance
-      // - If dist > idealMaxDist: Advance towards player (steering around neighboring enemies)
+      // - If NO direct LOS (player is behind the box): actively navigate around the box to reach the occluded region!
+      // - If dist < idealMinDist (and has LOS): Back away to maintain safe distance
+      // - If dist > idealMaxDist: Advance towards player (steering around neighboring enemies & obstacles)
       // - If within safe zone: Actively space out if crowded, or gently strafe around player
-      /*
-      if (this.dodgeTimer > 0) {
-        // Currently executing dodge impulse (COMMENTED OUT)
+      if (!hasLOS) {
+        // Player is behind an obstacle/occluder: pathfind towards player using BFS waypoints
+        const waypoint = (arena && arena.findNextWaypoint)
+          ? arena.findNextWaypoint(this.x, this.y, player.x, player.y)
+          : { x: player.x, y: player.y };
+
+        const wdx = waypoint.x - this.x;
+        const wdy = waypoint.y - this.y;
+        const wdist = Math.hypot(wdx, wdy) || 1;
+
+        let nx = wdx / wdist;
+        let ny = wdy / wdist;
+        if (sepX !== 0 || sepY !== 0) {
+          nx += sepX * 1.2;
+          ny += sepY * 1.2;
+          const len = Math.hypot(nx, ny) || 1;
+          nx /= len;
+          ny /= len;
+        }
+
+        const nextX = this.x + nx * this.speed * dt;
+        const nextY = this.y + ny * this.speed * dt;
+
+        if (arena && arena.resolveMovement) {
+          const res = arena.resolveMovement(this.x, this.y, nextX, nextY, this.radius);
+          this.x = res.x;
+          this.y = res.y;
+        } else {
+          this.x = nextX;
+          this.y = nextY;
+        }
+
         this.isMoving = true;
+        this.walkAnimTime += dt * 12.0;
+        this.facingAngle = Math.atan2(ny, nx);
         this.facingDir = SpriteManager.getDirection8(this.facingAngle);
-      } else
-      */
-      if (dist < this.idealMinDist) {
+      } else if (dist < this.idealMinDist) {
         // TOO CLOSE: Back away from the player to stay safe!
         let nx = -dx / dist;
         let ny = -dy / dist;

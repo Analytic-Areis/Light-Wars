@@ -227,6 +227,7 @@
 
       // Track walls and occluders for X-Ray holograms
       const wallsInFrontOfPlayer = [];
+      const occludersInFrontOfPlayer = [];
       let playerDrawn = false;
       let playerRef = null;
       const drawnEnemies = [];
@@ -243,6 +244,10 @@
           }
         } else if (item.type === 'OCCLUDER') {
           const occ = item.occluder;
+          if (playerDrawn && playerRef && this.isEntityBehindOccluder(playerRef, occ)) {
+            occludersInFrontOfPlayer.push(occ);
+          }
+
           if (occ.img && (occ.loaded || (occ.img.complete && occ.img.naturalWidth > 0))) {
             // Check if ANY living character (player or enemies) is behind this occluder
             let someoneBehind = false;
@@ -279,46 +284,60 @@
         }
       }
 
-      // 4. Comic X-Ray Hologram if behind opaque wall
-      if (this.enableXRaySilhouette && playerRef && playerRef.alive && wallsInFrontOfPlayer.length > 0) {
-        this.renderPlayerXRaySilhouette(ctx, playerRef, wallsInFrontOfPlayer, spriteManager);
+      // 4. Comic X-Ray Hologram if behind opaque wall or occluder
+      if (this.enableXRaySilhouette && playerRef && playerRef.alive && (wallsInFrontOfPlayer.length > 0 || occludersInFrontOfPlayer.length > 0)) {
+        this.renderPlayerXRaySilhouette(ctx, playerRef, wallsInFrontOfPlayer, occludersInFrontOfPlayer, spriteManager);
       }
     }
 
-    renderPlayerXRaySilhouette(ctx, player, foregroundWalls, spriteManager) {
-      let isBehindSolidWall = false;
-      const playerBounds = {
-        left: player.x - 20,
-        right: player.x + 20,
-        top: player.y - 50,
-        bottom: player.y
-      };
+    renderPlayerXRaySilhouette(ctx, player, foregroundWalls, foregroundOccluders, spriteManager) {
+      let isBehindStructure = false;
 
-      for (const wall of foregroundWalls) {
-        if (wall.type === 'WALL') {
-          const wallBounds = {
-            left: wall.x - wall.width / 2,
-            right: wall.x + wall.width / 2,
-            top: wall.y - wall.height,
-            bottom: wall.y
-          };
-          if (
-            playerBounds.left < wallBounds.right &&
-            playerBounds.right > wallBounds.left &&
-            playerBounds.top < wallBounds.bottom &&
-            playerBounds.bottom > wallBounds.top
-          ) {
-            isBehindSolidWall = true;
+      // 1. Check if behind an occluder
+      if (foregroundOccluders && foregroundOccluders.length > 0) {
+        for (const occ of foregroundOccluders) {
+          if (this.isEntityBehindOccluder(player, occ)) {
+            isBehindStructure = true;
             break;
           }
         }
       }
 
-      if (!isBehindSolidWall) return;
+      // 2. Check if behind a solid wall
+      if (!isBehindStructure && foregroundWalls && foregroundWalls.length > 0) {
+        const playerBounds = {
+          left: player.x - 20,
+          right: player.x + 20,
+          top: player.y - 50,
+          bottom: player.y
+        };
+
+        for (const wall of foregroundWalls) {
+          if (wall.type === 'WALL') {
+            const wallBounds = {
+              left: wall.x - wall.width / 2,
+              right: wall.x + wall.width / 2,
+              top: wall.y - wall.height,
+              bottom: wall.y
+            };
+            if (
+              playerBounds.left < wallBounds.right &&
+              playerBounds.right > wallBounds.left &&
+              playerBounds.top < wallBounds.bottom &&
+              playerBounds.bottom > wallBounds.top
+            ) {
+              isBehindStructure = true;
+              break;
+            }
+          }
+        }
+      }
+
+      if (!isBehindStructure) return;
 
       ctx.save();
-      ctx.globalAlpha = this.silhouetteAlpha !== undefined ? this.silhouetteAlpha : 0.25;
-      ctx.filter = 'drop-shadow(0 0 3px #00F0FF) hue-rotate(180deg)';
+      ctx.globalAlpha = this.silhouetteAlpha !== undefined ? this.silhouetteAlpha : 0.40;
+      ctx.filter = 'drop-shadow(0 0 4px #00F0FF) hue-rotate(180deg)';
       player.draw(ctx, spriteManager);
       ctx.restore();
     }
