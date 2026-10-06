@@ -8,7 +8,7 @@
  * - Boss hit reaction: replenishes minions, triggers Invert Frame ability
  * - Card 3: Triggered upon Boss Invert Frame activation ("The black boss has a special ability known as invert frame; when it is turned on, bots can be killed only by the lasers of their color, and the black boss is literally invincible in this state")
  * - Boss defeated reaction:
- *   - Card 4: ("By defeating the black boss, you gained his ability to invert frame. You can activate the ability using the key E, and it has a timeout of 25s")
+ *   - Card 4: ("By defeating the black boss, you gained his ability to invert frame. You can activate the ability using the key E, and it has a timeout of 25s at full health, 7s after 1 heart lost, and 5s after 2 hearts lost")
  *   - Card 5: ("Seems like another boss; we have to destroy him too. Let's move further")
  * - Completes Level 3 and transitions to victory / next boss screen
  */
@@ -261,16 +261,37 @@ class Level3Director {
       // Safely neutralize remaining minion projectiles
       this.game.enemyLasers = [];
 
-      // Unlock Invert Frame on player
-      if (this.game.player) {
-        this.game.player.invertUnlocked = true;
+      // Drop the Uno Reverse Card — InvertPowerup pickup at boss death position
+      if (window.LightWars.InvertPowerup && this.game.powerups) {
+        this.game.powerups.push(new window.LightWars.InvertPowerup(enemy.x, enemy.y));
       }
-      if (this.game.unlockHelpCapability) {
-        this.game.unlockHelpCapability('inversion');
-      }
-      localStorage.setItem('lightwars_black_boss_defeated', 'true');
 
-      // Cards 4 & 5 after defeating the Black Boss
+      if (this.game.particles) {
+        this.game.particles.spawnComicText(enemy.x, enemy.y - 60, "POWERUP DROPPED!", "#FF2A4D");
+      }
+
+      return;
+    }
+
+    this.waves.enemiesRemainingInPhase = Math.max(0, this.waves.enemiesRemainingInPhase - 1);
+
+    // Check if all non-boss minions are dead
+    const livingMinions = this.game.enemies.filter(e => e.alive && !e.isBoss);
+    if (livingMinions.length === 0 && !this.l3ReplenishPending && !this.isVictoryInProgress) {
+      // Check what died: if the last dead was CMY -> schedule RGB in 3 sec; if RGB -> schedule CYM in 3 sec!
+      const deadColor = enemy ? enemy.colorId : '';
+      const isRGB = (deadColor === 'RED' || deadColor === 'GREEN' || deadColor === 'BLUE');
+      const nextBatch = isRGB ? 'CYM' : 'RGB';
+      this.scheduleL3Replenish(nextBatch);
+    }
+  }
+
+  onInvertPowerupCollected() {
+    if (this.isPowerupCollected) return;
+    this.isPowerupCollected = true;
+
+    // Give a clear gap/breather (1.5 seconds) after picking up the Uno Reverse Powerup before Noobi-Wan appears
+    setTimeout(() => {
       const victoryCards = [
         {
           id: 'l3_card4',
@@ -283,11 +304,11 @@ class Level3Director {
           message:
             'Incredible victory, Fluke!<br><br>' +
             '<div style="font-size: 15px; font-weight: bold; color: #00F0FF; border-left: 3px solid #00F0FF; padding: 8px 10px; background: rgba(0, 240, 255, 0.12); border-radius: 4px; margin-bottom: 12px;">' +
-            '&ldquo;By defeating the black boss, you gained his ability to invert frame. You can activate the ability using the key E, and it has a timeout of 25s&rdquo;' +
+            '&ldquo;By defeating the black boss, you gained his ability to invert frame. You can activate the ability using the key E, and it has a timeout of 25s at full health &mdash; but it drops to 7s after losing 1 heart, and 5s after losing 2 hearts!&rdquo;' +
             '</div>' +
             '• Press <b>KEY [E]</b> during combat to reverse light physics for 10 seconds!<br>' +
             '• When active, enemies can be destroyed by their own matching color lasers.<br>' +
-            '• Ability timeout cooldown: <b>25 seconds</b>.',
+            '• Ability timeout cooldown: <b>25s</b> (full health) → <b>7s</b> (1 heart lost) → <b>5s</b> (2 hearts lost).',
           btnText: 'CONTINUE NOOBI-WAN ▶'
         },
         {
@@ -308,32 +329,16 @@ class Level3Director {
         }
       ];
 
-      setTimeout(() => {
-        if (this.game.showTutorialSequence) {
-          this.game.showTutorialSequence(victoryCards, () => {
-            this.waves.cleared = true;
-            this.game.onLevelComplete(3);
-          });
-        } else {
+      if (this.game.showTutorialSequence) {
+        this.game.showTutorialSequence(victoryCards, () => {
           this.waves.cleared = true;
           this.game.onLevelComplete(3);
-        }
-      }, 500);
-
-      return;
-    }
-
-    this.waves.enemiesRemainingInPhase = Math.max(0, this.waves.enemiesRemainingInPhase - 1);
-
-    // Check if all non-boss minions are dead
-    const livingMinions = this.game.enemies.filter(e => e.alive && !e.isBoss);
-    if (livingMinions.length === 0 && !this.l3ReplenishPending && !this.isVictoryInProgress) {
-      // Check what died: if the last dead was CMY -> schedule RGB in 3 sec; if RGB -> schedule CYM in 3 sec!
-      const deadColor = enemy ? enemy.colorId : '';
-      const isRGB = (deadColor === 'RED' || deadColor === 'GREEN' || deadColor === 'BLUE');
-      const nextBatch = isRGB ? 'CYM' : 'RGB';
-      this.scheduleL3Replenish(nextBatch);
-    }
+        });
+      } else {
+        this.waves.cleared = true;
+        this.game.onLevelComplete(3);
+      }
+    }, 1500);
   }
 
   update(dt) {

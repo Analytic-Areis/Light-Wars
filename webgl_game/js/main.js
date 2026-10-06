@@ -765,7 +765,7 @@ class LightWarsGame {
         icon: '🔄',
         name: 'INVERT FRAME ABILITY',
         key: 'KEY [E]',
-        desc: 'Activate Invert Frame using <b>KEY [E]</b> to reverse light physics for 10s (timeout: 25s)! When inverted, bots can only be destroyed by their matching color lasers, and the Black Boss is invincible.',
+        desc: 'Activate Invert Frame using <b>KEY [E]</b> to reverse light physics for 10s! Cooldown scales with damage: <b>25s</b> at full health, <b>7s</b> after 1 heart lost, <b>5s</b> after 2 hearts lost. When inverted, bots can only be destroyed by their matching color lasers, and the Black Boss is invincible.',
         unlocked: !!this.unlockedCapabilities.inversion,
         lockHint: 'Defeat the Black Boss in Mission 03 to acquire.'
       }
@@ -1209,6 +1209,9 @@ class LightWarsGame {
   setDevMode(enabled) {
     if (this.devMode === enabled) return;
     this.devMode = enabled;
+    // Expose to player.js and other modules via global namespace
+    window.LightWars = window.LightWars || {};
+    window.LightWars.devMode = enabled;
 
     const devModeCheckbox = document.getElementById('devModeCheckbox');
     if (devModeCheckbox && devModeCheckbox.checked !== enabled) {
@@ -1485,6 +1488,10 @@ class LightWarsGame {
       if (this.devMode || localStorage.getItem('lightwars_black_boss_defeated') === 'true') {
         this.player.invertUnlocked = true;
       }
+      // Developer mode: start Level 3 with 1 WHITE bullet (infinite via consumeAmmo patch)
+      if (this.devMode) {
+        this.player.ammo['WHITE'] = 1;
+      }
     }
     this.unlockHelpCapability('dash');
     this.unlockHelpCapability('orbCrafting');
@@ -1674,6 +1681,33 @@ class LightWarsGame {
       this.waves.onDashPowerupCollected();
     }
   }
+
+  onInvertPowerupCollected(x, y) {
+    if (this.player) {
+      this.player.invertUnlocked = true;
+    }
+    localStorage.setItem('lightwars_black_boss_defeated', 'true');
+    this.unlockHelpCapability('inversion');
+
+    if (window.LightWars.sound) {
+      if (window.LightWars.sound.playPowerupPickup) {
+        window.LightWars.sound.playPowerupPickup();
+      } else {
+        window.LightWars.sound.playVictory();
+      }
+    }
+
+    if (this.particles) {
+      this.particles.spawnBurst(x, y, '#FF2A4D', 36);
+      this.particles.spawnBurst(x, y, '#FFFFFF', 24);
+      this.particles.spawnComicText(x, y - 40, 'INVERT FRAME UNLOCKED!', '#FF2A4D');
+    }
+
+    if (this.waves && this.waves.onInvertPowerupCollected) {
+      this.waves.onInvertPowerupCollected();
+    }
+  }
+
 
   handlePlayerShoot() {
     if (this.state !== 'PLAYING' || !this.player || !this.player.alive) return;

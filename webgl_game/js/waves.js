@@ -135,6 +135,12 @@ class WaveDirector {
     }
   }
 
+  onInvertPowerupCollected() {
+    if (this.lvl3 && typeof this.lvl3.onInvertPowerupCollected === 'function') {
+      this.lvl3.onInvertPowerupCollected();
+    }
+  }
+
   onBossPhysicsInversionActivated() {
     if (this.lvl3 && typeof this.lvl3.onBossPhysicsInversionActivated === 'function') {
       this.lvl3.onBossPhysicsInversionActivated();

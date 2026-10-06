@@ -52,9 +52,9 @@ class Player {
     this.dashGhosts = [];
 
     // Invert Frame ability (Unlocked after defeating the Black Boss in Level 3)
+    // Cooldown scales with damage taken: 25s at full health, 7s after 1 heart lost, 5s after 2 hearts lost
     this.invertUnlocked = false;
     this.invertCooldown = 0;
-    this.invertCooldownMax = 25.0; // 25s timeout
     this.invertActiveTimer = 0;
     this.invertDuration = 10.0;
 
@@ -67,6 +67,20 @@ class Player {
     this.idleAnimTime = 0;
     this.refillTimer = 0;
     this.isRefilling = false;
+  }
+
+  /**
+   * Returns the invert-frame cooldown (in seconds) based on how many hearts
+   * the player has lost:
+   *   Full health (3 hearts) → 25 s
+   *   1 heart lost  (2 hearts) → 7 s
+   *   2 hearts lost (1 heart)  → 5 s
+   */
+  getInvertCooldownMax() {
+    const heartsLost = this.maxHealth - this.health;
+    if (heartsLost >= 2) return 5.0;
+    if (heartsLost >= 1) return 7.0;
+    return 25.0;
   }
 
   getActiveColorId() {
@@ -97,6 +111,8 @@ class Player {
   }
 
   consumeAmmo(colorId) {
+    // Developer mode: infinite bullets — never consume ammo
+    if (window.LightWars && window.LightWars.devMode) return true;
     if (this.ammo[colorId] > 0) {
       this.ammo[colorId]--;
       return true;
@@ -201,6 +217,9 @@ class Player {
 
   takeDamage(amount = 1, fromX = 0, fromY = 0, applyKnockback = true, knockbackAngle = null) {
     if (!this.alive) return;
+
+    // Developer mode: infinite HP & 0 knockback — ignore all damage
+    if (window.LightWars && window.LightWars.devMode) return;
 
     // 1. Always apply shot impact / knockback if requested (even during invulnerability frames)
     if (applyKnockback) {
@@ -455,7 +474,7 @@ class Player {
       return false;
     }
 
-    this.invertCooldown = this.invertCooldownMax;
+    this.invertCooldown = this.getInvertCooldownMax();
     this.invertActiveTimer = this.invertDuration;
 
     if (game) {
