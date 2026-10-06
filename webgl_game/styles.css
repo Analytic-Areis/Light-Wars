@@ -1240,24 +1240,6 @@ body, html {
   gap: 8px;
 }
 
-.noobi-skip-btn {
-  font-family: 'Bangers', cursive;
-  font-size: 13px;
-  letter-spacing: 1px;
-  color: #4B5268;
-  background: rgba(255, 255, 255, 0.5);
-  border: 1.5px solid #A0AABF;
-  padding: 4px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.noobi-skip-btn:hover {
-  background: rgba(255, 42, 77, 0.15);
-  color: #FF2A4D;
-  border-color: #FF2A4D;
-}
 
 .noobi-continue-btn {
   font-family: 'Bangers', cursive;

@@ -297,6 +297,7 @@ class Level2Director {
         'Splendid! The Red bot transformed into Yellow!<br><br>' +
         'Now another Red bot is arriving. <b>SHOOT BLUE LASER [3]</b> to watch him transform into <b>MAGENTA</b>!',
         {
+          repeatable: true,
           btnText: 'ENGAGE WITH BLUE [3] ▶',
           onDismiss: () => {
             this.trialEnemy = this.waves.spawnAt(12, 9, 'RED');
@@ -325,6 +326,7 @@ class Level2Director {
         '• Shoot Red bot with <b>BLUE LASER [3]</b> (transforms to Magenta)<br><br>' +
         'Your inventory has been replenished. Try again!',
         {
+          repeatable: true,
           btnText: 'RETRY COLOR DRILL 🔁',
           onDismiss: () => {
             this.startRedTrialStep1();
@@ -408,6 +410,7 @@ class Level2Director {
         'Perfect! The Cyan bot transformed into Blue!<br><br>' +
         'Now another Cyan bot is coming. <b>SHOOT YELLOW LASER [6]</b> to watch him transform into <b>GREEN</b>!',
         {
+          repeatable: true,
           btnText: 'ENGAGE WITH YELLOW [6] ▶',
           onDismiss: () => {
             this.trialEnemy = this.waves.spawnAt(12, 9, 'CYAN');
@@ -435,6 +438,7 @@ class Level2Director {
         '• Shoot Cyan with <b>YELLOW LASER [6]</b> (transforms into Green)<br><br>' +
         'Your inventory has been restored. Try again!',
         {
+          repeatable: true,
           btnText: 'RETRY CYAN DRILL 🔁',
           onDismiss: () => {
             this.startCyanTrialStep1();

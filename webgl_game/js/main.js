@@ -388,20 +388,12 @@ class LightWarsGame {
       });
     }
 
-    // Stop Tutorial / Noobi-Wan Instruction Modal dismiss & skip
+    // Stop Tutorial / Noobi-Wan Instruction Modal dismiss
     const tutorialDismissBtn = document.getElementById('tutorialDismissBtn');
     if (tutorialDismissBtn) {
       tutorialDismissBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         this.dismissTutorial();
-      });
-    }
-
-    const tutorialSkipBtn = document.getElementById('tutorialSkipBtn');
-    if (tutorialSkipBtn) {
-      tutorialSkipBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.skipTutorialSequence();
       });
     }
 
@@ -981,8 +973,9 @@ class LightWarsGame {
   }
 
   showStopTutorial(id, title, message, options = {}) {
-    if (id && this._tutorialsSeen && this._tutorialsSeen[id]) return;
-    if (id) {
+    const isRepeatable = options.repeatable || options.force || !id;
+    if (!isRepeatable && id && this._tutorialsSeen && this._tutorialsSeen[id]) return;
+    if (id && !isRepeatable) {
       if (!this._tutorialsSeen) this._tutorialsSeen = {};
       this._tutorialsSeen[id] = true;
     }
@@ -1036,13 +1029,20 @@ class LightWarsGame {
     const titleEl = document.getElementById('tutorialTitle');
     const msgEl = document.getElementById('tutorialMessage');
     const btnEl = document.getElementById('tutorialDismissBtn');
-    const skipBtn = document.getElementById('tutorialSkipBtn');
     const dotsEl = document.getElementById('tutorialDots');
 
     if (badgeEl) badgeEl.innerHTML = card.badge || card.tag || '⚡ JEDI MASTER INTEL';
     if (titleEl) titleEl.innerHTML = card.title || 'MISSION BRIEFING';
     if (msgEl) msgEl.innerHTML = card.message || '';
     if (btnEl) btnEl.innerHTML = card.btnText || 'CONTINUE NOOBI-WAN ▶';
+
+    // Swap speaker portrait — Black Boss cards supply speakerImg; default is Noobi-Wan
+    const artImg = document.getElementById('noobiArtImg');
+    if (artImg) {
+      const NOOBI_DEFAULT = 'assets/noobi/noobi_wan_instructions.png';
+      artImg.src = card.speakerImg || NOOBI_DEFAULT;
+      artImg.alt = card.speakerAlt || 'Master Noobi-Wan Instructions';
+    }
 
     // Tracker badge (e.g. CARD 01 / 06)
     if (trackerEl) {
@@ -1068,13 +1068,6 @@ class LightWarsGame {
       } else {
         dotsEl.style.display = 'none';
       }
-    }
-
-    // Skip button visibility
-    if (skipBtn) {
-      const hasMoreInQueue = this._tutorialQueue && this._tutorialQueue.length > 0;
-      const isMultiStep = (card.totalSteps && card.totalSteps > 1);
-      skipBtn.style.display = (hasMoreInQueue || isMultiStep) ? 'inline-block' : 'none';
     }
 
     if (modal) {
@@ -1125,41 +1118,6 @@ class LightWarsGame {
       if (this.state !== 'TUTORIAL') {
         if (modal) modal.style.display = 'none';
       }
-    }, 320);
-
-    this.state = (this._savedPreTutorialState && this._savedPreTutorialState !== 'TUTORIAL') 
-      ? this._savedPreTutorialState 
-      : 'PLAYING';
-    this._savedPreTutorialState = 'PLAYING';
-
-    if (typeof onComplete === 'function') {
-      onComplete();
-    }
-  }
-
-  skipTutorialSequence() {
-    if (window.LightWars.sound && window.LightWars.sound.playDialogueAdvance) {
-      window.LightWars.sound.playDialogueAdvance();
-    }
-
-    if (this._currentCard && typeof this._currentCard.onDismiss === 'function') {
-      try {
-        this._currentCard.onDismiss();
-      } catch (err) {
-        console.error("Error in card onDismiss on skip:", err);
-      }
-    }
-
-    this._tutorialQueue = [];
-    const modal = document.getElementById('tutorialModal');
-    if (modal) modal.classList.remove('visible');
-
-    const onComplete = this._tutorialSequenceOnComplete;
-    this._tutorialSequenceOnComplete = null;
-    this._currentCard = null;
-
-    setTimeout(() => {
-      if (modal) modal.style.display = 'none';
     }, 320);
 
     this.state = (this._savedPreTutorialState && this._savedPreTutorialState !== 'TUTORIAL') 

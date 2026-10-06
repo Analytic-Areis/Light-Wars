@@ -1,17 +1,26 @@
 /**
  * Light-Wars: Level 3 Wave & Script Logic
  *
- * LEVEL 3: The Black Boss & Master Noobi-Wan Cards (1-5)
- * - Card 1: Noobi-wan teaches how to create white crystals ("Shoot some orb with its contrary-color laser to form white crystals")
- * - Card 2: Noobi-wan teaches how to defeat the Black Boss ("To defeat the black boss, shoot him with his contrary-color laser")
- * - Spawns Black Boss + CYM triad; alternating minion waves (CYM <-> RGB)
- * - Boss hit reaction: replenishes minions, triggers Invert Frame ability
- * - Card 3: Triggered upon Boss Invert Frame activation ("The black boss has a special ability known as invert frame; when it is turned on, bots can be killed only by the lasers of their color, and the black boss is literally invincible in this state")
- * - Boss defeated reaction:
- *   - Card 4: ("By defeating the black boss, you gained his ability to invert frame. You can activate the ability using the key E, and it has a timeout of 25s at full health, 7s after 1 heart lost, and 5s after 2 hearts lost")
- *   - Card 5: ("Seems like another boss; we have to destroy him too. Let's move further")
- * - Completes Level 3 and transitions to victory / next boss screen
+ * LEVEL 3: The Black Boss & Master Noobi-Wan Cards (0–7)
+ *
+ * card-0: Black Boss taunts: "You can't defeat me — I am far stronger than you!"
+ * card-1: Noobi-Wan: "Don't listen to him; he will die to his contrary color"
+ * card-2: Noobi-Wan teaches white crystal synthesis
+ *
+ * (Battle begins — first hit triggers Invert Frame)
+ * card-3: Noobi-Wan explains the Invert Frame ability
+ *
+ * (After defeating the Black Boss)
+ * card-4: Dying Black Boss: "Are you thinking that everything is done? Not yet…"
+ * card-5: Dying Black Boss: warns about their true boss
+ * card-6: Noobi-Wan: "Seems like another boss; we have to destroy him too. Let's move further"
+ * card-7: Noobi-Wan: explains the player's new Invert Frame ability (key E, 25 s timeout)
  */
+
+// Image paths for swappable speaker portraits
+const NOOBI_IMG    = 'assets/noobi/noobi_wan_instructions.png';
+const BOSS_ALIVE   = 'assets/noobi/Black Boss_ Armoured Enforcer Splash.png';
+const BOSS_FALLEN  = 'assets/noobi/Black Boss_ Fallen in the Shattered Dark.png';
 
 class Level3Director {
   constructor(waveDirector) {
@@ -26,6 +35,7 @@ class Level3Director {
     this.l3NextBatch = 'RGB'; // 'RGB' or 'CYM'
     this._lastProcessedHp = null;
     this.isVictoryInProgress = false;
+    this.isPowerupCollected = false;
   }
 
   start() {
@@ -40,61 +50,92 @@ class Level3Director {
     this.l3NextBatch = 'RGB';
     this._lastProcessedHp = null;
     this.isVictoryInProgress = false;
+    this.isPowerupCollected = false;
 
     // Equip Fluke with combat-ready ammo for Level 3
     if (this.game.player) {
-      this.game.player.ammo.RED = Math.max(this.game.player.ammo.RED || 0, 6);
-      this.game.player.ammo.GREEN = Math.max(this.game.player.ammo.GREEN || 0, 6);
-      this.game.player.ammo.BLUE = Math.max(this.game.player.ammo.BLUE || 0, 6);
-      this.game.player.ammo.CYAN = Math.max(this.game.player.ammo.CYAN || 0, 4);
-      this.game.player.ammo.MAGENTA = Math.max(this.game.player.ammo.MAGENTA || 0, 4);
-      this.game.player.ammo.YELLOW = Math.max(this.game.player.ammo.YELLOW || 0, 4);
+      this.game.player.ammo.RED    = Math.max(this.game.player.ammo.RED    || 0, 6);
+      this.game.player.ammo.GREEN  = Math.max(this.game.player.ammo.GREEN  || 0, 6);
+      this.game.player.ammo.BLUE   = Math.max(this.game.player.ammo.BLUE   || 0, 6);
+      this.game.player.ammo.CYAN    = Math.max(this.game.player.ammo.CYAN   || 0, 4);
+      this.game.player.ammo.MAGENTA = Math.max(this.game.player.ammo.MAGENTA|| 0, 4);
+      this.game.player.ammo.YELLOW  = Math.max(this.game.player.ammo.YELLOW || 0, 4);
     }
 
-    // Sequence of Card 1 and Card 2 at the start of Level 3
-    const startCards = [
+    // ── card-0: Black Boss taunts ──────────────────────────────────────────────
+    // ── card-1: Noobi-Wan rebuttal ────────────────────────────────────────────
+    // ── card-2: White crystal synthesis tutorial ──────────────────────────────
+    const openingCards = [
+      {
+        id: 'l3_card0',
+        tag: 'BOSS INTERCEPT // 00',
+        badge: '☠️ THE BLACK BOSS SPEAKS',
+        tracker: 'CARD 01 / 03',
+        step: 1,
+        totalSteps: 3,
+        title: 'THE BLACK BOSS: "YOU CANNOT DEFEAT ME"',
+        speakerImg: BOSS_ALIVE,
+        speakerAlt: 'The Black Boss — Armoured Enforcer',
+        message:
+          '<span style="color:#888;font-size:13px;letter-spacing:1px;">— TRANSMISSION INTERCEPTED —</span><br><br>' +
+          '<div style="font-size: 15px; font-weight: bold; color: #FF2A4D; border-left: 3px solid #FF2A4D; ' +
+          'padding: 8px 10px; background: rgba(255,42,77,0.12); border-radius: 4px; margin-bottom: 12px;">' +
+          '&ldquo;You dare challenge me, Fluke?! I am the Void Enforcer — the embodiment of absolute darkness. ' +
+          'Every photon you fire crumbles at my feet. Your pitiful little lasers are nothing but flickering ' +
+          'candles before the abyss. You <em>cannot</em> defeat me. I am far stronger than you could ever ' +
+          'comprehend. Surrender now, or be consumed by the dark!&rdquo;' +
+          '</div>' +
+          '&nbsp;<span style="color:#888;font-size:13px;">— <b>THE BLACK BOSS</b>, Void Enforcer of the Spectrum War</span>',
+        btnText: 'RESPOND! ▶'
+      },
       {
         id: 'l3_card1',
-        tag: 'SYNTHESIS INTEL // 01',
+        tag: 'NOOBI-WAN INTEL // 01',
         badge: '⚡ MASTER NOOBI-WAN INTEL',
-        tracker: 'CARD 01 / 02',
-        step: 1,
-        totalSteps: 2,
-        title: 'MASTER NOOBI-WAN: WHITE CRYSTALS',
+        tracker: 'CARD 02 / 03',
+        step: 2,
+        totalSteps: 3,
+        title: 'MASTER NOOBI-WAN: "DON\'T LISTEN TO HIM"',
+        speakerImg: NOOBI_IMG,
+        speakerAlt: 'Master Noobi-Wan',
         message:
-          'Listen closely, Fluke!<br><br>' +
-          '<div style="font-size: 15px; font-weight: bold; color: #00F0FF; border-left: 3px solid #00F0FF; padding: 8px 10px; background: rgba(0, 240, 255, 0.12); border-radius: 4px; margin-bottom: 12px;">' +
+          'Fluke, do not let his words shake you!<br><br>' +
+          '<div style="font-size: 15px; font-weight: bold; color: #00F0FF; border-left: 3px solid #00F0FF; ' +
+          'padding: 8px 10px; background: rgba(0,240,255,0.12); border-radius: 4px; margin-bottom: 12px;">' +
+          '&ldquo;Don\'t listen to him — he is the same as all the others. He <em>will</em> die to his contrary color!&rdquo;' +
+          '</div>' +
+          '• Every entity in this war has a wavelength weakness — even the Black Boss.<br>' +
+          '• The darkness itself has a contrary: <b>pure WHITE light</b>.<br>' +
+          '• Find his weakness, and you will find his end.',
+        btnText: 'UNDERSTOOD, MASTER ▶'
+      },
+      {
+        id: 'l3_card2',
+        tag: 'SYNTHESIS INTEL // 02',
+        badge: '⚡ MASTER NOOBI-WAN INTEL',
+        tracker: 'CARD 03 / 03',
+        step: 3,
+        totalSteps: 3,
+        title: 'MASTER NOOBI-WAN: WHITE CRYSTAL SYNTHESIS',
+        speakerImg: NOOBI_IMG,
+        speakerAlt: 'Master Noobi-Wan',
+        message:
+          'Listen carefully, Fluke — this is the key!<br><br>' +
+          '<div style="font-size: 15px; font-weight: bold; color: #FFFFFF; border-left: 3px solid #FFFFFF; ' +
+          'padding: 8px 10px; background: rgba(255,255,255,0.08); border-radius: 4px; margin-bottom: 12px;">' +
           '&ldquo;Shoot some orb with its contrary-color laser to form white crystals&rdquo;' +
           '</div>' +
           '• Shoot <span class="noobi-hl red">RED laser [1]</span> into a <span class="noobi-hl cyan">CYAN orb</span> (or Cyan into Red)<br>' +
           '• Shoot <span class="noobi-hl green">GREEN laser [2]</span> into a <span class="noobi-hl magenta">MAGENTA orb</span> (or Magenta into Green)<br>' +
           '• Shoot <span class="noobi-hl blue">BLUE laser [3]</span> into a <span class="noobi-hl yellow">YELLOW orb</span> (or Yellow into Blue)<br><br>' +
-          'Contrary-color reaction crystallizes pure <b>WHITE AMMO [7]</b>!',
-        btnText: 'CONTINUE NOOBI-WAN ▶'
-      },
-      {
-        id: 'l3_card2',
-        tag: 'BOSS COMBAT // 02',
-        badge: '⚡ MASTER NOOBI-WAN INTEL',
-        tracker: 'CARD 02 / 02',
-        step: 2,
-        totalSteps: 2,
-        title: 'MASTER NOOBI-WAN: DEFEATING THE BLACK BOSS',
-        message:
-          'The Black Boss commands the abyssal darkness!<br><br>' +
-          '<div style="font-size: 15px; font-weight: bold; color: #FFE600; border-left: 3px solid #FFE600; padding: 8px 10px; background: rgba(255, 230, 0, 0.12); border-radius: 4px; margin-bottom: 12px;">' +
-          '&ldquo;To defeat the black boss, shoot him with his contrary-color laser&rdquo;' +
-          '</div>' +
-          '• The Black Boss is darkness incarnate — his contrary wavelength is <b>pure WHITE LASER [7]</b>!<br>' +
-          '• Standard RGB &amp; CMY lasers will not scratch his abyssal shield.<br>' +
-          '• Strike him with <b>3 White laser strikes</b> to destroy him once and for all!',
+          'Contrary-color reaction crystallizes pure <b>WHITE AMMO [7]</b> — the only laser that can harm the Black Boss!',
         btnText: 'ENGAGE THE BLACK BOSS! ⚔️'
       }
     ];
 
     setTimeout(() => {
       if (this.game.showTutorialSequence) {
-        this.game.showTutorialSequence(startCards, () => {
+        this.game.showTutorialSequence(openingCards, () => {
           this.initL3BossBattle();
         });
       } else {
@@ -178,30 +219,34 @@ class Level3Director {
     }
   }
 
+  // card-3: Triggered after the black boss uses his invert frame ability on first white hit
   onBossPhysicsInversionActivated() {
     if (this.seenInversionExplanation) return;
     this.seenInversionExplanation = true;
 
-    // Card 3: After hitting the black boss with a white bullet and the boss uses invert frame
     const card3 = {
       id: 'l3_card3',
       tag: 'BOSS ABILITY UNLEASHED',
       badge: '⚠️ REALITY DISTORTION ALERT',
-      tracker: 'CARD 03',
+      tracker: 'CARD 04',
       step: 1,
       totalSteps: 1,
       title: 'MASTER NOOBI-WAN: INVERT FRAME ABILITY',
+      speakerImg: NOOBI_IMG,
+      speakerAlt: 'Master Noobi-Wan',
       message:
-        'Fluke, look out!<br><br>' +
-        '<div style="font-size: 15px; font-weight: bold; color: #FF4D66; border-left: 3px solid #A020F0; padding: 8px 10px; background: rgba(160, 32, 240, 0.15); border-radius: 4px; margin-bottom: 12px;">' +
-        '&ldquo;The black boss has a special ability known as invert frame; when it is turned on, bots can be killed only by the lasers of their color, and the black boss is literally invincible in this state&rdquo;' +
+        'Fluke, look out — he activated his power!<br><br>' +
+        '<div style="font-size: 15px; font-weight: bold; color: #FF4D66; border-left: 3px solid #A020F0; ' +
+        'padding: 8px 10px; background: rgba(160,32,240,0.15); border-radius: 4px; margin-bottom: 12px;">' +
+        '&ldquo;The black boss has a special ability known as invert frame; when it is turned on, bots can be ' +
+        'killed only by the lasers of their color, and the black boss is literally invincible in this state!&rdquo;' +
         '</div>' +
-        '• <b>SAME-COLOR VULNERABILITY:</b><br>' +
+        '• <b>SAME-COLOR VULNERABILITY (Invert Frame ON):</b><br>' +
         '&nbsp;&nbsp;&bull; <span class="noobi-hl cyan">CYAN bot</span> dies only to <b>CYAN laser [4]</b><br>' +
         '&nbsp;&nbsp;&bull; <span class="noobi-hl magenta">MAGENTA bot</span> dies only to <b>MAGENTA laser [5]</b><br>' +
         '&nbsp;&nbsp;&bull; <span class="noobi-hl yellow">YELLOW bot</span> dies only to <b>YELLOW laser [6]</b><br>' +
         '&nbsp;&nbsp;&bull; <span class="noobi-hl red">RED bot</span> dies only to <b>RED laser [1]</b> (and Green to Green, Blue to Blue)<br><br>' +
-        '• <b>THE BLACK BOSS IS INVINCIBLE:</b> Hold your ground until his invert frame drops before striking him with White lasers again!',
+        '• <b>THE BLACK BOSS IS INVINCIBLE:</b> Hold your ground until his invert frame drops, then strike with White lasers again!',
       btnText: 'UNDERSTOOD, NOOBI-WAN! ⚔️'
     };
 
@@ -253,7 +298,7 @@ class Level3Director {
   }
 
   onEnemyDefeated(enemy, laserColorId) {
-    // If boss dies, trigger Cards 4 & 5 and level completion
+    // If boss dies, show dying cards 4 & 5 then proceed
     if (enemy && enemy.isBoss) {
       if (this.isVictoryInProgress) return;
       this.isVictoryInProgress = true;
@@ -278,7 +323,6 @@ class Level3Director {
     // Check if all non-boss minions are dead
     const livingMinions = this.game.enemies.filter(e => e.alive && !e.isBoss);
     if (livingMinions.length === 0 && !this.l3ReplenishPending && !this.isVictoryInProgress) {
-      // Check what died: if the last dead was CMY -> schedule RGB in 3 sec; if RGB -> schedule CYM in 3 sec!
       const deadColor = enemy ? enemy.colorId : '';
       const isRGB = (deadColor === 'RED' || deadColor === 'GREEN' || deadColor === 'BLUE');
       const nextBatch = isRGB ? 'CYM' : 'RGB';
@@ -290,41 +334,94 @@ class Level3Director {
     if (this.isPowerupCollected) return;
     this.isPowerupCollected = true;
 
-    // Give a clear gap/breather (1.5 seconds) after picking up the Uno Reverse Powerup before Noobi-Wan appears
+    // Give a clear gap/breather before the dying boss dialogue appears
     setTimeout(() => {
+      // ── card-4: Dying Black Boss — "Are you thinking that everything is done? Not yet…"
+      // ── card-5: Dying Black Boss — warns about their true boss
+      // ── card-6: Noobi-Wan — "Seems like another boss; let's move further"
+      // ── card-7: Noobi-Wan — explains the new Invert Frame ability
       const victoryCards = [
         {
           id: 'l3_card4',
-          tag: 'LEGENDARY POWER ACQUIRED // 01',
-          badge: '✨ NEW ABILITY UNLOCKED',
-          tracker: 'CARD 04 / 05',
+          tag: 'DYING BOSS // 01',
+          badge: '☠️ THE BLACK BOSS SPEAKS',
+          tracker: 'CARD 05 / 08',
           step: 1,
-          totalSteps: 2,
-          title: 'MASTER NOOBI-WAN: INVERT FRAME GAINED',
+          totalSteps: 4,
+          title: 'THE BLACK BOSS: "NOT YET…"',
+          speakerImg: BOSS_FALLEN,
+          speakerAlt: 'The Black Boss — Fallen in the Shattered Dark',
           message:
-            'Incredible victory, Fluke!<br><br>' +
-            '<div style="font-size: 15px; font-weight: bold; color: #00F0FF; border-left: 3px solid #00F0FF; padding: 8px 10px; background: rgba(0, 240, 255, 0.12); border-radius: 4px; margin-bottom: 12px;">' +
-            '&ldquo;By defeating the black boss, you gained his ability to invert frame. You can activate the ability using the key E, and it has a timeout of 25s at full health &mdash; but it drops to 7s after losing 1 heart, and 5s after losing 2 hearts!&rdquo;' +
+            '<span style="color:#888;font-size:13px;letter-spacing:1px;">— LAST TRANSMISSION —</span><br><br>' +
+            '<div style="font-size: 15px; font-weight: bold; color: #FF6030; border-left: 3px solid #FF6030; ' +
+            'padding: 8px 10px; background: rgba(255,96,48,0.12); border-radius: 4px; margin-bottom: 12px;">' +
+            '&ldquo;…Are you thinking that everything is done? &hellip;Not yet, little warrior. ' +
+            'This battle — <em>heh</em> — this was nothing. You haven\'t seen what lies ahead…&rdquo;' +
             '</div>' +
-            '• Press <b>KEY [E]</b> during combat to reverse light physics for 10 seconds!<br>' +
-            '• When active, enemies can be destroyed by their own matching color lasers.<br>' +
-            '• Ability timeout cooldown: <b>25s</b> (full health) → <b>7s</b> (1 heart lost) → <b>5s</b> (2 hearts lost).',
-          btnText: 'CONTINUE NOOBI-WAN ▶'
+            '&nbsp;<span style="color:#888;font-size:13px;">— <b>THE BLACK BOSS</b>, Void Enforcer — <em>defeated</em></span>',
+          btnText: 'LISTEN ▶'
         },
         {
           id: 'l3_card5',
-          tag: 'GREATER PERIL // 02',
-          badge: '🌌 THE SPECTRUM WAR AHEAD',
-          tracker: 'CARD 05 / 05',
+          tag: 'DYING BOSS // 02',
+          badge: '☠️ THE BLACK BOSS SPEAKS',
+          tracker: 'CARD 06 / 08',
           step: 2,
-          totalSteps: 2,
-          title: 'MASTER NOOBI-WAN: ANOTHER BOSS AHEAD',
+          totalSteps: 4,
+          title: 'THE BLACK BOSS: "OUR BOSS AWAITS YOU"',
+          speakerImg: BOSS_FALLEN,
+          speakerAlt: 'The Black Boss — Fallen in the Shattered Dark',
           message:
-            'Hold on... the chromatic disturbances haven\'t ceased!<br><br>' +
-            '<div style="font-size: 15px; font-weight: bold; color: #FFE600; border-left: 3px solid #FFE600; padding: 8px 10px; background: rgba(255, 230, 0, 0.12); border-radius: 4px; margin-bottom: 12px;">' +
-            '&ldquo;Seems like another boss; we have to destroy him too. Let\'s move further&rdquo;' +
+            '<span style="color:#888;font-size:13px;letter-spacing:1px;">— DYING WORDS —</span><br><br>' +
+            '<div style="font-size: 15px; font-weight: bold; color: #FF6030; border-left: 3px solid #FF6030; ' +
+            'padding: 8px 10px; background: rgba(255,96,48,0.12); border-radius: 4px; margin-bottom: 12px;">' +
+            '&ldquo;You think you\'ve won? You have only awakened a far greater wrath. ' +
+            'Our true lord — the one who forged this war — you cannot hope to defeat him. ' +
+            'What I was to you&hellip; he is that thousandfold. No light you carry will be enough. ' +
+            'It is practically <em>impossible</em>&hellip;&rdquo;' +
             '</div>' +
-            'Prepare yourself, Fluke. The battle for the spectrum is far from over!',
+            '&nbsp;<span style="color:#888;font-size:13px;">— <b>THE BLACK BOSS</b>, last breath</span>',
+          btnText: 'LISTEN ▶'
+        },
+        {
+          id: 'l3_card6',
+          tag: 'NOOBI-WAN INTEL // 03',
+          badge: '⚡ MASTER NOOBI-WAN INTEL',
+          tracker: 'CARD 07 / 08',
+          step: 3,
+          totalSteps: 4,
+          title: 'MASTER NOOBI-WAN: ANOTHER BOSS AHEAD',
+          speakerImg: NOOBI_IMG,
+          speakerAlt: 'Master Noobi-Wan',
+          message:
+            'Hold on, Fluke — the chromatic disturbances haven\'t ceased!<br><br>' +
+            '<div style="font-size: 15px; font-weight: bold; color: #FFE600; border-left: 3px solid #FFE600; ' +
+            'padding: 8px 10px; background: rgba(255,230,0,0.12); border-radius: 4px; margin-bottom: 12px;">' +
+            '&ldquo;Seems like another boss; we have to destroy him too. Let\'s move further!&rdquo;' +
+            '</div>' +
+            'Gather yourself. The spectrum is counting on you. Forward!',
+          btnText: 'CONTINUE NOOBI-WAN ▶'
+        },
+        {
+          id: 'l3_card7',
+          tag: 'LEGENDARY POWER ACQUIRED // 04',
+          badge: '✨ NEW ABILITY UNLOCKED',
+          tracker: 'CARD 08 / 08',
+          step: 4,
+          totalSteps: 4,
+          title: 'MASTER NOOBI-WAN: INVERT FRAME GAINED',
+          speakerImg: NOOBI_IMG,
+          speakerAlt: 'Master Noobi-Wan',
+          message:
+            'Incredible, Fluke — you\'ve claimed his power!<br><br>' +
+            '<div style="font-size: 15px; font-weight: bold; color: #00F0FF; border-left: 3px solid #00F0FF; ' +
+            'padding: 8px 10px; background: rgba(0,240,255,0.12); border-radius: 4px; margin-bottom: 12px;">' +
+            '&ldquo;By defeating the black boss, you gained his ability to invert frame. ' +
+            'You can activate the ability using the key E, and it has a timeout of 25s!&rdquo;' +
+            '</div>' +
+            '• Press <b>KEY [E]</b> during combat to reverse light physics for a limited time!<br>' +
+            '• When active, enemies can be destroyed by matching color lasers (same-color kills).<br>' +
+            '• Ability timeout: <b>25 s</b>.',
           btnText: 'COMPLETE LEVEL 3! 🏆'
         }
       ];
